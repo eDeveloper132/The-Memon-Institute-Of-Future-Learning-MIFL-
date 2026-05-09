@@ -23,7 +23,7 @@ connectDB().catch((err) => {
 });
 
 app.get("/", (req: Request, res: Response) => {
-    res.sendFile(path.join("public/protected/index.html"));
+    res.sendFile(path.resolve("public","protected","index.html"));
 });
 
 process.on("uncaughtException", (err) => {
