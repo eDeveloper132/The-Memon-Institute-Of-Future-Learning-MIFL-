@@ -1,0 +1,12 @@
+node_modules/
+.env
+*.js
+*.js.map
+*.mjs
+*.d.ts.map
+*.d.ts
+*.mjs.map
+*.d.mts
+*.d.mts.map
+.vercel
+.env*.local
