@@ -6,6 +6,7 @@ import cors from "cors";
 import chalk from "chalk";
 import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.mjs";
+import path from "path";
 
 const app = express();
 const httpServer = createServer(app);
@@ -14,17 +15,15 @@ const PORT = parseInt(process.env.PORT || "2500", 10);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+
+app.use(express.static(path.join("public")));
 // Database connection with handling
 connectDB().catch((err) => {
     console.error(chalk.red("Failed to connect to MongoDB:"), err.message);
 });
 
 app.get("/", (req: Request, res: Response) => {
-    res.json({ 
-        success: true,
-        message: "Welcome to the Medic Principal Care Server!",
-        data: {}
-    });
+    res.sendFile(path.join("public/protected/index.html"));
 });
 
 process.on("uncaughtException", (err) => {
