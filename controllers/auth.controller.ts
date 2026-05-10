@@ -196,7 +196,11 @@ export const forgotPassword = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) {
+            // Still return 200 to prevent user enumeration attacks
+            console.log(`[Auth] Forgot Password: Attempt for non-existent user ${email}`);
+            return res.status(200).json({ message: 'If a user with that email exists, a recovery link has been sent.' });
+        }
 
         const resetToken = generateResetToken(user._id.toString());
         const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
@@ -209,7 +213,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
         res.status(200).json({ message: 'Password recovery instructions sent to your email' });
     } catch (error: any) {
-        res.status(500).json({ message: 'Internal server error' });
+        console.error(chalk.red('Forgot Password error:'), error.message);
+        res.status(500).json({ message: 'Internal server error while sending email' });
     }
 };
 
@@ -217,15 +222,27 @@ export const resetPassword = async (req: Request, res: Response) => {
     try {
         const { token } = req.params;
         const { password } = req.body;
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+
         const decoded: any = jwt.verify(token as string, process.env.JWT_SECRET || 'secret');
         const user = await User.findById(decoded.id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found or token is invalid' });
+        }
 
         user.password = password;
         await user.save();
         res.status(200).json({ message: 'Password has been reset successfully' });
     } catch (error: any) {
-        res.status(400).json({ message: 'Invalid or expired token' });
+        console.error(chalk.red('Reset Password error:'), error.message);
+        if (error instanceof jwt.JsonWebTokenError) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 
