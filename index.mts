@@ -8,22 +8,35 @@ import cookieParser from "cookie-parser";
 import { connectDB } from "./config/db.mjs";
 import path from "path";
 
+import { securityMiddleware } from "./middlewares/security.mjs";
+import { generalLimiter } from "./middlewares/rateLimiter.mjs";
+import authRoutes from "./routes/auth.routes.mjs";
+import { authenticate } from "./middlewares/auth.mjs";
+
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "2500", 10);
 
+// Global Middlewares
+app.use(securityMiddleware);
+app.use(generalLimiter);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
+// API Routes
+app.use("/api/auth", authRoutes);
+
 app.use(express.static(path.join("public")));
-// Database connection with handling
+
+// Database connection
 connectDB().catch((err) => {
     console.error(chalk.red("Failed to connect to MongoDB:"), err.message);
 });
 
-app.get("/", (req: Request, res: Response) => {
-    res.sendFile(path.resolve("public","protected","index.html"));
+// Protected View Routes
+app.get("/", authenticate, (req: Request, res: Response) => {
+    res.sendFile(path.resolve("public", "protected", "index.html"));
 });
 
 process.on("uncaughtException", (err) => {

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/auth-components.js" defer></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <auth-card class="text-center">
+        <div class="animate-bounce mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 text-green-600 mb-6">
+            <i class="fa-solid fa-check text-4xl"></i>
+        </div>
+        
+        <auth-header title="Success!" subtitle="Your action was completed successfully. You can now continue to your dashboard."></auth-header>
+
+        <div class="pt-6">
+            <a href="/api/auth/login">
+                <auth-button type="button">Go to Login</auth-button>
+            </a>
+        </div>
+    </auth-card>
+</body>
+</html>

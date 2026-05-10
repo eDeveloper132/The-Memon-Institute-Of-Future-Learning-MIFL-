@@ -3,9 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WELCOME PAGE</title>
+    <title>Dashboard - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" defer></script>
 </head>
-<body>
-    <h1>WELCOME PAGE</h1>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="MIFL Dashboard"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <!-- Dashboard Content -->
+        <div id="dashboardContent" class="hidden">
+            <div id="roleBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6"></div>
+            
+            <div id="welcomeMessage" class="mb-8">
+                <h2 class="text-4xl font-bold text-gray-900">Welcome, <span id="displayFirstName">User</span>!</h2>
+                <p class="text-gray-500 mt-2">Here is what's happening today in your school management system.</p>
+            </div>
+
+            <!-- Role-Specific Sections -->
+            <div id="adminSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ui-card title="Total Students" value="1,250" color="blue"></ui-card>
+                <ui-card title="Total Teachers" value="85" color="green"></ui-card>
+                <ui-card title="System Health" value="Optimal" color="purple"></ui-card>
+            </div>
+
+            <div id="teacherSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ui-card title="My Classes" value="5" color="orange"></ui-card>
+                <ui-card title="Pending Grades" value="12" color="red"></ui-card>
+            </div>
+
+            <div id="studentSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ui-card title="My Attendance" value="95%" color="indigo"></ui-card>
+                <ui-card title="Assignments" value="3 Due" color="pink"></ui-card>
+            </div>
+
+            <div id="staffSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                <ui-card title="Inventory Tasks" value="8" color="yellow"></ui-card>
+            </div>
+        </div>
+
+        <ui-spinner id="loading" text="Fetching your profile..."></ui-spinner>
+    </main>
+
+    <script type="module">
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) {
+                    window.location.href = '/api/auth/login';
+                    return;
+                }
+                const { user } = await response.json();
+                renderDashboard(user);
+            } catch (err) {
+                console.error('Failed to fetch profile:', err);
+                window.location.href = '/api/auth/login';
+            }
+        }
+
+        function renderDashboard(user) {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+            
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
+            
+            const badge = document.getElementById('roleBadge');
+            badge.textContent = user.role;
+            
+            const sections = ['admin', 'teacher', 'student', 'staff'];
+            sections.forEach(role => {
+                const element = document.getElementById(role + 'Section');
+                if (role === user.role) {
+                    element.classList.remove('hidden');
+                    const colors = {
+                        admin: 'bg-blue-100 text-blue-600',
+                        teacher: 'bg-orange-100 text-orange-600',
+                        student: 'bg-indigo-100 text-indigo-600',
+                        staff: 'bg-yellow-100 text-yellow-600'
+                    };
+                    badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6 \${colors[role]}`;
+                } else {
+                    element.classList.add('hidden');
+                }
+            });
+        }
+
+        // Attach listener for logout (navbar component uses this ID)
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+
+        fetchProfile();
+    </script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/auth-components.js" defer></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <auth-card>
+        <auth-header title="Welcome Back" subtitle="Please enter your details to sign in"></auth-header>
+        
+        <form id="loginForm" class="space-y-6">
+            <auth-input type="email" label="Email Address" name="email" icon="envelope" placeholder="you@example.com" required></auth-input>
+            <auth-input type="password" label="Password" name="password" icon="lock" placeholder="••••••••" required></auth-input>
+
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label class="ml-2 block text-sm text-gray-700">Remember me</label>
+                </div>
+                <a href="/api/auth/forgot-password" class="text-sm font-medium text-blue-600 hover:text-blue-500">Forgot password?</a>
+            </div>
+
+            <auth-button type="submit">Sign In</auth-button>
+        </form>
+
+        <p class="text-center text-sm text-gray-600">
+            Don't have an account? 
+            <a href="/api/auth/signup" class="font-medium text-blue-600 hover:text-blue-500">Create one now</a>
+        </p>
+    </auth-card>
+
+    <script type="module">
+        const form = document.getElementById('loginForm');
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Login failed');
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+            }
+        });
+    </script>
+</body>
+</html>
