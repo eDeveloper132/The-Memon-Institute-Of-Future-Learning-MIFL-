@@ -18,7 +18,7 @@
                 <auth-input label="Full Name" name="name" required></auth-input>
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Role</label>
-                    <select name="role" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <select name="role" title="Select your role" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
                         <option value="student" selected>Student</option>
                         <!-- <option value="teacher">Teacher</option>
                         <option value="staff">Staff</option> -->
@@ -32,7 +32,7 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700">Address</label>
                 <textarea required name="address" rows="2"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"></textarea>
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" title="Enter your address here" placeholder="Enter your address"></textarea>
             </div>
 
             <auth-input type="password" label="Password" name="password" placeholder="••••••••" required></auth-input>
