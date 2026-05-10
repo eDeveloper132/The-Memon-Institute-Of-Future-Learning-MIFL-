@@ -27,7 +27,7 @@ app.use(cookieParser());
 // API Routes
 app.use("/api/auth", authRoutes);
 
-app.use(express.static(path.resolve("public")));
+app.use(express.static(path.join("public")));
 
 // Database connection
 connectDB().catch((err) => {
