@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import type { ICourse } from '../types/course.type.mjs';
+import type { ICourse } from '../types/course.type.js';
 
 const courseSchema = new Schema<ICourse>(
     {

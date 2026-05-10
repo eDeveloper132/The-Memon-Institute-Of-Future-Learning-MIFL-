@@ -5,24 +5,27 @@ import { createServer } from "http";
 import cors from "cors";
 import chalk from "chalk";
 import cookieParser from "cookie-parser";
-import { connectDB } from "./config/db.mjs";
+import { connectDB } from "./config/db.js";
 import path from "path";
 
-import { securityMiddleware } from "./middlewares/security.mjs";
-import { generalLimiter } from "./middlewares/rateLimiter.mjs";
-import authRoutes from "./routes/auth.routes.mjs";
-import { authenticate } from "./middlewares/auth.mjs";
+import { securityMiddleware } from "./middlewares/security.js";
+import { generalLimiter } from "./middlewares/rateLimiter.js";
+import authRoutes from "./routes/auth.routes.js";
+import { authenticate } from "./middlewares/auth.js";
 
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "2500", 10);
- app.get("/api/health", (req, res) => {
-        res.status(200).json({ 
-            status: "ok", 
-            hasMongo: !!process.env.MONGODB_URI,
-            hasJwt: !!process.env.JWT_SECRET
-        });
-   });
+
+// Diagnostic Route
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ 
+        status: "ok", 
+        hasMongo: !!process.env.MONGODB_URI,
+        hasJwt: !!process.env.JWT_SECRET
+    });
+});
+
 // Global Middlewares
 app.use(securityMiddleware);
 app.use(generalLimiter);
@@ -31,9 +34,6 @@ app.use(express.json());
 app.use(cookieParser());
 
 // API Routes
-app.get("/api/health", (req, res) => {
-    res.status(200).json({ status: "ok", environment: process.env.NODE_ENV });
-});
 app.use("/api/auth", authRoutes);
 
 app.use(express.static(path.join(process.cwd(), "public")));

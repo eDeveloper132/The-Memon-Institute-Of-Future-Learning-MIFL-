@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
-import type { IUser } from '../types/user.type.mjs';
+import type { IUser } from '../types/user.type.js';
 
 const userSchema = new Schema<IUser>(
     {
@@ -47,7 +47,7 @@ userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;
     
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await bcrypt.hash(this.password as string, salt);
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {

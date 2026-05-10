@@ -1,4 +1,7 @@
-import helmet from 'helmet';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const helmet = require('helmet');
+
 import mongoSanitize from 'express-mongo-sanitize';
 import hpp from 'hpp';
 import type { Request, Response, NextFunction } from 'express';

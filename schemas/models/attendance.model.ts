@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import type { IAttendance } from '../types/attendance.type.mjs';
+import type { IAttendance } from '../types/attendance.type.js';
 
 const attendanceSchema = new Schema<IAttendance>(
     {

@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { signup, login, logout, forgotPassword, resetPassword, getMe, verifyEmail, resendVerification, requestEmailChange, initiateNewEmailVerification, confirmEmailChange } from '../controllers/auth.controller.mjs';
-import { authLimiter } from '../middlewares/rateLimiter.mjs';
-import { authenticate } from '../middlewares/auth.mjs';
+import { signup, login, logout, forgotPassword, resetPassword, getMe, verifyEmail, resendVerification, requestEmailChange, initiateNewEmailVerification, confirmEmailChange } from '../controllers/auth.controller.js';
+import { authLimiter } from '../middlewares/rateLimiter.js';
+import { authenticate } from '../middlewares/auth.js';
 import path from 'path';
 
 const router = Router();

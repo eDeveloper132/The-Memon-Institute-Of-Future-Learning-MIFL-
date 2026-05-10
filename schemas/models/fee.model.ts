@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import type { IFee } from '../types/fee.type.mjs';
+import type { IFee } from '../types/fee.type.js';
 
 const feeSchema = new Schema<IFee>(
     {

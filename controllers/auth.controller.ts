@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express';
-import { User } from '../schemas/models/user.model.mjs';
+import { User } from '../schemas/models/user.model.js';
 import jwt from 'jsonwebtoken';
 import chalk from 'chalk';
-import { mailService } from '../services/mail.service.mjs';
+import { mailService } from '../services/mail.service.js';
 import crypto from 'crypto';
 
 /**

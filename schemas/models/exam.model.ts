@@ -1,5 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import type { IExam, IGrade } from '../types/exam.type.mjs';
+import type { IExam, IGrade } from '../types/exam.type.js';
 
 const examSchema = new Schema<IExam>(
     {
