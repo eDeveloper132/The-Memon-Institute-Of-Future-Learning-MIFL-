@@ -39,9 +39,11 @@ app.use("/api/auth", authRoutes);
 app.use(express.static(path.join(process.cwd(), "public")));
 
 // Database connection
-connectDB().catch((err) => {
-    console.error(chalk.red("Failed to connect to MongoDB:"), err.message);
-});
+        if (process.env.MONGODB_URI) {
+            connectDB().catch((err) => console.error("DB connection failed:", err));
+        } else {
+            console.error("MONGODB_URI is missing. App will likely fail on DB routes.");
+        }
 
 // Protected View Routes
 app.get("/", authenticate, (req: Request, res: Response) => {
