@@ -25,6 +25,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 // API Routes
+app.get("/api/health", (req, res) => {
+    res.status(200).json({ status: "ok", environment: process.env.NODE_ENV });
+});
 app.use("/api/auth", authRoutes);
 
 app.use(express.static(path.join(process.cwd(), "public")));
