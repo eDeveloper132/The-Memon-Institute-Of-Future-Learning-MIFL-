@@ -1,6 +1,6 @@
 import type { Document, Types } from 'mongoose';
 
-export type UserRole = 'student' | 'teacher' | 'staff' | 'admin';
+export type UserRole = 'student' | 'teacher' | 'staff' | 'admin' | 'parent';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 export interface IUser extends Document {

@@ -11,7 +11,7 @@ const userSchema = new Schema<IUser>(
         address: { type: String, required: true },
         role: {
             type: String,
-            enum: ['student', 'teacher', 'staff', 'admin'],
+            enum: ['student', 'teacher', 'staff', 'admin','parent'],
             default: 'student',
         },
         status: {
