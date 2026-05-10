@@ -1,5 +1,9 @@
 # Routes
 
+> **Note:** This README file was added by Qwen to document the routes directory structure and provide context for future development.
+
+This README file was added by Qwen to document the routes directory structure and provide context for future development.
+
 This directory contains the Express router definitions, mapping URL endpoints to their respective controller methods.
 
 ## Current Route Groups

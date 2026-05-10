@@ -1,5 +1,9 @@
 # Services
 
+> **Note:** This README file was added by Qwen to document the services directory structure and provide context for future development.
+
+This README file was added by Qwen to document the services directory structure and provide context for future development.
+
 Services contain the core business logic of the application. By isolating logic into services, we ensure that the codebase remains modular, testable, and independent of the transport layer (HTTP/Express).
 
 ## Available Services

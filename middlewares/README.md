@@ -1,5 +1,9 @@
 # Middlewares
 
+> **Note:** This README file was added by Qwen to document the middlewares directory structure and provide context for future development.
+
+This README file was added by Qwen to document the middlewares directory structure and provide context for future development.
+
 Middlewares are functions that execute during the request-response lifecycle. They provide a powerful way to handle cross-cutting concerns such as security, authentication, and request throttling.
 
 ## Core Middlewares

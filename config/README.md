@@ -1,5 +1,9 @@
 # Configuration
 
+> **Note:** This README file was added by Qwen to document the configuration directory structure and provide context for future development.
+
+This README file was added by Qwen to document the configuration directory structure and provide context for future development.
+
 This directory contains configuration files and setup logic for the application's infrastructure and external services.
 
 ## Core Configurations

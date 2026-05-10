@@ -1,5 +1,9 @@
 # Schemas and Models
 
+> **Note:** This README file was added by Qwen to document the schemas and models directory structure and provide context for future development.
+
+This README file was added by Qwen to document the schemas and models directory structure and provide context for future development.
+
 This directory defines the data architecture of the application using Mongoose schemas and TypeScript interfaces.
 
 ## Structure

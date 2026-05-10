@@ -1,5 +1,9 @@
 # Controllers
 
+> **Note:** This README file was added by Qwen to document the controllers directory structure and provide context for future development.
+
+This README file was added by Qwen to document the controllers directory structure and provide context for future development.
+
 Controllers act as the bridge between the API routes and the business logic (services). They are responsible for handling incoming HTTP requests, validating inputs, and returning the appropriate HTTP responses.
 
 ## Current Controllers

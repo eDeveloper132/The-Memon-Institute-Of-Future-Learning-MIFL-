@@ -1,5 +1,9 @@
 # MIFL - Educational Management System Backend
 
+> **Note:** This README file was added by Qwen to document the project structure and provide context for future development.
+
+This README file was added by Qwen to document the project structure and provide context for future development. It provides a comprehensive overview of the MIFL educational management system, including its architecture, development conventions, and implementation status.
+
 MIFL is a robust, scalable backend application for an Educational Management System, built with Node.js (Express 5), TypeScript, and MongoDB. It provides a foundation for managing users (students, teachers, admins), courses, classes, attendance, exams, and fees.
 
 ## Key Features
