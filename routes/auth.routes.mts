@@ -10,31 +10,31 @@ const router = Router();
  * Auth Views
  */
 router.get('/login', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'login.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'login.html'));
 });
 
 router.get('/signup', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'signup.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'signup.html'));
 });
 
 router.get('/forgot-password', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'forgotPassword.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'forgotPassword.html'));
 });
 
 router.get('/reset-password/:token', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'resetPassword.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'resetPassword.html'));
 });
 
 router.get('/change-email', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'changeEmailRequest.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'changeEmailRequest.html'));
 });
 
 router.get('/reset-email/:token', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'resetEmail.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'resetEmail.html'));
 });
 
 router.get('/success', (req, res) => {
-    res.sendFile(path.resolve('public', 'auth', 'success.html'));
+    res.sendFile(path.join(process.cwd(), 'public', 'auth', 'success.html'));
 });
 
 /**

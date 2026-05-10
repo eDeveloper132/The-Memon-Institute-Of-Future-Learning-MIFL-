@@ -36,17 +36,17 @@ connectDB().catch((err) => {
 
 // Protected View Routes
 app.get("/", authenticate, (req: Request, res: Response) => {
-    res.sendFile(path.resolve("public", "protected", "index.html"));
+    res.sendFile(path.join(process.cwd(), "public", "protected", "index.html"));
 });
 
 process.on("uncaughtException", (err) => {
     console.error(chalk.red("Uncaught Exception:"), err);
-    process.exit(1);
+    // process.exit(1);
 });
 
 process.on("unhandledRejection", (reason, promise) => {
     console.error(chalk.red("Unhandled Rejection at:"), promise, "reason:", reason);
-    process.exit(1);
+    // process.exit(1);
 });
 
 if (process.env.NODE_ENV !== "production") {
