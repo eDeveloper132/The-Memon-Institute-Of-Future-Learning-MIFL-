@@ -16,7 +16,13 @@ import { authenticate } from "./middlewares/auth.mjs";
 const app = express();
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "2500", 10);
-
+ app.get("/api/health", (req, res) => {
+        res.status(200).json({ 
+            status: "ok", 
+            hasMongo: !!process.env.MONGODB_URI,
+            hasJwt: !!process.env.JWT_SECRET
+        });
+   });
 // Global Middlewares
 app.use(securityMiddleware);
 app.use(generalLimiter);
