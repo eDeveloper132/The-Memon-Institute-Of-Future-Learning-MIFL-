@@ -3,23 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forgot Password - MIFL</title>
+    <title>Change Email Request - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
     <script src="/components/auth-components.js?v=1.1" type="module" defer></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
     <auth-card>
-        <div class="text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 text-blue-600 mb-4">
-                <i class="fa-solid fa-key text-xl"></i>
-            </div>
-            <auth-header title="Forgot Password?" subtitle="Enter your email and we'll send you a link to reset your password."></auth-header>
-        </div>
+        <auth-header title="Change Email" subtitle="Enter your current verified email to receive a secure link."></auth-header>
         
-        <form id="forgotForm" class="space-y-6">
-            <auth-input type="email" label="Email Address" name="email" icon="envelope" placeholder="you@example.com" required></auth-input>
-            <auth-button type="submit">Send Reset Link</auth-button>
+        <form id="requestForm" class="space-y-6">
+            <auth-input type="email" label="Current Email Address" name="email" icon="envelope" placeholder="current@example.com" required></auth-input>
+            <auth-button type="submit">Send Verification Link</auth-button>
         </form>
 
         <div class="text-center">
@@ -30,17 +26,16 @@
     </auth-card>
 
     <script type="module">
-        const form = document.getElementById('forgotForm');
+        const form = document.getElementById('requestForm');
         const submitBtn = form.querySelector('auth-button');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             submitBtn.loading = true;
-            
-            const email = form.querySelector('[name="email"]').value;
+            const email = form.querySelector('auth-input[name="email"]').value;
             
             try {
-                const response = await fetch('/api/auth/forgot-password', {
+                const response = await fetch('/api/auth/request-email-change', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email })
@@ -54,8 +49,7 @@
                     submitBtn.loading = false;
                 }
             } catch (err) {
-                console.error('Forgot password error:', err);
-                showToast('Failed to connect to server', 'error');
+                showToast('A connection error occurred', 'error');
                 submitBtn.loading = false;
             }
         });

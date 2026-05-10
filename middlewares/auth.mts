@@ -13,6 +13,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     const token = req.cookies.token || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
+        console.log(`[Auth] No token found for ${req.url}`);
         // If it's a browser request for a page, redirect to login
         if (req.accepts('html')) {
             return res.redirect('/api/auth/login');
@@ -23,8 +24,10 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
         req.user = decoded;
+        console.log(`[Auth] User authenticated: ${(decoded as any).id} [${(decoded as any).role}]`);
         next();
     } catch (error) {
+        console.error(`[Auth] Token verification failed: ${error}`);
         res.cookie('token', '', { maxAge: 1 }); // Clear invalid token
         if (req.accepts('html')) {
             return res.redirect('/api/auth/login');

@@ -12,6 +12,7 @@ import type { Request, Response, NextFunction } from 'express';
 
 // Custom middleware to handle NoSQL injection in Express 5
 const nosqlSanitize = (req: Request, res: Response, next: NextFunction) => {
+    console.log(`[Security] Sanitizing request: ${req.method} ${req.url}`);
     if (req.body) mongoSanitize.sanitize(req.body);
     if (req.params) mongoSanitize.sanitize(req.params);
     if (req.query) mongoSanitize.sanitize(req.query);

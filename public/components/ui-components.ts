@@ -60,3 +60,60 @@ class UISpinner extends HTMLElement {
 if (!customElements.get('ui-navbar')) customElements.define('ui-navbar', UINavbar);
 if (!customElements.get('ui-card')) customElements.define('ui-card', UICard);
 if (!customElements.get('ui-spinner')) customElements.define('ui-spinner', UISpinner);
+
+/**
+ * Toast Notification System
+ */
+class UIToastContainer extends HTMLElement {
+    connectedCallback() {
+        this.className = "fixed bottom-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none";
+        this.id = "toast-container";
+    }
+}
+
+if (!customElements.get('ui-toast-container')) customElements.define('ui-toast-container', UIToastContainer);
+
+// Ensure container exists
+if (!document.getElementById('toast-container')) {
+    document.body.appendChild(document.createElement('ui-toast-container'));
+}
+
+export const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    const colors = {
+        success: 'bg-green-600',
+        error: 'bg-red-600',
+        info: 'bg-blue-600'
+    };
+
+    toast.className = `${colors[type]} text-white px-6 py-3 rounded-lg shadow-2xl transform translate-y-10 opacity-0 transition-all duration-300 pointer-events-auto flex items-center min-w-[300px]`;
+    
+    const icon = type === 'success' ? 'circle-check' : type === 'error' ? 'circle-xmark' : 'circle-info';
+    
+    toast.innerHTML = `
+        <i class="fa-solid fa-${icon} mr-3 text-lg"></i>
+        <span class="flex-1 font-medium">${message}</span>
+        <button class="ml-4 hover:opacity-70">&times;</button>
+    `;
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-y-10', 'opacity-0');
+    }, 10);
+
+    const remove = () => {
+        toast.classList.add('opacity-0', 'translate-x-10');
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    toast.querySelector('button')?.addEventListener('click', remove);
+    setTimeout(remove, 5000);
+};
+
+// Make it globally accessible for non-module scripts if needed
+(window as any).showToast = showToast;

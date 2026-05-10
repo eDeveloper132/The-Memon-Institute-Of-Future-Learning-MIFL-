@@ -6,13 +6,21 @@
     <title>Login - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/components/auth-components.js" defer></script>
+    <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
+    <script src="/components/auth-components.js?v=1.1" type="module" defer></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen">
     <auth-card>
         <auth-header title="Welcome Back" subtitle="Please enter your details to sign in"></auth-header>
         
         <form id="loginForm" class="space-y-6">
+            <div id="verifyMessage" class="hidden p-3 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-sm">
+                Email not verified. <button type="button" id="resendBtn" class="underline font-bold hover:text-orange-900">Resend verification email?</button>
+            </div>
+            <div id="successMessage" class="hidden p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+                Email verified successfully! You can now log in.
+            </div>
+
             <auth-input type="email" label="Email Address" name="email" icon="envelope" placeholder="you@example.com" required></auth-input>
             <auth-input type="password" label="Password" name="password" icon="lock" placeholder="••••••••" required></auth-input>
 
@@ -31,14 +39,48 @@
             Don't have an account? 
             <a href="/api/auth/signup" class="font-medium text-blue-600 hover:text-blue-500">Create one now</a>
         </p>
+
+        <div class="border-t border-gray-100 pt-6 text-center">
+            <a href="/api/auth/change-email" class="text-sm font-medium text-gray-500 hover:text-blue-600 transition">
+                <i class="fa-solid fa-envelope-circle-check mr-1"></i> Change Email Address
+            </a>
+        </div>
     </auth-card>
 
     <script type="module">
         const form = document.getElementById('loginForm');
+        const submitBtn = form.querySelector('auth-button');
+        const verifyMessage = document.getElementById('verifyMessage');
+        const successMessage = document.getElementById('successMessage');
+        const resendBtn = document.getElementById('resendBtn');
+        const emailInput = form.querySelector('auth-input[name="email"]');
+        const rememberMeCheckbox = form.querySelector('input[type="checkbox"]');
+
+        // Check if just verified
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('verified')) {
+            successMessage.classList.remove('hidden');
+        }
+
+        // Prefill email if remembered
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            // Wait for custom element to initialize its internal input
+            setTimeout(() => {
+                emailInput.value = savedEmail;
+                rememberMeCheckbox.checked = true;
+            }, 100);
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            submitBtn.loading = true;
+            verifyMessage.classList.add('hidden');
+            
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
+            // Explicitly add rememberMe status
+            data.rememberMe = rememberMeCheckbox.checked;
             
             try {
                 const response = await fetch('/api/auth/login', {
@@ -47,14 +89,44 @@
                     body: JSON.stringify(data)
                 });
                 
+                const result = await response.json();
+
                 if (response.ok) {
+                    // Save or clear remembered email
+                    if (data.rememberMe) {
+                        localStorage.setItem('rememberedEmail', data.email);
+                    } else {
+                        localStorage.removeItem('rememberedEmail');
+                    }
                     window.location.href = '/';
+                } else if (response.status === 403 && result.requiresVerification) {
+                    verifyMessage.classList.remove('hidden');
+                    submitBtn.loading = false;
                 } else {
-                    const error = await response.json();
-                    alert(error.message || 'Login failed');
+                    showToast(result.message || 'Login failed', 'error');
+                    submitBtn.loading = false;
                 }
             } catch (err) {
                 console.error('Login error:', err);
+                showToast('A connection error occurred', 'error');
+                submitBtn.loading = false;
+            }
+        });
+
+        resendBtn.addEventListener('click', async () => {
+            const email = form.querySelector('auth-input[name="email"]').value;
+            if (!email) return showToast('Please enter your email first', 'info');
+
+            try {
+                const response = await fetch('/api/auth/resend-verification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const result = await response.json();
+                showToast(result.message, response.ok ? 'success' : 'error');
+            } catch (err) {
+                showToast('Failed to resend email', 'error');
             }
         });
     </script>

@@ -35,6 +35,10 @@ const userSchema = new Schema<IUser>(
         designation: String,
         joiningDate: Date,
         qualification: [String],
+
+        isEmailVerified: { type: Boolean, default: false },
+        emailVerificationToken: String,
+        pendingEmail: String,
     },
     { timestamps: true }
 );

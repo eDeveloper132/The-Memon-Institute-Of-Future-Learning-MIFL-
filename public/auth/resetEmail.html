@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Email - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
+    <script src="/components/auth-components.js?v=1.1" type="module" defer></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <auth-card>
+        <auth-header title="Enter New Email" subtitle="A verification link will be sent to your new email address."></auth-header>
+        
+        <form id="resetEmailForm" class="space-y-6">
+            <auth-input type="email" label="New Email Address" name="newEmail" icon="envelope" placeholder="new@example.com" required></auth-input>
+            <auth-button type="submit">Verify & Update</auth-button>
+        </form>
+    </auth-card>
+
+    <script type="module">
+        const form = document.getElementById('resetEmailForm');
+        const submitBtn = form.querySelector('auth-button');
+        const token = window.location.pathname.split('/').pop();
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.loading = true;
+            const newEmail = form.querySelector('auth-input[name="newEmail"]').value;
+
+            try {
+                const response = await fetch(`/api/auth/update-email/${token}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ newEmail })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('Email updated successfully', 'success');
+                    setTimeout(() => window.location.href = '/api/auth/success', 2000);
+                } else {
+                    showToast(result.message || 'Update failed', 'error');
+                    submitBtn.loading = false;
+                }
+            } catch (err) {
+                showToast('A connection error occurred', 'error');
+                submitBtn.loading = false;
+            }
+        });
+    </script>
+</body>
+</html>

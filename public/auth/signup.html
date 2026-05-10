@@ -6,7 +6,8 @@
     <title>Sign Up - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/components/auth-components.js" defer></script>
+    <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
+    <script src="/components/auth-components.js?v=1.1" type="module" defer></script>
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen py-12 px-4">
     <auth-card>
@@ -47,8 +48,12 @@
 
     <script type="module">
         const form = document.getElementById('signupForm');
+        const submitBtn = form.querySelector('auth-button');
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            submitBtn.loading = true;
+            
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
             
@@ -63,10 +68,13 @@
                     window.location.href = '/api/auth/success';
                 } else {
                     const error = await response.json();
-                    alert(error.message || 'Signup failed');
+                    showToast(error.message || 'Signup failed', 'error');
+                    submitBtn.loading = false;
                 }
             } catch (err) {
                 console.error('Signup error:', err);
+                showToast('A connection error occurred', 'error');
+                submitBtn.loading = false;
             }
         });
     </script>

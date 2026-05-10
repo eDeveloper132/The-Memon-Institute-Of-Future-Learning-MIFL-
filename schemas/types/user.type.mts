@@ -34,6 +34,10 @@ export interface IUser extends Document {
     joiningDate?: Date;
     qualification?: string[];
     
+    isEmailVerified: boolean;
+    emailVerificationToken?: string;
+    pendingEmail?: string;
+    
     createdAt: Date;
     updatedAt: Date;
     comparePassword(password: string): Promise<boolean>;

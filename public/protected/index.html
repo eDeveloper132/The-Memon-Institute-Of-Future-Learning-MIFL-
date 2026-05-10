@@ -6,7 +6,7 @@
     <title>Dashboard - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/components/ui-components.js" defer></script>
+    <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
@@ -84,7 +84,7 @@
                         student: 'bg-indigo-100 text-indigo-600',
                         staff: 'bg-yellow-100 text-yellow-600'
                     };
-                    badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6 \${colors[role]}`;
+                    badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6 ${colors[role]}`;
                 } else {
                     element.classList.add('hidden');
                 }
