@@ -14,6 +14,10 @@ import authRoutes from "./routes/auth.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 
 const app = express();
+
+// Trust the first proxy (Vercel)
+app.set('trust proxy', 1);
+
 const httpServer = createServer(app);
 const PORT = parseInt(process.env.PORT || "2500", 10);
 
