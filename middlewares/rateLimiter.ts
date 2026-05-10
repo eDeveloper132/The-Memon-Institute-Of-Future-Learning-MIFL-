@@ -19,7 +19,7 @@ export const generalLimiter = rateLimit({
  */
 export const authLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
-    max: 5, // Limit each IP to 5 login attempts per hour
+    max: 10, // Limit each IP to 5 login attempts per hour
     standardHeaders: true,
     legacyHeaders: false,
     message: {
