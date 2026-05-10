@@ -25,9 +25,12 @@ export const securityMiddleware = [
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com"],
-                "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com"],
+                "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "https://vercel.live"],
+                "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
                 "img-src": ["'self'", "data:", "https:"],
+                "connect-src": ["'self'", "https://vercel.live", "https://*.vercel.live"],
+                "font-src": ["'self'", "https://fonts.gstatic.com", "cdnjs.cloudflare.com"],
+                "frame-src": ["'self'", "https://vercel.live"],
             },
         },
     }),

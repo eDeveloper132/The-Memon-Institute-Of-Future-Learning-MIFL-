@@ -1,10 +1,18 @@
 # Controllers
 
-Controllers handle the incoming HTTP requests and interact with services to process data and return responses.
+Controllers act as the bridge between the API routes and the business logic (services). They are responsible for handling incoming HTTP requests, validating inputs, and returning the appropriate HTTP responses.
 
-## Responsibility
+## Current Controllers
 
-- Extract data from requests (params, query, body).
-- Validate request data (optionally).
-- Call appropriate service methods.
-- Send HTTP responses with correct status codes and data.
+### Auth Controller (`auth.controller.mts`)
+Handles all authentication-related logic, including:
+- User registration (Signup).
+- User login and JWT generation.
+- Password management (Forgot/Reset password).
+- Email verification and updates.
+
+## Design Patterns
+
+- **Separation of Concerns:** Controllers do not contain business logic; they delegate to services.
+- **Request Validation:** Controllers ensure that the incoming request body, parameters, and queries are correctly formatted before processing.
+- **Response Consistency:** All controllers follow a standard response format for success and error cases.
