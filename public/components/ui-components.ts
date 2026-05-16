@@ -2,23 +2,70 @@
  * MIFL General UI Components (TypeScript)
  */
 
-class UINavbar extends HTMLElement {
-    connectedCallback(): void {
-        const title = this.getAttribute('title') || 'MIFL';
-        this.innerHTML = `
-            <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-blue-600">${title}</h1>
-                <div class="flex items-center space-x-4">
-                    <span id="userName" class="text-gray-700 font-medium">Loading...</span>
-                    <button id="logoutBtn" class="text-red-500 hover:text-red-700 transition">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
-                    </button>
-                </div>
-            </nav>
-        `;
+     class UINavbar extends HTMLElement {
+         connectedCallback(): void {
+             const title = this.getAttribute('title') || 'MIFL';
+             this.innerHTML = `
+                 <nav class="bg-white shadow-md px-6 py-4 flex justify-between
+      items-center">
+                     <div class="flex items-center space-x-8">
+                         <h1 class="text-2xl font-bold text-blue-600 cursor-pointer"
+      onclick="window.location.href='/'">${title}</h1>
+                         <div id="navLinks" class="hidden md:flex space-x-4">
+                             <!-- Role-based links will be injected here -->
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="userName" class="text-gray-700
+      font-medium">Loading...</span>
+                        <button id="logoutBtn" class="text-red-500
+      hover:text-red-700 transition">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </button>
+                    </div>
+                </nav>
+            `;
+        }
+   
+        /**
+         * Static method to inject links based on user role
+         */
+        static renderLinks(role: string): void {
+            const navLinks = document.getElementById('navLinks');
+            if (!navLinks) return;
+   
+            const links: Record<string, { label: string, href: string }[]> = {
+                admin: [
+                    { label: 'Dashboard', href: '/' },
+                    { label: 'Users', href: '/protected/admin/index.html' },
+                    { label: 'System Logs', href: '#' }
+                ],
+                teacher: [
+                    { label: 'Dashboard', href: '/' },
+                    { label: 'My Classes', href: '/protected/teacher/index.html' },
+                    { label: 'Attendance', href: '/protected/teacher/attendance.html' }
+                ],
+                student: [
+                    { label: 'Dashboard', href: '/' },
+                    { label: 'My Courses', href: '/protected/student/index.html' },
+                    { label: 'My Grades', href: '/protected/student/grades.html' }
+                ],
+                parent: [
+                    { label: 'Dashboard', href: '/' },
+                    { label: 'My Children', href: '/protected/parent/index.html' }
+                ],
+                staff: [
+                    { label: 'Dashboard', href: '/' },
+                    { label: 'Inventory', href: '/protected/staff/index.html' }
+                ]
+            };
+            const roleLinks = links[role] || [];
+            navLinks.innerHTML = roleLinks.map(link => `
+                <a href="${link.href}" class="text-gray-600 hover:text-blue-600
+      font-medium transition">${link.label}</a>
+            `).join('');
+        }
     }
-}
-
 class UICard extends HTMLElement {
     connectedCallback(): void {
         const title = this.getAttribute('title') || '';

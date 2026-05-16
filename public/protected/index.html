@@ -69,7 +69,10 @@
             
             document.getElementById('userName').textContent = user.name;
             document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
-            
+                    const navbar = customElements.get('ui-navbar');
+        if (navbar && navbar.renderLinks) {
+            navbar.renderLinks(user.role);
+        }
             const badge = document.getElementById('roleBadge');
             badge.textContent = user.role;
             
