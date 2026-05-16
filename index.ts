@@ -36,18 +36,21 @@ app.use(generalLimiter);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
-
+    app.use(async (req, res, next) => {
+         try {
+             await connectDB();
+             next();
+         } catch (err) {
+             console.error(chalk.red("Database connection middleware error:"), err);
+             res.status(500).json({ message: "Database connection failed" });
+         }
+     });
 // API Routes
 app.use("/api/auth", authRoutes);
 
 app.use(express.static(path.join(process.cwd(), "public")));
 
-// Database connection
-        if (process.env.MONGODB_URI) {
-            connectDB().catch((err) => console.error("DB connection failed:", err));
-        } else {
-            console.error("MONGODB_URI is missing. App will likely fail on DB routes.");
-        }
+
 
 // Protected View Routes
 app.get("/", authenticate, (req: Request, res: Response) => {
