@@ -1,21 +1,16 @@
 # Services
 
-> **Note:** This README file was added by Qwen to document the services directory structure and provide context for future development.
-
-This README file was added by Qwen to document the services directory structure and provide context for future development.
-
 Services contain the core business logic of the application. By isolating logic into services, we ensure that the codebase remains modular, testable, and independent of the transport layer (HTTP/Express).
 
 ## Available Services
 
-### Mail Service (`mail.service.mts`)
+### Mail Service (`mail.service.ts`)
 A wrapper around Nodemailer for handling all outgoing communications.
 - **Transporters:** Configured to use SMTP with environment-based credentials.
 - **Functionality:** 
+    - `sendMail`: Generic method for sending HTML/Text emails.
     - `sendWelcomeEmail`: Sent upon registration.
-    - `sendPasswordResetEmail`: Sent when a user requests a password reset.
-    - `sendEmailChangeNotification`: Sent when a user updates their email.
-- **Templates:** Supports HTML templates for professional-looking emails.
+    - Special templates for verification links, password resets, and email change confirmations.
 
 ## Responsibility
 

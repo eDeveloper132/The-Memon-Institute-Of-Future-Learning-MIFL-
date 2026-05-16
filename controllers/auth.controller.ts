@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import chalk from 'chalk';
 import { mailService } from '../services/mail.service.js';
 import crypto from 'crypto';
+import { emailTemplates } from '../services/emailTemplates.js';
 
 /**
  * Generate JWT Token
@@ -52,22 +53,13 @@ export const signup = async (req: Request, res: Response) => {
 
         console.log(`[Auth] User created successfully: ${user._id}. Sending verification email.`);
         
-        const verificationUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email/${verificationToken}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const verificationUrl = `${protocol}://${req.get('host')}/api/auth/verify-email/${verificationToken}`;
 
         await mailService.sendMail({
             to: user.email,
             subject: 'Verify Your Email - MIFL',
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">
-                    <h1 style="color: #2563eb;">Welcome to MIFL!</h1>
-                    <p>Hello ${user.name},</p>
-                    <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
-                    </div>
-                    <p>Best regards,<br>MIFL Team</p>
-                </div>
-            `,
+            html: emailTemplates.verification(user.name, verificationUrl),
         });
 
         res.status(201).json({
@@ -141,21 +133,28 @@ export const logout = (req: Request, res: Response) => {
 export const verifyEmail = async (req: Request, res: Response) => {
     try {
         const { token } = req.params;
+        
+        // Find user by token
         const user = await User.findOne({ emailVerificationToken: token as string });
 
         if (!user) {
+            console.log(`[Auth] Email verification failed: Invalid token ${token}`);
             return res.status(400).send('<h1>Invalid or expired verification link</h1>');
         }
 
-        user.isEmailVerified = true;
-        user.set('emailVerificationToken', undefined);
-        await user.save();
+        // Use findByIdAndUpdate to avoid validation issues with unselected required fields (like password)
+        await User.findByIdAndUpdate(user._id, {
+            $set: { isEmailVerified: true },
+            $unset: { emailVerificationToken: 1 }
+        });
 
         console.log(`[Auth] Email verified for user: ${user._id}`);
+        
+        // Redirect to login page with success message
         res.redirect('/api/auth/login?verified=true');
     } catch (error) {
         console.error(chalk.red('Verify Email error:'), error);
-        res.status(500).send('<h1>Internal server error</h1>');
+        res.status(500).send('<h1>Internal server error during verification</h1>');
     }
 };
 
@@ -168,26 +167,24 @@ export const resendVerification = async (req: Request, res: Response) => {
         if (user.isEmailVerified) return res.status(400).json({ message: 'Email is already verified' });
 
         const verificationToken = crypto.randomBytes(32).toString('hex');
-        user.emailVerificationToken = verificationToken;
-        await user.save();
+        
+        // Use findByIdAndUpdate to avoid validation issues
+        await User.findByIdAndUpdate(user._id, {
+            $set: { emailVerificationToken: verificationToken }
+        });
 
-        const verificationUrl = `${req.protocol}://${req.get('host')}/api/auth/verify-email/${verificationToken}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const verificationUrl = `${protocol}://${req.get('host')}/api/auth/verify-email/${verificationToken}`;
 
         await mailService.sendMail({
             to: user.email,
             subject: 'Verify Your Email - MIFL',
-            html: `
-                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px; max-width: 600px;">
-                    <h1 style="color: #2563eb;">Verify Your Email</h1>
-                    <p>Please click the button below to verify your email address:</p>
-                    <div style="text-align: center; margin: 30px 0;">
-                        <a href="${verificationUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verify Email Address</a>
-                    </div>
-                </div>`,
+            html: emailTemplates.verification(user.name, verificationUrl),
         });
 
         res.status(200).json({ message: 'Verification email resent successfully' });
     } catch (error) {
+        console.error(chalk.red('Resend Verification error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -208,7 +205,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         await mailService.sendMail({
             to: user.email,
             subject: 'Password Reset Request - MIFL',
-            html: `<h1>Reset Your Password</h1><p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
+            html: emailTemplates.passwordReset(resetUrl),
         });
 
         res.status(200).json({ message: 'Password recovery instructions sent to your email' });
@@ -269,12 +266,13 @@ export const requestEmailChange = async (req: Request, res: Response) => {
         if (!user) return res.status(404).json({ message: 'Verified user not found' });
 
         const changeToken = jwt.sign({ id: user._id, step: 'intent' }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
-        const changeUrl = `${req.protocol}://${req.get('host')}/api/auth/reset-email/${changeToken}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const changeUrl = `${protocol}://${req.get('host')}/api/auth/reset-email/${changeToken}`;
 
         await mailService.sendMail({
             to: user.email,
             subject: 'Email Change Request - MIFL',
-            html: `<h1>Confirm Intent</h1><p>Click <a href="${changeUrl}">here</a> to confirm you want to change your email.</p>`,
+            html: emailTemplates.emailChangeIntent(changeUrl),
         });
 
         res.status(200).json({ message: 'Confirmation link sent to your current email' });
@@ -306,12 +304,13 @@ export const initiateNewEmailVerification = async (req: Request, res: Response) 
         const finalToken = jwt.sign({ id: user._id, step: 'confirm', newEmail }, process.env.JWT_SECRET || 'secret', { expiresIn: '1h' });
         await user.save();
 
-        const confirmUrl = `${req.protocol}://${req.get('host')}/api/auth/confirm-email-change/${finalToken}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const confirmUrl = `${protocol}://${req.get('host')}/api/auth/confirm-email-change/${finalToken}`;
 
         await mailService.sendMail({
             to: newEmail,
             subject: 'Verify Your New Email - MIFL',
-            html: `<h1>Verify New Email</h1><p>Click <a href="${confirmUrl}">here</a> to verify this new email address.</p>`,
+            html: emailTemplates.emailChangeVerify(confirmUrl),
         });
 
         res.status(200).json({ message: 'Verification link sent to your NEW email address' });
@@ -335,13 +334,19 @@ export const confirmEmailChange = async (req: Request, res: Response) => {
             return res.status(400).send('<h1>Email change no longer valid</h1>');
         }
 
-        user.email = user.pendingEmail;
-        user.set('pendingEmail', undefined);
-        user.isEmailVerified = true;
-        await user.save();
+        // Use findByIdAndUpdate to avoid validation issues with unselected fields
+        await User.findByIdAndUpdate(user._id, {
+            $set: { 
+                email: user.pendingEmail,
+                isEmailVerified: true 
+            },
+            $unset: { pendingEmail: 1 }
+        });
 
+        console.log(`[Auth] Email updated for user: ${user._id} to ${user.pendingEmail}`);
         res.redirect('/api/auth/success?type=email_updated');
     } catch (error) {
+        console.error(chalk.red('Confirm Email Change error:'), error);
         res.status(400).send('<h1>Link expired or invalid</h1>');
     }
 };

@@ -37,8 +37,8 @@ const userSchema = new Schema<IUser>(
         qualification: [String],
 
         isEmailVerified: { type: Boolean, default: false },
-        emailVerificationToken: String,
-        pendingEmail: String,
+        emailVerificationToken: { type: String, index: true },
+        pendingEmail: { type: String, index: true },
     },
     { timestamps: true }
 );

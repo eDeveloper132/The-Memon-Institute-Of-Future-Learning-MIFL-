@@ -1,27 +1,23 @@
 # Public Assets
 
-This directory contains the static frontend assets for the application, including HTML prototypes and client-side scripts. These files serve as a visual representation and prototype for the Educational Management System's user interface.
+This directory contains the static frontend assets for the application, including HTML prototypes and client-side scripts. The frontend is built using **Native Web Components** and styled with **Tailwind CSS**.
 
 ## Structure
 
 - `auth/`: HTML pages for authentication workflows.
-    - `login.html`: User login page.
-    - `signup.html`: User registration page.
-    - `forgotPassword.html`: Initial step for password recovery.
-    - `recoveryPass.html`: Form to enter a new password.
-    - `changeEmailRequest.html`: Request to update user email.
-    - `resetEmail.html`: Confirm email reset.
-    - `success.html`: Generic success feedback page.
-- `protected/`: Pages accessible only to authenticated users.
-    - `index.html`: The main dashboard prototype.
-- `components/`: Client-side TypeScript/JavaScript components for UI consistency.
-    - `auth-components.ts`: UI elements specific to authentication pages.
-    - `ui-components.ts`: General-purpose UI components.
+    - `login.html`, `signup.html`, `forgotPassword.html`, etc.
+- `protected/`: Pages accessible only to authenticated users (Dashboard, etc.).
+- `components/`: Client-side TypeScript components.
+    - `auth-components.ts`: UI elements specific to authentication.
+    - `ui-components.ts`: General-purpose UI components (Navbar, Cards, Toasts).
+
+## Tech Stack
+
+- **HTML5:** Semantic structure.
+- **Tailwind CSS:** Utility-first styling (loaded via CDN or compiled).
+- **TypeScript:** Compiled to modern JavaScript for component logic.
+- **Web Components:** Reusable, encapsulated UI elements (e.g., `<ui-navbar>`, `<ui-card>`).
 
 ## Usage
 
-The Express server is configured to serve these files statically from the root path (`/`). For example, accessing `http://localhost:2500/auth/login.html` will serve the login page.
-
-## Prototype Status
-
-These files are currently prototypes intended to demonstrate functionality and design. In a production environment, they would typically be replaced or supplemented by a modern frontend framework (like React or Angular).
+The Express server serves these files statically. Protected routes are guarded by the `authenticate` middleware, which redirects unauthenticated users to the login page.

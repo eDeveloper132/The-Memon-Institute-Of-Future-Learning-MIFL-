@@ -1,14 +1,10 @@
 # Configuration
 
-> **Note:** This README file was added by Qwen to document the configuration directory structure and provide context for future development.
-
-This README file was added by Qwen to document the configuration directory structure and provide context for future development.
-
 This directory contains configuration files and setup logic for the application's infrastructure and external services.
 
 ## Core Configurations
 
-### Database Connection (`db.mts`)
+### Database Connection (`db.ts`)
 - **Technology:** Mongoose (MongoDB).
 - **Functionality:** Exports a `connectDB` function that initializes the connection to the MongoDB instance using the `MONGODB_URI` environment variable.
 - **Error Handling:** Includes retry logic and logs connection status using `chalk`.

@@ -1,41 +1,41 @@
 # MIFL - Educational Management System Backend
 
-> **Note:** This README file was added by Qwen to document the project structure and provide context for future development.
-
-This README file was added by Qwen to document the project structure and provide context for future development. It provides a comprehensive overview of the MIFL educational management system, including its architecture, development conventions, and implementation status.
-
-MIFL is a robust, scalable backend application for an Educational Management System, built with Node.js (Express 5), TypeScript, and MongoDB. It provides a foundation for managing users (students, teachers, admins), courses, classes, attendance, exams, and fees.
+MIFL is a robust, scalable backend application for an Educational Management System, built with Node.js (Express 5), TypeScript, and MongoDB. It provides a foundation for managing users (students, teachers, parents, admins), courses, classes, attendance, exams, and fees.
 
 ## Key Features
 
 - **Modern Stack:** Built with Express 5 and Node.js 18+.
 - **Type Safety:** Fully written in TypeScript with strict type checking.
 - **Database:** MongoDB integration using Mongoose with comprehensive schemas and models.
+- **Advanced Authentication:** 
+    - JWT-based session management using cookies.
+    - Secure password hashing with Bcrypt.
+    - Robust 3-Step Double Verification for email changes.
+    - Email verification workflow for new registrations.
 - **Security:** 
-    - JWT-based authentication.
-    - Password hashing with Bcrypt.
     - Security headers with Helmet.
     - NoSQL Injection protection.
-    - Rate limiting to prevent brute force attacks.
-- **Real-time:** Socket.io integration ready for real-time notifications or features.
-- **Emailing:** Automated email delivery using Nodemailer with support for HTML templates.
+    - HTTP Parameter Pollution (HPP) protection.
+    - Rate limiting to prevent brute force and DoS attacks.
+- **Real-time:** Socket.io integration ready for real-time notifications.
+- **Emailing:** Automated email delivery using Nodemailer with HTML templates.
 - **ES Modules:** Modern JavaScript module system throughout the project.
 
 ## Project Structure
 
 ```text
 D:\MIFL\
-├── config\           # Application configuration (DB, etc.)
-├── controllers\      # Request handlers
+├── config\           # Application configuration (DB connection, etc.)
+├── controllers\      # Request handlers (Auth, etc.)
 ├── middlewares\      # Express middlewares (Auth, Security, Rate Limiter)
-├── public\           # Static assets and frontend prototypes
+├── public\           # Static assets and frontend prototypes (Web Components)
 ├── routes\           # API route definitions
-├── schemas\          # Data layer
-│   ├── models\       # Mongoose models
+├── schemas\          # Data layer (Mongoose models and types)
+│   ├── models\       # Mongoose models (User, Class, Course, etc.)
 │   └── types\        # Data-related TypeScript interfaces
-├── services\         # Business logic layer (Mail, etc.)
+├── services\         # Business logic layer (Mail Service, etc.)
 ├── types\            # Global TypeScript type definitions
-├── index.mts         # Application entry point
+├── index.ts          # Application entry point
 ├── package.json      # Dependencies and scripts
 └── tsconfig.json     # TypeScript configuration
 ```
