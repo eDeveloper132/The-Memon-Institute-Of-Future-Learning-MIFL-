@@ -161,6 +161,31 @@ export const getPendingFees = async (req: Request, res: Response) => {
     }
 };
 
+export const generateFeeVoucher = async (req: Request, res: Response) => {
+    try {
+        const { studentId, amount, type, dueDate, remarks } = req.body;
+
+        // If no specific student, generate for ALL students
+        if (!studentId) {
+            const students = await User.find({ role: 'student' });
+            const operations = students.map(s => ({
+                insertOne: {
+                    document: { student: s._id, amount, type, dueDate, status: 'unpaid', remarks }
+                }
+            }));
+            
+            await Fee.bulkWrite(operations);
+            return res.status(201).json({ message: `Vouchers generated for ${students.length} students` });
+        }
+
+        // Single student voucher
+        const fee = await Fee.create({ student: studentId, amount, type, dueDate, status: 'unpaid', remarks });
+        res.status(201).json({ message: 'Voucher generated', fee });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 /**
  * ADMIN - STATS
  */

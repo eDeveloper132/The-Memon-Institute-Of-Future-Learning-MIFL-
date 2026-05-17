@@ -10,6 +10,8 @@ import {
     getMaterials,
     createQuiz,
     getQuizzes,
+    createExam,
+    recordGrade,
     getExamsAndGrades 
 } from '../controllers/teacher.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
@@ -51,8 +53,10 @@ router.get('/quizzes', getQuizzes);
 router.post('/quizzes', createQuiz);
 
 /**
- * Results
+ * Results & Exams
  */
+router.post('/exams', createExam);
+router.post('/grades', recordGrade);
 router.get('/results', getExamsAndGrades);
 
 export default router;

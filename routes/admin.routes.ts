@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { 
     getAllUsers, createUser, updateUser, deleteUser,
     crudClasses, crudCourses, crudBatches,
-    getSystemAttendance, getPendingFees, getAdminStats 
+    getSystemAttendance, getPendingFees, getAdminStats,
+    generateFeeVoucher
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -58,5 +59,6 @@ router.get('/attendance', getSystemAttendance);
  * Financial Oversight
  */
 router.get('/fees', getPendingFees);
+router.post('/fees/generate', generateFeeVoucher);
 
 export default router;

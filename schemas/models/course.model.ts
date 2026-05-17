@@ -9,6 +9,7 @@ const courseSchema = new Schema<ICourse>(
         credits: { type: Number, required: true, default: 0 },
         department: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
         teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+        enrolledStudents: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         syllabus: String,
     },
     { timestamps: true }

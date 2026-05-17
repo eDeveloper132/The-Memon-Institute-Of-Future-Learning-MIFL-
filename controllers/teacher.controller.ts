@@ -189,8 +189,43 @@ export const getQuizzes = async (req: any, res: Response) => {
 };
 
 /**
- * Result Management
+ * Result & Exam Management
  */
+export const createExam = async (req: any, res: Response) => {
+    try {
+        // Ensure the teacher owns the course
+        const course = await Course.findOne({ _id: req.body.course, teacher: req.user.id });
+        if (!course) return res.status(403).json({ message: 'Not authorized for this course' });
+
+        const exam = await Exam.create(req.body);
+        res.status(201).json({ message: 'Exam created', exam });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const recordGrade = async (req: any, res: Response) => {
+    try {
+        const { examId, studentId, obtainedMarks, remarks } = req.body;
+        
+        // Verify teacher owns the exam's course
+        const exam: any = await Exam.findById(examId).populate('course');
+        if (!exam || String(exam.course.teacher) !== req.user.id) {
+            return res.status(403).json({ message: 'Unauthorized grading attempt' });
+        }
+
+        const grade = await Grade.findOneAndUpdate(
+            { exam: examId, student: studentId },
+            { obtainedMarks, remarks },
+            { new: true, upsert: true }
+        );
+
+        res.status(200).json({ message: 'Grade recorded', grade });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getExamsAndGrades = async (req: any, res: Response) => {
     try {
         const teacherId = req.user.id;
@@ -198,7 +233,9 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
         const courseIds = courses.map(c => c._id);
 
         const exams = await Exam.find({ course: { $in: courseIds } });
-        res.status(200).json({ exams });
+        const grades = await Grade.find({ exam: { $in: exams.map(e => e._id) } }).populate('student', 'name');
+        
+        res.status(200).json({ exams, grades });
     } catch (error: any) {
         res.status(500).json({ message: 'Internal server error' });
     }

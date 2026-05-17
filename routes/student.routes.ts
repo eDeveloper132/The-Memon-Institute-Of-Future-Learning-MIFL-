@@ -9,7 +9,8 @@ import {
     submitAssignment,
     getMyMaterials,
     getAvailableQuizzes,
-    attemptQuiz
+    attemptQuiz,
+    enrollCourse
 } from '../controllers/student.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -24,6 +25,7 @@ router.patch('/profile', updateMyDetails);
 router.get('/attendance', getMyAttendance);
 router.get('/results', getMyResults);
 router.get('/fees', getMyFees);
+router.post('/enroll/:courseId', enrollCourse);
 
 /**
  * Academic

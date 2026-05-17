@@ -8,6 +8,8 @@ export interface ICourse extends Document {
     department: Types.ObjectId; // Ref to Department
     teacher: Types.ObjectId; // Ref to User (Teacher)
     syllabus?: string; // URL or text
+    enrolledStudents: Types.ObjectId[]; // Ref to User (Student)
     createdAt: Date;
+
     updatedAt: Date;
 }

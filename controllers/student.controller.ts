@@ -39,6 +39,24 @@ export const updateMyDetails = async (req: any, res: Response) => {
 /**
  * STUDENT - ACADEMIC LOGIC
  */
+export const enrollCourse = async (req: any, res: Response) => {
+    try {
+        const { courseId } = req.params;
+        const course = await Course.findById(courseId);
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        if (course.enrolledStudents.includes(req.user.id)) {
+            return res.status(400).json({ message: 'Already enrolled' });
+        }
+
+        course.enrolledStudents.push(req.user.id);
+        await course.save();
+        res.status(200).json({ message: 'Enrolled successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getMyAttendance = async (req: any, res: Response) => {
     try {
         const records = await Attendance.find({ student: req.user.id }).populate('course', 'title');
@@ -110,9 +128,15 @@ export const submitAssignment = async (req: any, res: Response) => {
 
 export const getMyMaterials = async (req: any, res: Response) => {
     try {
-        // Logic to fetch materials for student's courses
-        // For now, fetch all materials for the department or general
-        const materials = await Material.find().populate('course', 'title').populate('teacher', 'name');
+        // Find courses where student is enrolled
+        const courses = await Course.find({ enrolledStudents: req.user.id });
+        const courseIds = courses.map(c => c._id);
+
+        // Fetch materials ONLY for those courses
+        const materials = await Material.find({ course: { $in: courseIds } })
+            .populate('course', 'title')
+            .populate('teacher', 'name');
+            
         res.status(200).json({ materials });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -124,7 +148,12 @@ export const getMyMaterials = async (req: any, res: Response) => {
  */
 export const getAvailableQuizzes = async (req: any, res: Response) => {
     try {
-        const quizzes = await Quiz.find({ isActive: true }).populate('course', 'title');
+        const courses = await Course.find({ enrolledStudents: req.user.id });
+        const courseIds = courses.map(c => c._id);
+
+        const quizzes = await Quiz.find({ course: { $in: courseIds }, isActive: true })
+            .populate('course', 'title');
+            
         const attempts = await QuizAttempt.find({ student: req.user.id });
         res.status(200).json({ quizzes, attempts });
     } catch (error) {
