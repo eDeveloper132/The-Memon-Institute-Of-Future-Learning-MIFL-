@@ -24,19 +24,20 @@
 
             <!-- Role-Specific Sections -->
             <div id="adminSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ui-card title="Total Students" value="1,250" color="blue"></ui-card>
-                <ui-card title="Total Teachers" value="85" color="green"></ui-card>
-                <ui-card title="System Health" value="Optimal" color="purple"></ui-card>
+                <ui-card id="adminTotalStudents" title="Total Students" value="..." color="blue"></ui-card>
+                <ui-card id="adminTotalTeachers" title="Total Teachers" value="..." color="green"></ui-card>
+                <ui-card id="adminPendingFees" title="Pending Fees" value="..." color="red"></ui-card>
             </div>
 
             <div id="teacherSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ui-card title="My Classes" value="5" color="orange"></ui-card>
-                <ui-card title="Pending Grades" value="12" color="red"></ui-card>
+                <ui-card id="teacherClasses" title="My Classes" value="..." color="orange"></ui-card>
+                <ui-card id="teacherStudents" title="Total Students" value="..." color="green"></ui-card>
+                <ui-card id="teacherGrading" title="Pending Grading" value="..." color="red"></ui-card>
             </div>
 
             <div id="studentSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ui-card title="My Attendance" value="95%" color="indigo"></ui-card>
-                <ui-card title="Assignments" value="3 Due" color="pink"></ui-card>
+                <ui-card id="studentAttendance" title="Overall Attendance" value="..." color="indigo"></ui-card>
+                <ui-card id="studentFees" title="Pending Fees" value="..." color="red"></ui-card>
             </div>
         </div>
 
@@ -88,6 +89,46 @@
                     if (element) element.classList.add('hidden');
                 }
             });
+
+            fetchStats(user.role);
+        }
+
+        async function fetchStats(role) {
+            try {
+                if (role === 'admin') {
+                    const res = await fetch('/api/admin/stats');
+                    if (res.ok) {
+                        const stats = await res.json();
+                        document.getElementById('adminTotalStudents').setAttribute('value', stats.totalStudents);
+                        document.getElementById('adminTotalTeachers').setAttribute('value', stats.totalTeachers);
+                        document.getElementById('adminPendingFees').setAttribute('value', `$${stats.pendingFeesAmount.toLocaleString()}`);
+                    }
+                } else if (role === 'teacher') {
+                    const res = await fetch('/api/teacher/stats');
+                    if (res.ok) {
+                        const stats = await res.json();
+                        document.getElementById('teacherClasses').setAttribute('value', stats.classesCount);
+                        document.getElementById('teacherStudents').setAttribute('value', stats.totalStudents);
+                        document.getElementById('teacherGrading').setAttribute('value', stats.pendingGrading);
+                    }
+                } else if (role === 'student') {
+                    const [attRes, feeRes] = await Promise.all([
+                        fetch('/api/student/attendance'),
+                        fetch('/api/student/fees')
+                    ]);
+                    if (attRes.ok && feeRes.ok) {
+                        const { records } = await attRes.json();
+                        const { vouchers } = await feeRes.json();
+                        const present = records.filter(r => r.status === 'present').length;
+                        const percent = records.length ? ((present / records.length) * 100).toFixed(0) + '%' : '0%';
+                        const pendingFees = vouchers.filter(v => v.status !== 'paid').length;
+                        document.getElementById('studentAttendance').setAttribute('value', percent);
+                        document.getElementById('studentFees').setAttribute('value', pendingFees);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching dashboard stats');
+            }
         }
 
         // Attach listener for logout (navbar component uses this ID)

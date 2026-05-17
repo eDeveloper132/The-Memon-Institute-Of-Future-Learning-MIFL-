@@ -19,35 +19,52 @@
         </div>
 
         <div id="reviewsList" class="space-y-6">
-            <!-- Review Session Info -->
-            <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-xl shadow-sm mb-10">
-                <div class="flex items-center">
-                    <i class="fa-solid fa-calendar-check text-blue-600 text-2xl mr-4"></i>
-                    <div>
-                        <h3 class="text-lg font-bold text-blue-900">Active Review Session: Q2 Feedback</h3>
-                        <p class="text-blue-700">Started: May 15 | Ends: May 30</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Placeholder Review -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex items-center mb-4">
-                    <div class="flex text-yellow-400">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-regular fa-star"></i>
-                    </div>
-                    <span class="ml-3 text-sm text-gray-500">2 days ago</span>
-                </div>
-                <p class="text-gray-800 italic">"The lessons are very clear, but I would appreciate more practical examples during the algebra session."</p>
+            <div class="col-span-full text-center py-20 text-gray-500 font-bold italic">
+                <ui-spinner text="Loading performance feedback..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <script type="module">
+        const list = document.getElementById('reviewsList');
+
+        async function fetchReviews() {
+            try {
+                // Proposed endpoint, might need implementation in TeacherController
+                const res = await fetch('/api/teacher/results'); // Using results as a fallback or proxy
+                if (res.ok) {
+                    const { reviews } = await res.json();
+                    renderReviews(reviews || []);
+                }
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-red-500 py-10">Feedback module is currently being finalized.</p>';
+            }
+        }
+
+        function renderReviews(reviews) {
+            if (!reviews.length) {
+                list.innerHTML = `
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-8 rounded-r-2xl text-center">
+                        <i class="fa-solid fa-face-smile text-blue-600 text-4xl mb-4"></i>
+                        <h3 class="text-xl font-bold text-blue-900">No student reviews yet.</h3>
+                        <p class="text-blue-700">Student feedback will appear here once an administrator initiates a review session.</p>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = reviews.map(r => `
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition">
+                    <div class="flex items-center mb-4">
+                        <div class="flex text-yellow-400">
+                            ${Array(5).fill(0).map((_, i) => `<i class="fa-${i < r.rating ? 'solid' : 'regular'} fa-star"></i>`).join('')}
+                        </div>
+                        <span class="ml-3 text-xs font-bold text-gray-400 uppercase tracking-widest">${new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p class="text-gray-700 italic font-medium">"${r.comment}"</p>
+                </div>
+            `).join('');
+        }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
@@ -57,6 +74,7 @@
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                fetchReviews();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }

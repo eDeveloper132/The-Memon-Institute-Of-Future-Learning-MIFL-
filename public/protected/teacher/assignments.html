@@ -23,19 +23,9 @@
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Placeholder Assignment Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold uppercase">Mathematics</span>
-                    <span class="text-xs text-gray-500">Due: May 25</span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Algebraic Equations P2</h3>
-                <p class="text-gray-600 text-sm mb-4">Complete the exercises on page 45-50 of the textbook.</p>
-                <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-50">
-                    <span class="text-sm font-medium text-gray-700">12/30 Submitted</span>
-                    <button class="text-blue-600 hover:text-blue-800 font-bold text-sm">View Details</button>
-                </div>
+        <div id="assignmentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20 text-gray-500 font-bold italic">
+                <ui-spinner text="Loading assignments..."></ui-spinner>
             </div>
         </div>
     </main>
@@ -50,26 +40,25 @@
             <form id="addAssignmentForm" class="p-6 space-y-4">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Title</label>
-                    <input type="text" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+<input type="text" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the title of the assignment" title="Enter the title of the assignment">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                    <textarea name="description" required class="w-full px-4 py-2 border rounded-lg outline-none h-24"></textarea>
+<textarea name="description" title="Enter the description of the assignment" required class="w-full px-4 py-2 border rounded-lg outline-none h-24"></textarea>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Course ID</label>
-                        <input type="text" name="course" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Class ID</label>
-                        <input type="text" name="class" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Due Date</label>
-                    <input type="date" name="dueDate" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                </div>
+<div>
+    <label class="block text-sm font-bold text-gray-700 mb-1" for="title">Title</label>
+    <input type="text" id="title" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the title of the assignment">
+</div>
+<div>
+    <label class="block text-sm font-bold text-gray-700 mb-1" for="class">Class ID</label>
+    <input type="text" id="class" name="class" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the class ID">
+</div>
+<div>
+    <label class="block text-sm font-bold text-gray-700 mb-1">Due Date</label>
+    <input type="date" name="dueDate" required class="w-full px-4 py-2 border rounded-lg outline-none" placeholder="Enter the due date">
+</div>
                 <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4">Post Assignment</button>
             </form>
         </div>
@@ -82,10 +71,45 @@
         const modal = document.getElementById('addAssignmentModal');
         const openBtn = document.getElementById('openAssignmentModal');
         const closeBtn = document.getElementById('closeAssignmentModal');
+        const assignmentGrid = document.getElementById('assignmentGrid');
 
         if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
         if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
         window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+
+        async function fetchAssignments() {
+            try {
+                const res = await fetch('/api/teacher/assignments');
+                if (res.ok) {
+                    const { assignments } = await res.json();
+                    renderAssignments(assignments);
+                }
+            } catch (err) {
+                assignmentGrid.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load assignments.</p>';
+            }
+        }
+
+        function renderAssignments(assignments) {
+            if (!assignments.length) {
+                assignmentGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No assignments posted yet. Click "New Assignment" to start.</div>';
+                return;
+            }
+
+            assignmentGrid.innerHTML = assignments.map(a => `
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold uppercase truncate max-w-[120px]">${a.course?.title || 'General'}</span>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">${a.title}</h3>
+                    <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-3">${a.description}</p>
+                    <div class="flex justify-between items-center pt-4 border-t border-gray-50">
+                        <span class="text-xs font-bold text-gray-400">${a.class?.name || 'Class'}</span>
+                        <button class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider">Submissions</button>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         if (addForm) {
             addForm.onsubmit = async (e) => {
@@ -98,13 +122,17 @@
                         body: JSON.stringify(data)
                     });
                     if (res.ok) {
-                        showToast('Assignment posted');
+                        showToast('Assignment posted successfully');
                         modal.classList.add('hidden');
                         addForm.reset();
+                        fetchAssignments();
+                    } else {
+                        showToast('Error posting assignment', 'error');
                     }
-                } catch (err) { showToast('Error', 'error'); }
+                } catch (err) { showToast('Connection error', 'error'); }
             };
         }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
@@ -114,6 +142,8 @@
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                
+                fetchAssignments();
             } catch (err) {
                 console.error('Failed to fetch profile:', err);
                 window.location.href = '/api/auth/login';

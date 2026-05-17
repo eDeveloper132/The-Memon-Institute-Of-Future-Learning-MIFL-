@@ -18,32 +18,71 @@
             <p class="text-gray-500 mt-2">Take upcoming quizzes and view your past performance.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Quiz Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold uppercase">Upcoming</span>
-                    <span class="text-xs text-gray-500 font-bold">Starts: May 20, 10:00 AM</span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Calculus Quiz 1</h3>
-                <p class="text-gray-600 text-sm mb-6">Course: Mathematics 101 • Duration: 30m</p>
-                <div class="flex border-t border-gray-50 pt-4">
-                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">Enter Quiz</button>
-                </div>
+        <div id="quizGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20 text-gray-500">
+                <ui-spinner text="Fetching active quizzes..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <script type="module">
+        const quizGrid = document.getElementById('quizGrid');
+
+        async function fetchQuizzes() {
+            try {
+                const res = await fetch('/api/student/quizzes');
+                if (res.ok) {
+                    const { quizzes, attempts } = await res.json();
+                    renderQuizzes(quizzes, attempts);
+                }
+            } catch (err) {
+                quizGrid.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load quizzes.</p>';
+            }
+        }
+
+        function renderQuizzes(quizzes, attempts) {
+            if (!quizzes.length) {
+                quizGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No active quizzes at the moment.</div>';
+                return;
+            }
+
+            quizGrid.innerHTML = quizzes.map(q => {
+                const attempt = attempts.find(a => a.quiz === q._id);
+                const isAttempted = !!attempt;
+
+                return `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2 py-1 ${isAttempted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} rounded text-[10px] font-bold uppercase">
+                                ${isAttempted ? 'Completed' : 'Upcoming'}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-bold">Time: ${q.duration} mins</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1 truncate">${q.title}</h3>
+                        <p class="text-gray-500 text-xs mb-4">Course: ${q.course?.title || 'General'}</p>
+                        <div class="flex-1">
+                            <p class="text-sm text-gray-600 mb-2 font-medium">Starts: ${new Date(q.startTime).toLocaleString()}</p>
+                            ${isAttempted ? `<p class="text-sm font-bold text-blue-600 mt-2">Score: ${attempt.score}/${q.questions.length}</p>` : ''}
+                        </div>
+                        <div class="flex border-t border-gray-50 pt-4 mt-4">
+                            <button class="w-full ${isAttempted ? 'bg-gray-100 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'} py-2 rounded-lg font-bold transition text-xs uppercase tracking-wider" ${isAttempted ? 'disabled' : ''}>
+                                ${isAttempted ? 'Results Locked' : 'Enter Quiz'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (user.role !== 'student' && user.role !== 'admin') { window.location.href = '/'; return; }
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                fetchQuizzes();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }

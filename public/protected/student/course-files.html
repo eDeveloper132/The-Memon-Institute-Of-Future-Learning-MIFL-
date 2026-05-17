@@ -18,41 +18,82 @@
             <p class="text-gray-500 mt-2">Access outlines, lecture notes, and files posted by your teachers.</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                <h3 class="font-bold text-gray-800">Mathematics 101 - Prof. Smith</h3>
-                <span class="text-sm text-gray-500">4 Files Available</span>
-            </div>
-            <div class="divide-y divide-gray-100">
-                <!-- File Entry -->
-                <div class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
-                            <i class="fa-solid fa-file-pdf text-xl"></i>
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-900">Course Outline - Spring 2026.pdf</p>
-                            <p class="text-xs text-gray-500">Uploaded: May 12 | 1.2 MB</p>
-                        </div>
-                    </div>
-                    <button class="text-blue-600 hover:text-blue-800 p-2">
-                        <i class="fa-solid fa-download text-xl"></i>
-                    </button>
-                </div>
+        <div id="materialsList" class="space-y-6">
+            <div class="col-span-full text-center py-20 text-gray-500 font-bold italic">
+                <ui-spinner text="Fetching course materials..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <script type="module">
+        const list = document.getElementById('materialsList');
+
+        async function fetchMaterials() {
+            try {
+                const res = await fetch('/api/student/materials');
+                if (res.ok) {
+                    const { materials } = await res.json();
+                    renderMaterials(materials);
+                }
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load materials.</p>';
+            }
+        }
+
+        function renderMaterials(materials) {
+            if (!materials.length) {
+                list.innerHTML = '<div class="bg-white p-20 rounded-3xl text-center text-gray-500 font-bold border border-dashed border-gray-200">No course materials uploaded yet by your teachers.</div>';
+                return;
+            }
+
+            // Group by course
+            const grouped = {};
+            materials.forEach(m => {
+                const cId = m.course?._id || 'other';
+                if (!grouped[cId]) grouped[cId] = { title: m.course?.title || 'General Resources', teacher: m.teacher?.name || 'Faculty', items: [] };
+                grouped[cId].items.push(m);
+            });
+
+            list.innerHTML = Object.values(grouped).map(group => `
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-gray-900">${group.title}</h3>
+                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${group.teacher}</p>
+                        </div>
+                        <span class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">${group.items.length} Files</span>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        ${group.items.map(item => `
+                            <div class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-file-${item.type === 'link' ? 'link' : 'pdf'} text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">${item.title}</p>
+                                        <p class="text-[10px] text-gray-400 uppercase font-extrabold tracking-widest">${item.type} | Uploaded ${new Date(item.createdAt).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <button class="text-blue-600 hover:text-blue-800 p-2 transition transform hover:scale-110">
+                                    <i class="fa-solid fa-${item.type === 'link' ? 'arrow-up-right-from-square' : 'cloud-download-alt'} text-xl"></i>
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (user.role !== 'student' && user.role !== 'admin') { window.location.href = '/'; return; }
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                fetchMaterials();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }

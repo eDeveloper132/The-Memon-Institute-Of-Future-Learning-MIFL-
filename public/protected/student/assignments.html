@@ -18,32 +18,68 @@
             <p class="text-gray-500 mt-2">View and submit your course assignments.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Assignment Card -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-bold uppercase">Pending</span>
-                    <span class="text-xs text-gray-500 font-bold">Due: May 25</span>
-                </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Algebraic Equations P2</h3>
-                <p class="text-gray-600 text-sm mb-6">Course: Mathematics 101</p>
-                <div class="flex border-t border-gray-50 pt-4">
-                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">View & Submit</button>
-                </div>
+        <div id="assignmentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20 text-gray-500">
+                <ui-spinner text="Loading assignments..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <script type="module">
+        const assignmentGrid = document.getElementById('assignmentGrid');
+
+        async function fetchAssignments() {
+            try {
+                const res = await fetch('/api/student/assignments');
+                if (res.ok) {
+                    const { assignments, submissions } = await res.json();
+                    renderAssignments(assignments, submissions);
+                }
+            } catch (err) {
+                assignmentGrid.innerHTML = '<p class="text-center text-red-500 py-10">Failed to load assignments.</p>';
+            }
+        }
+
+        function renderAssignments(assignments, submissions) {
+            if (!assignments.length) {
+                assignmentGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No assignments for your courses.</div>';
+                return;
+            }
+
+            assignmentGrid.innerHTML = assignments.map(a => {
+                const submission = submissions.find(s => s.assignment === a._id);
+                const isSubmitted = !!submission;
+                const status = isSubmitted ? (submission.status || 'submitted') : 'pending';
+                const statusColors = { pending: 'bg-yellow-100 text-yellow-700', submitted: 'bg-blue-100 text-blue-700', graded: 'bg-green-100 text-green-700', late: 'bg-red-100 text-red-700' };
+
+                return `
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-2 py-1 ${statusColors[status]} rounded text-[10px] font-bold uppercase">${status}</span>
+                            <span class="text-[10px] text-gray-400 font-bold">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-1 truncate">${a.title}</h3>
+                        <p class="text-gray-500 text-xs mb-4">Course: ${a.course?.title || 'General'}</p>
+                        <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-2">${a.description}</p>
+                        <div class="flex border-t border-gray-50 pt-4">
+                            <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition text-xs uppercase tracking-wider">
+                                ${isSubmitted ? 'View Submission' : 'Submit Now'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (user.role !== 'student' && user.role !== 'admin') { window.location.href = '/'; return; }
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                fetchAssignments();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }

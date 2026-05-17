@@ -18,30 +18,67 @@
             <p class="text-gray-500 mt-2">Manage your teaching roadmap and student learning objectives.</p>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+        <div id="curriculumList" class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div class="space-y-6">
-                <!-- Placeholder Subject -->
-                <div class="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-gray-900">Advanced Mathematics - Grade 12</h3>
-                        <button class="text-blue-600 hover:bg-blue-50 px-3 py-1 rounded transition text-sm font-bold">Edit Outline</button>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex items-center text-gray-600">
-                            <i class="fa-solid fa-book-open mr-3"></i>
-                            <span>Unit 1: Calculus Foundations</span>
-                        </div>
-                        <div class="flex items-center text-gray-600">
-                            <i class="fa-solid fa-check-circle text-green-500 mr-3"></i>
-                            <span>Completed: 65%</span>
-                        </div>
-                    </div>
+                <div class="text-center py-10">
+                    <ui-spinner text="Loading your course materials..."></ui-spinner>
                 </div>
             </div>
         </div>
     </main>
 
     <script type="module">
+        const list = document.getElementById('curriculumList');
+
+        async function fetchMaterials() {
+            try {
+                const res = await fetch('/api/teacher/materials');
+                if (res.ok) {
+                    const { materials } = await res.json();
+                    renderMaterials(materials);
+                }
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-red-500 py-10">Error loading materials.</p>';
+            }
+        }
+
+        function renderMaterials(materials) {
+            if (!materials.length) {
+                list.innerHTML = '<div class="text-center py-20 text-gray-500 font-bold italic">No materials uploaded yet. Use the "Materials" link in the navbar to add some.</div>';
+                return;
+            }
+
+            // Group by course
+            const grouped = {};
+            materials.forEach(m => {
+                const cId = m.course?._id || 'other';
+                if (!grouped[cId]) grouped[cId] = { title: m.course?.title || 'General', items: [] };
+                grouped[cId].items.push(m);
+            });
+
+            list.innerHTML = Object.values(grouped).map(group => `
+                <div class="mb-10 last:mb-0">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">${group.title}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${group.items.map(item => `
+                            <div class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition flex justify-between items-center">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
+                                        <i class="fa-solid fa-file-${item.type === 'link' ? 'link' : 'pdf'}"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-gray-900">${item.title}</p>
+                                        <p class="text-xs text-gray-400 uppercase font-bold tracking-widest">${item.type}</p>
+                                    </div>
+                                </div>
+                                <button class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-cloud-download-alt text-lg"></i></button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
@@ -51,6 +88,8 @@
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                
+                fetchMaterials();
             } catch (err) {
                 console.error('Failed to fetch profile:', err);
                 window.location.href = '/api/auth/login';
