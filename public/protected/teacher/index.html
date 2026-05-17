@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Teacher Dashboard"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div id="welcomeMessage" class="mb-10">
+            <h2 class="text-4xl font-bold text-gray-900">Hello, <span id="displayFirstName">Teacher</span>!</h2>
+            <p class="text-gray-500 mt-2">Here's an overview of your academic activities.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <ui-card id="classesCard" title="Today's Classes" value="..." color="blue"></ui-card>
+            <ui-card id="gradingCard" title="Pending Grading" value="..." color="orange"></ui-card>
+            <ui-card id="studentsCard" title="Total Students" value="..." color="green"></ui-card>
+            <ui-card id="feedbackCard" title="Avg. Feedback" value="..." color="purple"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Recent Activity -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Upcoming Schedule</h3>
+                <div id="scheduleList" class="space-y-4">
+                    <p class="text-gray-500 italic">No classes scheduled for today.</p>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="/protected/teacher/attendance.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                        <i class="fa-solid fa-clipboard-user text-blue-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Mark Attendance</p>
+                    </a>
+                    <a href="/protected/teacher/assignments.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                        <i class="fa-solid fa-file-signature text-orange-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Post Assignment</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/teacher/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    // Helper to update card value
+                    const updateCard = (id, val) => {
+                        const card = document.getElementById(id);
+                        if (card) {
+                            card.setAttribute('value', val);
+                            // Force re-render if component doesn't observe attributes
+                            card.connectedCallback(); 
+                        }
+                    };
+
+                    updateCard('classesCard', stats.classesCount);
+                    updateCard('gradingCard', stats.pendingGrading);
+                    updateCard('studentsCard', stats.totalStudents);
+                    updateCard('feedbackCard', stats.avgFeedback);
+                }
+            } catch (err) {
+                console.error('Failed to fetch stats:', err);
+            }
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
+                
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
+                
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                
+                fetchStats();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+        fetchProfile();
+    </script>
+</body>
+</html>

@@ -58,7 +58,21 @@
     }
 
 class UICard extends HTMLElement {
+    static get observedAttributes() {
+        return ['value'];
+    }
+
+    attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        if (name === 'value' && oldValue !== newValue) {
+            this.render();
+        }
+    }
+
     connectedCallback(): void {
+        this.render();
+    }
+
+    render(): void {
         const title = this.getAttribute('title') || '';
         const value = this.getAttribute('value') || '';
         const color = this.getAttribute('color') || 'blue';

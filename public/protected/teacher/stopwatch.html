@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stopwatch Utility - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Stopwatch Utility"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center py-20">
+        <div class="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 text-center w-full max-w-lg">
+            <h2 class="text-2xl font-bold text-gray-700 mb-8 uppercase tracking-widest">Activity Timer</h2>
+            
+            <div id="display" class="text-7xl font-mono font-extrabold text-blue-600 mb-12">
+                00:00:00
+            </div>
+
+            <div class="flex justify-center space-x-6">
+                <button id="startBtn" class="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg">
+                    <i class="fa-solid fa-play text-xl"></i>
+                </button>
+                <button id="pauseBtn" class="bg-orange-500 text-white w-16 h-16 rounded-full flex items-center justify-center hover:bg-orange-600 transition shadow-lg hidden">
+                    <i class="fa-solid fa-pause text-xl"></i>
+                </button>
+                <button id="resetBtn" class="bg-gray-300 text-gray-700 w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-400 transition shadow-lg">
+                    <i class="fa-solid fa-rotate-left text-xl"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="laps" class="mt-12 w-full max-w-lg space-y-3">
+            <!-- Laps will appear here -->
+        </div>
+    </main>
+
+    <script type="module">
+        let startTime;
+        let elapsedTime = 0;
+        let timerInterval;
+
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function timeToString(time) {
+            let diffInHrs = time / 3600000;
+            let hh = Math.floor(diffInHrs);
+
+            let diffInMin = (diffInHrs - hh) * 60;
+            let mm = Math.floor(diffInMin);
+
+            let diffInSec = (diffInMin - mm) * 60;
+            let ss = Math.floor(diffInSec);
+
+            let formattedHH = hh.toString().padStart(2, "0");
+            let formattedMM = mm.toString().padStart(2, "0");
+            let formattedSS = ss.toString().padStart(2, "0");
+
+            return `${formattedHH}:${formattedMM}:${formattedSS}`;
+        }
+
+        function print(txt) { display.innerHTML = txt; }
+
+        function start() {
+            startTime = Date.now() - elapsedTime;
+            timerInterval = setInterval(function printTime() {
+                elapsedTime = Date.now() - startTime;
+                print(timeToString(elapsedTime));
+            }, 1000);
+            showButton("PAUSE");
+        }
+
+        function pause() {
+            clearInterval(timerInterval);
+            showButton("PLAY");
+        }
+
+        function reset() {
+            clearInterval(timerInterval);
+            print("00:00:00");
+            elapsedTime = 0;
+            showButton("PLAY");
+        }
+
+        function showButton(buttonKey) {
+            if (buttonKey === "PAUSE") {
+                startBtn.classList.add('hidden');
+                pauseBtn.classList.remove('hidden');
+            } else {
+                startBtn.classList.remove('hidden');
+                pauseBtn.classList.add('hidden');
+            }
+        }
+
+        startBtn.addEventListener("click", start);
+        pauseBtn.addEventListener("click", pause);
+        resetBtn.addEventListener("click", reset);
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+        fetchProfile();
+    </script>
+</body>
+</html>

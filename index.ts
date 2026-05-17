@@ -11,6 +11,7 @@ import path from "path";
 import { securityMiddleware } from "./middlewares/security.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
 import authRoutes from "./routes/auth.routes.js";
+import teacherRoutes from "./routes/teacher.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 
 const app = express();
@@ -56,7 +57,7 @@ app.use(express.static(path.join(process.cwd(), "public")));
 app.get("/", authenticate, (req: Request, res: Response) => {
     res.sendFile(path.join(process.cwd(), "public", "protected", "index.html"));
 });
-
+app.use("/api/teacher", teacherRoutes);
 process.on("uncaughtException", (err) => {
     console.error(chalk.red("Uncaught Exception:"), err);
     // process.exit(1);
