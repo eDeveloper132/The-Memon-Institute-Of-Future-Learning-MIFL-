@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee Management - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Fee Management"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Financial Oversight</h2>
+                <p class="text-gray-500 mt-2">Track pending student fees and record payments.</p>
+            </div>
+            <div class="flex gap-4">
+                <button class="bg-red-50 text-red-600 px-6 py-2 rounded-lg font-bold hover:bg-red-100 transition">
+                    Send Overdue Alerts
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <ui-card id="totalPendingCard" title="Total Outstanding" value="..." color="red"></ui-card>
+            <ui-card id="paidThisMonthCard" title="Collected (Month)" value="$0" color="green"></ui-card>
+            <ui-card id="overdueCountCard" title="Overdue Accounts" value="0" color="orange"></ui-card>
+        </div>
+
+        <!-- Fees Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-700">Student</th>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-700">Amount</th>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-700">Due Date</th>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-700">Status</th>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="feeTableBody" class="divide-y divide-gray-200">
+                    <tr>
+                        <td colspan="5" class="px-6 py-10 text-center">
+                            <ui-spinner text="Fetching financial records..."></ui-spinner>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js';
+
+        const tableBody = document.getElementById('feeTableBody');
+
+        async function fetchFees() {
+            try {
+                const res = await fetch('/api/admin/fees');
+                const { pending } = await res.json();
+                renderFees(pending);
+                
+                const total = pending.reduce((sum, f) => sum + f.amount, 0);
+                document.getElementById('totalPendingCard').setAttribute('value', `$${total.toLocaleString()}`);
+                document.getElementById('overdueCountCard').setAttribute('value', pending.length);
+            } catch (err) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-red-500">Failed to load fee records</td></tr>';
+            }
+        }
+
+        function renderFees(fees) {
+            if (!fees.length) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">No pending fees found</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = fees.map(f => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-900">${f.student?.name || 'Unknown'}</div>
+                        <div class="text-xs text-gray-500">${f.student?.email || 'N/A'}</div>
+                    </td>
+                    <td class="px-6 py-4 font-bold text-gray-900">$${f.amount.toLocaleString()}</td>
+                    <td class="px-6 py-4 text-sm text-gray-600">${new Date(f.dueDate).toLocaleDateString()}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700">
+                            ${f.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 transition">Record Payment</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function init() {
+            try {
+                const res = await fetch('/api/auth/me');
+                const { user } = await res.json();
+                if (!res.ok || user.role !== 'admin') { window.location.href = '/'; return; }
+                
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                
+                fetchFees();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

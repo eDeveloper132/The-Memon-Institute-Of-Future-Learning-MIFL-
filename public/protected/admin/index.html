@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Admin Dashboard"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div id="welcomeMessage" class="mb-10">
+            <h2 class="text-4xl font-bold text-gray-900">Admin Control Panel</h2>
+            <p class="text-gray-500 mt-2">Welcome, <span id="displayFirstName">Administrator</span>. Here is the system-wide overview.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+            <ui-card id="totalStudents" title="Total Students" value="..." color="blue"></ui-card>
+            <ui-card id="totalTeachers" title="Total Teachers" value="..." color="green"></ui-card>
+            <ui-card id="totalClasses" title="Classes" value="..." color="purple"></ui-card>
+            <ui-card id="activeBatches" title="Batches" value="..." color="indigo"></ui-card>
+            <ui-card id="pendingFees" title="Pending Fees" value="..." color="red"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- System Health -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Management</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <a href="/protected/admin/students.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                        <i class="fa-solid fa-user-graduate text-blue-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Student Directory</p>
+                    </a>
+                    <a href="/protected/admin/teachers.html" class="p-4 bg-gray-50 rounded-lg hover:bg-green-50 transition group">
+                        <i class="fa-solid fa-chalkboard-teacher text-green-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-green-600">Staff Management</p>
+                    </a>
+                    <a href="/protected/admin/batches.html" class="p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 transition group">
+                        <i class="fa-solid fa-layer-group text-indigo-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Batch Control</p>
+                    </a>
+                    <a href="/protected/admin/fees.html" class="p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition group">
+                        <i class="fa-solid fa-money-bill-wave text-red-500 text-2xl mb-2"></i>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Financial Overview</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Recent Logins or Activity -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">System Notifications</h3>
+                <div class="space-y-4">
+                    <div class="flex items-center p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-600 mr-4"></i>
+                        <p class="text-sm text-yellow-800 font-medium">12 students have pending fee payments for this month.</p>
+                    </div>
+                    <div class="flex items-center p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                        <i class="fa-solid fa-info-circle text-blue-600 mr-4"></i>
+                        <p class="text-sm text-blue-800 font-medium">New teacher registration pending approval.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        async function fetchAdminStats() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    
+                    const updateCard = (id, val) => {
+                        const card = document.getElementById(id);
+                        if (card) {
+                            card.setAttribute('value', val);
+                        }
+                    };
+
+                    updateCard('totalStudents', stats.totalStudents);
+                    updateCard('totalTeachers', stats.totalTeachers);
+                    updateCard('totalClasses', stats.totalClasses);
+                    updateCard('activeBatches', stats.activeBatches);
+                    updateCard('pendingFees', `$${stats.pendingFeesAmount.toLocaleString()}`);
+                }
+            } catch (err) {
+                console.error('Failed to fetch admin stats:', err);
+            }
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                if (user.role !== 'admin') { window.location.href = '/'; return; }
+                
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
+                
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                
+                fetchAdminStats();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+
+        fetchProfile();
+    </script>
+</body>
+</html>

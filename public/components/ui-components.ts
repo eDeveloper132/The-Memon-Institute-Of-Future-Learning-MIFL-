@@ -32,19 +32,26 @@
             if (!navLinks) return;
    
             const links: Record<string, { label: string, href: string }[]> = {
+                admin: [
+                    { label: 'Dashboard', href: '/protected/index.html' },
+                    { label: 'Students', href: '/protected/admin/students.html' },
+                    { label: 'Teachers', href: '/protected/admin/teachers.html' },
+                    { label: 'Classes', href: '/protected/admin/classes.html' },
+                    { label: 'Batches', href: '/protected/admin/batches.html' },
+                    { label: 'Courses', href: '/protected/admin/courses.html' },
+                    { label: 'Time Tracking', href: '/protected/admin/teacher-time.html' },
+                    { label: 'Staff Attendance', href: '/protected/admin/teacher-attendance.html' },
+                    { label: 'Student Attendance', href: '/protected/admin/student-attendance.html' },
+                    { label: 'Pending Fees', href: '/protected/admin/fees.html' }
+                ],
                 teacher: [
                     { label: 'Dashboard', href: '/protected/index.html' },
-                    { label: 'Attendance', href:
-      '/protected/teacher/attendance.html' },
-                    { label: 'Assignments', href:
-      '/protected/teacher/assignments.html' },
-                    { label: 'Curriculum', href:
-      '/protected/teacher/curriculum.html' },
+                    { label: 'Attendance', href: '/protected/teacher/attendance.html' },
+                    { label: 'Assignments', href: '/protected/teacher/assignments.html' },
+                    { label: 'Curriculum', href: '/protected/teacher/curriculum.html' },
                     { label: 'Results', href: '/protected/teacher/results.html' },
-                    { label: 'Stopwatch', href: '/protected/teacher/stopwatch.html'
-      },
-                    { label: 'Student Reviews', href:
-      '/protected/teacher/reviews.html' }
+                    { label: 'Stopwatch', href: '/protected/teacher/stopwatch.html' },
+                    { label: 'Student Reviews', href: '/protected/teacher/reviews.html' }
                 ],
                 // ... other roles ...
             };
