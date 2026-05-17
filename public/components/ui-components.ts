@@ -53,8 +53,26 @@
                     { label: 'Stopwatch', href: '/protected/teacher/stopwatch.html' },
                     { label: 'Student Reviews', href: '/protected/teacher/reviews.html' }
                 ],
-                // ... other roles ...
-            };
+                student: [
+                    { label: 'Dashboard', href: '/protected/index.html' },
+                    { label: 'Registration & Attendance', href: '/protected/student/registration-attendance.html' },
+                    { label: 'Fee Vouchers', href: '/protected/student/vouchers.html' },
+                    { label: 'My Results', href: '/protected/student/results.html' },
+                    { label: 'My Details', href: '/protected/student/details.html' },
+                    { label: 'Assignments', href: '/protected/student/assignments.html' },
+                    { label: 'Quizzes', href: '/protected/student/quizzes.html' },
+                    { label: 'Course Files', href: '/protected/student/course-files.html' }
+                ],
+                parent: [
+                    { label: 'Dashboard', href: '/protected/index.html' },
+                    { label: 'My Children', href: '/protected/parent/index.html' }
+                ],
+                staff: [
+                    { label: 'Dashboard', href: '/protected/index.html' },
+                    { label: 'Inventory', href: '/protected/staff/index.html' }
+                ]
+                };
+
    
             const roleLinks = links[role] || [];
             navLinks.innerHTML = roleLinks.map(link => `

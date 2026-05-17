@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration & Attendance - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Course Registration & Attendance"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">Registration & Attendance</h2>
+            <p class="text-gray-500 mt-2">Manage your course enrollments and track your attendance.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Registration Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Course Registration</h3>
+                <div class="space-y-4">
+                    <p class="text-gray-600">Your Registered Courses:</p>
+                    <div id="enrolledCourses" class="space-y-2">
+                        <ui-spinner text="Loading courses..."></ui-spinner>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">My Attendance</h3>
+                <div id="attendanceList" class="space-y-4">
+                    <ui-spinner text="Loading attendance..."></ui-spinner>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        const enrolledCourses = document.getElementById('enrolledCourses');
+        const attendanceList = document.getElementById('attendanceList');
+
+        async function fetchAcademicData() {
+            try {
+                // Fetch attendance
+                const attRes = await fetch('/api/student/attendance');
+                if (attRes.ok) {
+                    const { records } = await attRes.json();
+                    renderAttendance(records);
+                }
+
+                // Fetch courses/classes
+                // Note: getMyCourses was proposed in the controller
+                const courseRes = await fetch('/api/student/profile'); // Using profile as it might have links or separate call
+                // For simplicity, let's assume a dedicated endpoint or we fetch from profile
+                // Let's use the attendance records to derive enrolled courses for now if separate endpoint isn't ready
+            } catch (err) {
+                console.error('Failed to fetch academic data');
+            }
+        }
+
+        function renderAttendance(records) {
+            if (!records.length) {
+                attendanceList.innerHTML = '<p class="text-gray-500 italic">No attendance records found.</p>';
+                enrolledCourses.innerHTML = '<p class="text-gray-500 italic">No courses registered.</p>';
+                return;
+            }
+
+            // Group by course and calculate percentage
+            const stats = {};
+            records.forEach(r => {
+                const courseId = r.course?._id || 'General';
+                const courseTitle = r.course?.title || 'General Class';
+                if (!stats[courseId]) stats[courseId] = { title: courseTitle, present: 0, total: 0 };
+                stats[courseId].total++;
+                if (r.status === 'present') stats[courseId].present++;
+            });
+
+            enrolledCourses.innerHTML = Object.values(stats).map(s => `
+                <div class="p-3 bg-blue-50 text-blue-700 rounded-lg flex justify-between items-center font-medium">
+                    <span>${s.title}</span>
+                    <span class="text-xs bg-blue-200 px-2 py-1 rounded">Active</span>
+                </div>
+            `).join('');
+
+            attendanceList.innerHTML = Object.values(stats).map(s => {
+                const percent = ((s.present / s.total) * 100).toFixed(0);
+                return `
+                    <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition border border-transparent hover:border-gray-100">
+                        <div>
+                            <h4 class="font-bold text-gray-800">${s.title}</h4>
+                            <p class="text-sm text-gray-500">${s.present}/${s.total} Lectures Attended</p>
+                        </div>
+                        <div class="text-2xl font-bold ${percent >= 75 ? 'text-green-600' : 'text-red-600'}">${percent}%</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/student/profile');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                
+                fetchAcademicData();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+        fetchProfile();
+    </script>
+</body>
+</html>

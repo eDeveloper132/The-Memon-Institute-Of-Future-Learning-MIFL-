@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Quizzes - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="My Academic Quizzes"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-gray-900">Quizzes</h2>
+            <p class="text-gray-500 mt-2">Take upcoming quizzes and view your past performance.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Quiz Card -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-start mb-4">
+                    <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-bold uppercase">Upcoming</span>
+                    <span class="text-xs text-gray-500 font-bold">Starts: May 20, 10:00 AM</span>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Calculus Quiz 1</h3>
+                <p class="text-gray-600 text-sm mb-6">Course: Mathematics 101 • Duration: 30m</p>
+                <div class="flex border-t border-gray-50 pt-4">
+                    <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">Enter Quiz</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                if (user.role !== 'student' && user.role !== 'admin') { window.location.href = '/'; return; }
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
+        fetchProfile();
+    </script>
+</body>
+</html>

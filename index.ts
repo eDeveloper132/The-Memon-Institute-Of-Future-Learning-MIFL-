@@ -13,6 +13,7 @@ import { generalLimiter } from "./middlewares/rateLimiter.js";
 import authRoutes from "./routes/auth.routes.js";
 import teacherRoutes from "./routes/teacher.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import studentRoutes from "./routes/student.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 
 const app = express();
@@ -49,7 +50,6 @@ app.use(cookieParser());
      });
 // API Routes
 app.use("/api/auth", authRoutes);
-
 app.use(express.static(path.join(process.cwd(), "public")));
 
 
@@ -59,6 +59,7 @@ app.get("/", authenticate, (req: Request, res: Response) => {
     res.sendFile(path.join(process.cwd(), "public", "protected", "index.html"));
 });
 app.use("/api/teacher", teacherRoutes);
+app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
 process.on("uncaughtException", (err) => {
     console.error(chalk.red("Uncaught Exception:"), err);
