@@ -4,6 +4,7 @@ import { Class } from '../schemas/models/class.model.js';
 import { Course } from '../schemas/models/course.model.js';
 import { Attendance } from '../schemas/models/attendance.model.js';
 import { Fee } from '../schemas/models/fee.model.js';
+import { Batch } from '../schemas/models/batch.model.js';
 import chalk from 'chalk';
 
 /**
@@ -13,7 +14,7 @@ import chalk from 'chalk';
 export const getAllUsers = async (req: Request, res: Response) => {
     try {
         const { role } = req.query;
-        const query = role ? { role: role as string } : {};
+        const query = role ? { role } : {};
         const users = await User.find(query as any).sort({ createdAt: -1 });
         res.status(200).json({ users });
     } catch (error) {
@@ -98,6 +99,28 @@ export const crudCourses = {
 };
 
 /**
+ * ADMIN - BATCH MANAGEMENT
+ */
+export const crudBatches = {
+    getAll: async (req: Request, res: Response) => {
+        const batches = await Batch.find().sort({ startYear: -1 });
+        res.status(200).json({ batches });
+    },
+    create: async (req: Request, res: Response) => {
+        const batch = await Batch.create(req.body);
+        res.status(201).json({ message: 'Batch created', batch });
+    },
+    update: async (req: Request, res: Response) => {
+        const updated = await Batch.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.status(200).json({ message: 'Batch updated', batch: updated });
+    },
+    delete: async (req: Request, res: Response) => {
+        await Batch.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: 'Batch deleted' });
+    }
+};
+
+/**
  * ADMIN - ATTENDANCE MANAGEMENT
  */
 
@@ -143,10 +166,11 @@ export const getPendingFees = async (req: Request, res: Response) => {
  */
 export const getAdminStats = async (req: Request, res: Response) => {
     try {
-        const [totalStudents, totalTeachers, totalClasses, pendingFees] = await Promise.all([
+        const [totalStudents, totalTeachers, totalClasses, activeBatches, pendingFees] = await Promise.all([
             User.countDocuments({ role: 'student' }),
             User.countDocuments({ role: 'teacher' }),
             Class.countDocuments(),
+            Batch.countDocuments({ isActive: true }),
             Fee.aggregate([
                 { $match: { status: { $ne: 'paid' } } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
@@ -157,7 +181,7 @@ export const getAdminStats = async (req: Request, res: Response) => {
             totalStudents,
             totalTeachers,
             totalClasses,
-            activeBatches: 5, // Placeholder until Batch model
+            activeBatches,
             pendingFeesAmount: pendingFees[0]?.total || 0
         });
     } catch (error) {

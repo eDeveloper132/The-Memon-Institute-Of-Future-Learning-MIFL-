@@ -4,6 +4,7 @@ import { Attendance } from '../schemas/models/attendance.model.js';
 import { Fee } from '../schemas/models/fee.model.js';
 import { Grade } from '../schemas/models/exam.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
+import { Message } from '../schemas/models/message.model.js';
 import chalk from 'chalk';
 
 /**
@@ -105,6 +106,47 @@ export const getNotices = async (req: Request, res: Response) => {
         }).sort({ isPinned: -1, createdAt: -1 });
         
         res.status(200).json({ notices });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * MESSAGING LOGIC
+ */
+export const getChatHistory = async (req: any, res: Response) => {
+    try {
+        const { partnerId } = req.query;
+        if (!partnerId) return res.status(400).json({ message: 'Partner ID is required' });
+
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id, receiver: partnerId },
+                { sender: partnerId, receiver: req.user.id }
+            ]
+        }).sort({ createdAt: 1 });
+
+        res.status(200).json({ messages });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getMyConversations = async (req: any, res: Response) => {
+    try {
+        // Find unique users I have messaged with
+        const messages = await Message.find({
+            $or: [{ sender: req.user.id }, { receiver: req.user.id }]
+        }).sort({ createdAt: -1 });
+
+        const partnerIds = new Set();
+        messages.forEach(m => {
+            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
+            partnerIds.add(partnerId);
+        });
+
+        const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');
+        res.status(200).json({ partners });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }

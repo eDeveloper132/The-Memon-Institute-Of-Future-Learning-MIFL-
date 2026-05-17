@@ -4,7 +4,9 @@ import { Class } from '../schemas/models/class.model.js';
 import { Attendance } from '../schemas/models/attendance.model.js';
 import { Course } from '../schemas/models/course.model.js';
 import { Exam, Grade } from '../schemas/models/exam.model.js';
-// import { Assignment, Submission } from '../schemas/models/assignment.model.js'; // Will use if file exists
+import { Assignment, Submission } from '../schemas/models/assignment.model.js';
+import { Quiz } from '../schemas/models/quiz.model.js';
+import { Material } from '../schemas/models/material.model.js';
 import chalk from 'chalk';
 
 /**
@@ -23,15 +25,16 @@ export const getDashboardStats = async (req: any, res: Response) => {
         classes.forEach(cls => cls.students.forEach(id => studentIds.add(id.toString())));
         const totalStudents = studentIds.size;
 
-        // Get pending grading (example: using Exam model for now)
-        const pendingGrading = await Exam.countDocuments({ 
-            // Logic to find exams/assignments that need grading
-        });
+        // Get pending grading (Assignments & Exams)
+        const [pendingAssignments, pendingExams] = await Promise.all([
+            Submission.countDocuments({ status: 'submitted' }),
+            Grade.countDocuments({ grade: { $exists: false } }) // Simplified logic
+        ]);
 
         res.status(200).json({
             classesCount,
             totalStudents,
-            pendingGrading,
+            pendingGrading: pendingAssignments + pendingExams,
             avgFeedback: "4.8/5" // Placeholder
         });
     } catch (error: any) {
@@ -97,11 +100,90 @@ export const markAttendance = async (req: any, res: Response) => {
 /**
  * Assignment Management
  */
+export const createAssignment = async (req: any, res: Response) => {
+    try {
+        const assignment = await Assignment.create({
+            ...req.body,
+            teacher: req.user.id
+        });
+        res.status(201).json({ message: 'Assignment created successfully', assignment });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getAssignments = async (req: any, res: Response) => {
     try {
-        // Placeholder for Assignment model logic
-        res.status(200).json({ assignments: [] });
+        const assignments = await Assignment.find({ teacher: req.user.id })
+            .populate('course', 'title')
+            .populate('class', 'name');
+        res.status(200).json({ assignments });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const gradeSubmission = async (req: any, res: Response) => {
+    try {
+        const { submissionId } = req.params;
+        const { grade, feedback } = req.body;
+
+        const submission = await Submission.findByIdAndUpdate(
+            submissionId,
+            { grade, feedback, status: 'graded', gradedBy: req.user.id },
+            { new: true }
+        );
+
+        res.status(200).json({ message: 'Submission graded', submission });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * Material Management
+ */
+export const uploadMaterial = async (req: any, res: Response) => {
+    try {
+        const material = await Material.create({
+            ...req.body,
+            teacher: req.user.id
+        });
+        res.status(201).json({ message: 'Material uploaded', material });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getMaterials = async (req: any, res: Response) => {
+    try {
+        const materials = await Material.find({ teacher: req.user.id }).populate('course', 'title');
+        res.status(200).json({ materials });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * Quiz Management
+ */
+export const createQuiz = async (req: any, res: Response) => {
+    try {
+        const quiz = await Quiz.create({
+            ...req.body,
+            teacher: req.user.id
+        });
+        res.status(201).json({ message: 'Quiz created', quiz });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getQuizzes = async (req: any, res: Response) => {
+    try {
+        const quizzes = await Quiz.find({ teacher: req.user.id }).populate('course', 'title');
+        res.status(200).json({ quizzes });
+    } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
 };

@@ -16,6 +16,7 @@ import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import parentRoutes from "./routes/parent.routes.js";
 import { authenticate } from "./middlewares/auth.js";
+import { setupSocket } from "./socket.js";
 
 const app = express();
 
@@ -23,6 +24,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 const httpServer = createServer(app);
+setupSocket(httpServer);
 const PORT = parseInt(process.env.PORT || "2500", 10);
 
 // Diagnostic Route

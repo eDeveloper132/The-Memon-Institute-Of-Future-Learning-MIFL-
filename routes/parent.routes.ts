@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { 
-    getMyChildren, getChildResults, getChildAttendance, 
-    getFamilyFees, getNotices 
+    getMyChildren, 
+    getChildResults, 
+    getChildAttendance, 
+    getFamilyFees, 
+    getNotices,
+    getChatHistory,
+    getMyConversations
 } from '../controllers/parent.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -16,5 +21,11 @@ router.get('/results', getChildResults);
 router.get('/attendance', getChildAttendance);
 router.get('/fees', getFamilyFees);
 router.get('/notices', getNotices);
+
+/**
+ * Communication
+ */
+router.get('/messages', getChatHistory);
+router.get('/conversations', getMyConversations);
 
 export default router;

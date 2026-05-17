@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { 
     getAllUsers, createUser, updateUser, deleteUser,
-    crudClasses, crudCourses, 
+    crudClasses, crudCourses, crudBatches,
     getSystemAttendance, getPendingFees, getAdminStats 
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
@@ -40,6 +40,14 @@ router.get('/courses', crudCourses.getAll);
 router.post('/courses', crudCourses.create);
 router.patch('/courses/:id', crudCourses.update);
 router.delete('/courses/:id', crudCourses.delete);
+
+/**
+ * Batch Management
+ */
+router.get('/batches', crudBatches.getAll);
+router.post('/batches', crudBatches.create);
+router.patch('/batches/:id', crudBatches.update);
+router.delete('/batches/:id', crudBatches.delete);
 
 /**
  * Attendance Oversight
