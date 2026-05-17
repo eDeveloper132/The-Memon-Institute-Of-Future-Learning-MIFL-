@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Results - MIFL Parent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Academic Performance"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Academic History</h2>
+                <p class="text-gray-500 mt-2">Track the performance and report cards for your children.</p>
+            </div>
+            <select id="childSelector" class="bg-white border border-gray-300 rounded-xl px-6 py-2 font-bold text-gray-700 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                <option value="">Select Child</option>
+            </select>
+        </div>
+
+        <div id="resultsContent" class="hidden">
+            <div id="resultsTable" class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-8 py-5 text-sm font-bold text-gray-700 uppercase tracking-wider">Exam Title</th>
+                            <th class="px-8 py-5 text-sm font-bold text-gray-700 uppercase tracking-wider">Subject</th>
+                            <th class="px-8 py-5 text-sm font-bold text-gray-700 uppercase tracking-wider">Marks</th>
+                            <th class="px-8 py-5 text-sm font-bold text-gray-700 uppercase tracking-wider">Grade</th>
+                            <th class="px-8 py-5 text-sm font-bold text-gray-700 uppercase tracking-wider text-right">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody" class="divide-y divide-gray-100">
+                        <!-- Results injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="noChildSelected" class="py-20 text-center text-gray-500">
+            <i class="fa-solid fa-user-graduate text-6xl mb-4 opacity-20"></i>
+            <p class="text-xl font-medium">Please select a child to view their academic records.</p>
+        </div>
+    </main>
+
+    <script type="module">
+        const childSelector = document.getElementById('childSelector');
+        const resultsContent = document.getElementById('resultsContent');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const noChildSelected = document.getElementById('noChildSelected');
+
+        // Check for childId in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlChildId = urlParams.get('childId');
+
+        async function fetchChildren() {
+            try {
+                const response = await fetch('/api/parent/children');
+                const { children } = await response.json();
+                
+                childSelector.innerHTML += children.map(c => `
+                    <option value="${c._id}" ${urlChildId === c._id ? 'selected' : ''}>${c.name}</option>
+                `).join('');
+
+                if (urlChildId) {
+                    loadResults(urlChildId);
+                }
+            } catch (err) {
+                console.error('Failed to fetch children');
+            }
+        }
+
+        async function loadResults(childId) {
+            if (!childId) {
+                resultsContent.classList.add('hidden');
+                noChildSelected.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/parent/results?childId=${childId}`);
+                if (response.ok) {
+                    const { results } = await response.json();
+                    renderResults(results);
+                    resultsContent.classList.remove('hidden');
+                    noChildSelected.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Failed to load results');
+            }
+        }
+
+        function renderResults(results) {
+            if (!results.length) {
+                resultsTableBody.innerHTML = '<tr><td colspan="5" class="px-8 py-10 text-center text-gray-500 italic">No exam records found for this student.</td></tr>';
+                return;
+            }
+
+            resultsTableBody.innerHTML = results.map(r => {
+                const percent = ((r.obtainedMarks / r.exam.maxMarks) * 100).toFixed(0);
+                const grade = percent >= 80 ? 'A' : percent >= 70 ? 'B' : percent >= 60 ? 'C' : percent >= 50 ? 'D' : 'F';
+                
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-8 py-6">
+                            <div class="font-bold text-gray-900">${r.exam.title}</div>
+                            <div class="text-xs text-gray-400">Date: ${new Date(r.exam.date).toLocaleDateString()}</div>
+                        </td>
+                        <td class="px-8 py-6 text-gray-600 font-medium">${r.exam.course.title}</td>
+                        <td class="px-8 py-6">
+                            <span class="font-bold text-gray-900">${r.obtainedMarks}</span><span class="text-gray-400 text-xs">/${r.exam.maxMarks}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-bold uppercase">${grade}</span>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                            <div class="w-24 bg-gray-100 rounded-full h-2 ml-auto">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${percent}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        childSelector.addEventListener('change', (e) => loadResults(e.target.value));
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                
+                fetchChildren();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+        fetchProfile();
+    </script>
+</body>
+</html>

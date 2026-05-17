@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Board - MIFL Parent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="School Announcements"></ui-navbar>
+
+    <main class="p-8 max-w-5xl mx-auto">
+        <div class="mb-10">
+            <h2 class="text-3xl font-bold text-gray-900">Notice Board</h2>
+            <p class="text-gray-500 mt-2">Important updates, event alerts, and holiday announcements.</p>
+        </div>
+
+        <div id="noticesList" class="space-y-6">
+            <!-- Loading State -->
+            <div class="text-center py-20">
+                <ui-spinner text="Fetching latest announcements..."></ui-spinner>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        const noticesList = document.getElementById('noticesList');
+
+        async function fetchNotices() {
+            try {
+                const response = await fetch('/api/parent/notices');
+                if (response.ok) {
+                    const { notices } = await response.json();
+                    renderNotices(notices);
+                }
+            } catch (err) {}
+        }
+
+        function renderNotices(notices) {
+            if (!notices.length) {
+                noticesList.innerHTML = '<div class="bg-white p-10 rounded-3xl text-center text-gray-500 italic border border-gray-100 shadow-sm">No active notices at this time.</div>';
+                return;
+            }
+
+            noticesList.innerHTML = notices.map(n => `
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:border-blue-300 transition group relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-2 h-full bg-blue-600"></div>
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-bold uppercase tracking-wider">Announcement</span>
+                        <span class="text-sm text-gray-400 font-medium">${new Date(n.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition">${n.title}</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">${n.content}</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold">
+                            ${n.isPinned ? '<i class="fa-solid fa-thumbtack text-blue-600"></i>' : '<i class="fa-solid fa-user-tie"></i>'}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">MIFL Administration</p>
+                            <p class="text-xs text-gray-500">Official Notice</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                fetchNotices();
+            } catch (err) {}
+        }
+        fetchProfile();
+    </script>
+</body>
+</html>

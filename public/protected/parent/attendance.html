@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Tracking - MIFL Parent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Attendance Oversight"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Attendance Log</h2>
+                <p class="text-gray-500 mt-2">Monitor your child's daily presence and late arrivals.</p>
+            </div>
+            <div class="flex gap-4">
+                <select id="childSelector" class="bg-white border border-gray-300 rounded-xl px-4 py-2 font-bold text-gray-700 outline-none">
+                    <option value="">Select Child</option>
+                </select>
+                <input type="month" id="attendanceMonth" class="bg-white border border-gray-300 rounded-xl px-4 py-2 font-bold text-gray-700 outline-none">
+            </div>
+        </div>
+
+        <div id="attendanceStats" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 hidden">
+            <ui-card id="totalDaysCard" title="Total Lectures" value="0" color="blue"></ui-card>
+            <ui-card id="presentCard" title="Present" value="0" color="green"></ui-card>
+            <ui-card id="absentCard" title="Absent" value="0" color="red"></ui-card>
+            <ui-card id="lateCard" title="Late" value="0" color="orange"></ui-card>
+        </div>
+
+        <div id="attendanceContent" class="hidden">
+            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="font-bold text-gray-800 uppercase tracking-widest text-sm">Attendance List</h3>
+                </div>
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Date</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                            <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Recorded By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody" class="divide-y divide-gray-100">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="noSelection" class="py-20 text-center text-gray-500">
+            <i class="fa-solid fa-calendar-check text-6xl mb-4 opacity-20"></i>
+            <p class="text-xl font-medium">Please select a child to view their attendance history.</p>
+        </div>
+    </main>
+
+    <script type="module">
+        const childSelector = document.getElementById('childSelector');
+        const monthInput = document.getElementById('attendanceMonth');
+        const tableBody = document.getElementById('attendanceTableBody');
+        const stats = document.getElementById('attendanceStats');
+        const content = document.getElementById('attendanceContent');
+        const noSelection = document.getElementById('noSelection');
+
+        monthInput.value = new Date().toISOString().slice(0, 7);
+
+        async function fetchChildren() {
+            try {
+                const response = await fetch('/api/parent/children');
+                const { children } = await response.json();
+                childSelector.innerHTML += children.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+            } catch (err) {}
+        }
+
+        async function loadAttendance() {
+            const childId = childSelector.value;
+            const month = monthInput.value;
+            if (!childId) {
+                stats.classList.add('hidden');
+                content.classList.add('hidden');
+                noSelection.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/parent/attendance?childId=${childId}&month=${month}`);
+                if (response.ok) {
+                    const { records } = await response.json();
+                    renderAttendance(records);
+                    stats.classList.remove('hidden');
+                    content.classList.remove('hidden');
+                    noSelection.classList.add('hidden');
+                }
+            } catch (err) {}
+        }
+
+        function renderAttendance(records) {
+            if (!records.length) {
+                tableBody.innerHTML = '<tr><td colspan="3" class="px-8 py-10 text-center text-gray-500 italic">No attendance logs found for this month.</td></tr>';
+                updateStats(0, 0, 0, 0);
+                return;
+            }
+
+            let p = 0, a = 0, l = 0;
+            tableBody.innerHTML = records.map(r => {
+                if (r.status === 'present') p++;
+                else if (r.status === 'absent') a++;
+                else if (r.status === 'late') l++;
+
+                const colors = { present: 'bg-green-100 text-green-700', absent: 'bg-red-100 text-red-700', late: 'bg-orange-100 text-orange-700' };
+
+                return `
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-8 py-5 text-gray-900 font-medium">${new Date(r.date).toLocaleDateString()}</td>
+                        <td class="px-8 py-5">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${colors[r.status]}">${r.status}</span>
+                        </td>
+                        <td class="px-8 py-5 text-sm text-gray-500">System Recorded</td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateStats(records.length, p, a, l);
+        }
+
+        function updateStats(total, p, a, l) {
+            document.getElementById('totalDaysCard').setAttribute('value', total);
+            document.getElementById('presentCard').setAttribute('value', p);
+            document.getElementById('absentCard').setAttribute('value', a);
+            document.getElementById('lateCard').setAttribute('value', l);
+        }
+
+        childSelector.addEventListener('change', loadAttendance);
+        monthInput.addEventListener('change', loadAttendance);
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                fetchChildren();
+            } catch (err) {}
+        }
+        fetchProfile();
+    </script>
+</body>
+</html>

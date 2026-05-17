@@ -23,6 +23,7 @@ export interface IUser extends Document {
     
     // Student specific
     studentId?: string;
+    parent?: Types.ObjectId; // Ref to User (Parent)
     parentName?: string;
     parentContact?: string;
     currentClass?: Types.ObjectId; // Ref to Class

@@ -25,6 +25,7 @@ const userSchema = new Schema<IUser>(
 
         // Student specific
         studentId: { type: String, unique: true, sparse: true },
+        parent: { type: Schema.Types.ObjectId, ref: 'User' }, // Linked parent user
         parentName: String,
         parentContact: String,
         currentClass: { type: Schema.Types.ObjectId, ref: 'Class' },

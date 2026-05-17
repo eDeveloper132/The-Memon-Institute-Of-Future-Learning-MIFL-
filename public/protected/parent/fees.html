@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fees & Payments - MIFL Parent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Fees & Payments"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-10">
+            <h2 class="text-3xl font-bold text-gray-900">Financial Overview</h2>
+            <p class="text-gray-500 mt-2">Manage tuition fees, view payment history, and download vouchers.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+            <!-- Balance Card -->
+            <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+                <i class="fa-solid fa-wallet absolute -right-10 -bottom-10 text-9xl opacity-10"></i>
+                <div class="relative z-10">
+                    <p class="text-blue-100 font-bold uppercase tracking-widest text-xs mb-2">Total Outstanding Balance</p>
+                    <h3 id="totalBalance" class="text-5xl font-extrabold mb-8">$0.00</h3>
+                    <div class="flex gap-4">
+                        <button class="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg">Pay Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <ui-card id="paidTotalCard" title="Paid (This Year)" value="$0" color="green"></ui-card>
+                <ui-card id="pendingVouchersCard" title="Pending Vouchers" value="0" color="red"></ui-card>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-8 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="font-bold text-gray-900">Fee Vouchers & History</h3>
+            </div>
+            <table class="w-full text-left">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Description</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Child</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Amount</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                        <th class="px-8 py-4 text-xs font-bold text-gray-500 uppercase text-right">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody id="feeTableBody" class="divide-y divide-gray-100">
+                    <!-- Data injected here -->
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module">
+        const tableBody = document.getElementById('feeTableBody');
+
+        async function fetchFees() {
+            try {
+                const response = await fetch('/api/parent/fees');
+                if (response.ok) {
+                    const { fees } = await response.json();
+                    renderFees(fees);
+                }
+            } catch (err) {}
+        }
+
+        function renderFees(fees) {
+            if (!fees.length) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="px-8 py-10 text-center text-gray-500">No financial records found.</td></tr>';
+                return;
+            }
+
+            let balance = 0;
+            let paid = 0;
+            let pendingCount = 0;
+
+            tableBody.innerHTML = fees.map(f => {
+                if (f.status !== 'paid') {
+                    balance += f.amount;
+                    pendingCount++;
+                } else {
+                    paid += f.amount;
+                }
+
+                const statusColor = f.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+
+                return `
+                    <tr>
+                        <td class="px-8 py-5">
+                            <div class="font-bold text-gray-900">${f.type}</div>
+                            <div class="text-xs text-gray-400">Due: ${new Date(f.dueDate).toLocaleDateString()}</div>
+                        </td>
+                        <td class="px-8 py-5 text-sm text-gray-600">${f.student?.name || 'Child'}</td>
+                        <td class="px-8 py-5 font-bold text-gray-900">$${f.amount.toLocaleString()}</td>
+                        <td class="px-8 py-5">
+                            <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${statusColor}">${f.status}</span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <button class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-file-invoice"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('totalBalance').textContent = `$${balance.toLocaleString()}.00`;
+            document.getElementById('paidTotalCard').setAttribute('value', `$${paid.toLocaleString()}`);
+            document.getElementById('pendingVouchersCard').setAttribute('value', pendingCount);
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                document.getElementById('userName').textContent = user.name;
+                const navbar = customElements.get('ui-navbar');
+                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                fetchFees();
+            } catch (err) {}
+        }
+        fetchProfile();
+    </script>
+</body>
+</html>

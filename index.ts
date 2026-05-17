@@ -14,6 +14,7 @@ import authRoutes from "./routes/auth.routes.js";
 import teacherRoutes from "./routes/teacher.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
+import parentRoutes from "./routes/parent.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 
 const app = express();
@@ -61,6 +62,7 @@ app.get("/", authenticate, (req: Request, res: Response) => {
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/parent", parentRoutes);
 process.on("uncaughtException", (err) => {
     console.error(chalk.red("Uncaught Exception:"), err);
     // process.exit(1);

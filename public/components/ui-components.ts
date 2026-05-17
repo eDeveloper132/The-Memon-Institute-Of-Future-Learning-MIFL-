@@ -64,8 +64,13 @@
                     { label: 'Course Files', href: '/protected/student/course-files.html' }
                 ],
                 parent: [
-                    { label: 'Dashboard', href: '/protected/index.html' },
-                    { label: 'My Children', href: '/protected/parent/index.html' }
+                          { label: 'Dashboard', href: '/protected/index.html' },
+        { label: 'My Children', href: '/protected/parent/index.html' },
+        { label: 'Academic Results', href: '/protected/parent/results.html' },
+        { label: 'Attendance', href: '/protected/parent/attendance.html' },
+        { label: 'Fees & Payments', href: '/protected/parent/fees.html' },
+        { label: 'Notice Board', href: '/protected/parent/notices.html' },
+        { label: 'Messages', href: '/protected/parent/messages.html' }
                 ],
                 staff: [
                     { label: 'Dashboard', href: '/protected/index.html' },
