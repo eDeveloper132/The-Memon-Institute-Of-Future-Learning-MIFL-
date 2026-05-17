@@ -8,7 +8,7 @@ const noticeSchema = new Schema<INotice>(
         author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         audience: [{ 
             type: String, 
-            enum: ['all', 'students', 'teachers', 'parents', 'staff'],
+            enum: ['all', 'students', 'teachers', 'parents'],
             default: 'all'
         }],
         targetClass: { type: Schema.Types.ObjectId, ref: 'Class' },

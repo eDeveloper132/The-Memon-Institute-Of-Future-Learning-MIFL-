@@ -11,7 +11,7 @@ const userSchema = new Schema<IUser>(
         address: { type: String, required: true },
         role: {
             type: String,
-            enum: ['student', 'teacher', 'staff', 'admin','parent'],
+            enum: ['student', 'teacher', 'admin', 'parent'],
             default: 'student',
         },
         status: {
@@ -30,7 +30,7 @@ const userSchema = new Schema<IUser>(
         parentContact: String,
         currentClass: { type: Schema.Types.ObjectId, ref: 'Class' },
 
-        // Teacher/Staff specific
+        // Teacher specific
         staffId: { type: String, unique: true, sparse: true },
         department: { type: Schema.Types.ObjectId, ref: 'Department' },
         designation: String,

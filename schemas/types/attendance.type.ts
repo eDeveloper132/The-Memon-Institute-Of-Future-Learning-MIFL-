@@ -9,7 +9,7 @@ export interface IAttendance extends Document {
     date: Date;
     status: AttendanceStatus;
     remarks?: string;
-    recordedBy: Types.ObjectId; // Ref to User (Teacher/Staff)
+    recordedBy: Types.ObjectId; // Ref to User (Teacher/Admin)
     createdAt: Date;
     updatedAt: Date;
 }

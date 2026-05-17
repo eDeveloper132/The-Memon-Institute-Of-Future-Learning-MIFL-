@@ -18,7 +18,7 @@
                 <h2 class="text-3xl font-bold text-gray-900">System Course Catalog</h2>
                 <p class="text-gray-500 mt-2">Manage the curriculum and subject offerings across all departments.</p>
             </div>
-            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg">
+            <button id="openCourseModal" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg">
                 <i class="fa-solid fa-book-medical mr-2"></i> Add Course
             </button>
         </div>
@@ -45,8 +45,69 @@
         </div>
     </main>
 
+    <!-- Add Course Modal -->
+    <div id="addCourseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold">Register New Course</h3>
+                <button id="closeCourseModal" class="text-2xl">&times;</button>
+            </div>
+            <form id="addCourseForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Course Title</label>
+                    <input type="text" name="title" placeholder="e.g. Advanced Physics" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Course Code</label>
+                    <input type="text" name="code" placeholder="e.g. PHYS202" required class="w-full px-4 py-2 border rounded-lg outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Credits</label>
+                        <input type="number" name="credits" value="3" required class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Department ID</label>
+                        <input type="text" name="department" placeholder="Dept ID" class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4">Save Course</button>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
+        import { showToast } from '/components/ui-components.js';
+
         const tableBody = document.getElementById('courseTableBody');
+        const addForm = document.getElementById('addCourseForm');
+        const modal = document.getElementById('addCourseModal');
+        const openBtn = document.getElementById('openCourseModal');
+        const closeBtn = document.getElementById('closeCourseModal');
+
+        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
+        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+
+        addForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(addForm));
+            try {
+                const res = await fetch('/api/admin/courses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Course added successfully');
+                    modal.classList.add('hidden');
+                    addForm.reset();
+                    fetchCourses();
+                } else {
+                    showToast('Failed to add course', 'error');
+                }
+            } catch (err) { showToast('An error occurred', 'error'); }
+        };
 
         async function fetchCourses() {
             try {

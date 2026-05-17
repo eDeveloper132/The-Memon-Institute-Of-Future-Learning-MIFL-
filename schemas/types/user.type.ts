@@ -1,6 +1,6 @@
 import type { Document, Types } from 'mongoose';
 
-export type UserRole = 'student' | 'teacher' | 'staff' | 'admin' | 'parent';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'parent';
 export type UserStatus = 'active' | 'inactive' | 'suspended';
 
 export interface IUser extends Document {
@@ -28,7 +28,7 @@ export interface IUser extends Document {
     parentContact?: string;
     currentClass?: Types.ObjectId; // Ref to Class
     
-    // Teacher/Staff specific
+    // Teacher specific
     staffId?: string;
     department?: Types.ObjectId; // Ref to Department
     designation?: string;

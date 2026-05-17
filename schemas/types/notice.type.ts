@@ -1,6 +1,6 @@
 import type { Document, Types } from 'mongoose';
 
-export type NoticeAudience = 'all' | 'students' | 'teachers' | 'parents' | 'staff';
+export type NoticeAudience = 'all' | 'students' | 'teachers' | 'parents';
 
 export interface INotice extends Document {
     title: string;

@@ -38,10 +38,6 @@
                 <ui-card title="My Attendance" value="95%" color="indigo"></ui-card>
                 <ui-card title="Assignments" value="3 Due" color="pink"></ui-card>
             </div>
-
-            <div id="staffSection" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ui-card title="Inventory Tasks" value="8" color="yellow"></ui-card>
-            </div>
         </div>
 
         <ui-spinner id="loading" text="Fetching your profile..."></ui-spinner>
@@ -76,7 +72,7 @@
             const badge = document.getElementById('roleBadge');
             badge.textContent = user.role;
             
-            const sections = ['admin', 'teacher', 'student', 'staff'];
+            const sections = ['admin', 'teacher', 'student'];
             sections.forEach(role => {
                 const element = document.getElementById(role + 'Section');
                 if (role === user.role) {
@@ -85,11 +81,11 @@
                         admin: 'bg-blue-100 text-blue-600',
                         teacher: 'bg-orange-100 text-orange-600',
                         student: 'bg-indigo-100 text-indigo-600',
-                        staff: 'bg-yellow-100 text-yellow-600'
+                        parent: 'bg-purple-100 text-purple-600'
                     };
-                    badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6 ${colors[role]}`;
+                    badge.className = `inline-block px-3 py-1 rounded-full text-xs font-bold uppercase mb-6 ${colors[role] || 'bg-gray-100 text-gray-600'}`;
                 } else {
-                    element.classList.add('hidden');
+                    if (element) element.classList.add('hidden');
                 }
             });
         }

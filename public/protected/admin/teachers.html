@@ -16,9 +16,9 @@
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900">Faculty Management</h2>
-                <p class="text-gray-500 mt-2">Oversee and manage teaching staff and designations.</p>
+                <p class="text-gray-500 mt-2">Oversee and manage teaching faculty and designations.</p>
             </div>
-            <button onclick="document.getElementById('addTeacherModal').classList.remove('hidden')" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center shadow-lg">
+            <button id="openTeacherModal" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center shadow-lg">
                 <i class="fa-solid fa-chalkboard-user mr-2"></i> Register Teacher
             </button>
         </div>
@@ -36,7 +36,7 @@
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
             <div class="p-6 bg-green-600 text-white flex justify-between items-center">
                 <h3 class="text-xl font-bold">Register New Faculty</h3>
-                <button onclick="document.getElementById('addTeacherModal').classList.add('hidden')" class="hover:text-gray-200 text-2xl">&times;</button>
+                <button id="closeTeacherModal" class="hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <form id="addTeacherForm" class="p-6 space-y-4">
                 <div class="grid grid-cols-2 gap-4">
@@ -81,6 +81,13 @@
 
         const teacherGrid = document.getElementById('teacherGrid');
         const addForm = document.getElementById('addTeacherForm');
+        const modal = document.getElementById('addTeacherModal');
+        const openBtn = document.getElementById('openTeacherModal');
+        const closeBtn = document.getElementById('closeTeacherModal');
+
+        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
+        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
 
         async function fetchTeachers() {
             try {

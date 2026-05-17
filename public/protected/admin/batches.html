@@ -18,7 +18,7 @@
                 <h2 class="text-3xl font-bold text-gray-900">Graduation Batches</h2>
                 <p class="text-gray-500 mt-2">Manage student cohorts and academic graduation years.</p>
             </div>
-            <button onclick="document.getElementById('addBatchModal').classList.remove('hidden')" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition flex items-center shadow-lg">
+            <button id="openBatchModal" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition flex items-center shadow-lg">
                 <i class="fa-solid fa-layer-group mr-2"></i> Create Batch
             </button>
         </div>
@@ -35,7 +35,7 @@
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             <div class="p-4 bg-indigo-600 text-white flex justify-between items-center">
                 <h3 class="font-bold">Register New Batch</h3>
-                <button onclick="document.getElementById('addBatchModal').classList.add('hidden')" class="text-xl">&times;</button>
+                <button id="closeBatchModal" class="text-xl">&times;</button>
             </div>
             <form id="batchForm" class="p-6 space-y-4">
                 <div>
@@ -62,6 +62,13 @@
 
         const batchList = document.getElementById('batchList');
         const form = document.getElementById('batchForm');
+        const modal = document.getElementById('addBatchModal');
+        const openBtn = document.getElementById('openBatchModal');
+        const closeBtn = document.getElementById('closeBatchModal');
+
+        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
+        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
 
         async function fetchBatches() {
             try {

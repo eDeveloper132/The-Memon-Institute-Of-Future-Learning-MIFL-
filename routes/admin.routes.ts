@@ -19,7 +19,7 @@ router.use(authorize('admin'));
 router.get('/stats', getAdminStats);
 
 /**
- * User Management (Students, Teachers, Staff)
+ * User Management (Students, Teachers)
  */
 router.get('/users', getAllUsers);
 router.post('/users', createUser);
