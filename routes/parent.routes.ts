@@ -6,7 +6,8 @@ import {
     getFamilyFees, 
     getNotices,
     getChatHistory,
-    getMyConversations
+    getMyConversations,
+    sendMessage
 } from '../controllers/parent.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -27,5 +28,6 @@ router.get('/notices', getNotices);
  */
 router.get('/messages', getChatHistory);
 router.get('/conversations', getMyConversations);
+router.post('/messages', sendMessage);
 
 export default router;

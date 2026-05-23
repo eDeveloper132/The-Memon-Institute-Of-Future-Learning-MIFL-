@@ -10,7 +10,8 @@ import {
     getMyMaterials,
     getAvailableQuizzes,
     attemptQuiz,
-    enrollCourse
+    enrollCourse,
+    getStudentChatHistory, getStudentConversations, sendStudentMessage
 } from '../controllers/student.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -35,5 +36,12 @@ router.post('/assignments/:assignmentId', submitAssignment);
 router.get('/materials', getMyMaterials);
 router.get('/quizzes', getAvailableQuizzes);
 router.post('/quizzes/:quizId', attemptQuiz);
+
+/**
+ * Messaging
+ */
+router.get('/messages', getStudentChatHistory);
+router.get('/conversations', getStudentConversations);
+router.post('/messages', sendStudentMessage);
 
 export default router;

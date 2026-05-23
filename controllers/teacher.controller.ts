@@ -7,6 +7,7 @@ import { Exam, Grade } from '../schemas/models/exam.model.js';
 import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Quiz } from '../schemas/models/quiz.model.js';
 import { Material } from '../schemas/models/material.model.js';
+import { Message } from '../schemas/models/message.model.js';
 import chalk from 'chalk';
 
 /**
@@ -91,6 +92,14 @@ export const markAttendance = async (req: any, res: Response) => {
         }));
 
         await Attendance.bulkWrite(operations);
+
+        // Notify class about attendance update
+        req.io.to(`class:${classId}`).emit('notification', {
+            type: 'ATTENDANCE_MARKED',
+            message: `Attendance for ${dateObj.toLocaleDateString()} has been recorded.`,
+            classId
+        });
+
         res.status(200).json({ message: 'Attendance recorded successfully' });
     } catch (error: any) {
         res.status(500).json({ message: 'Internal server error' });
@@ -106,6 +115,14 @@ export const createAssignment = async (req: any, res: Response) => {
             ...req.body,
             teacher: req.user.id
         });
+
+        // Notify class about new assignment
+        req.io.to(`class:${req.body.class}`).emit('notification', {
+            type: 'NEW_ASSIGNMENT',
+            message: `A new assignment "${assignment.title}" has been posted.`,
+            assignmentId: assignment._id
+        });
+
         res.status(201).json({ message: 'Assignment created successfully', assignment });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -133,6 +150,15 @@ export const gradeSubmission = async (req: any, res: Response) => {
             { grade, feedback, status: 'graded', gradedBy: req.user.id },
             { new: true }
         );
+
+        if (submission) {
+            // Notify student about graded submission
+            req.io.to(String(submission.student)).emit('notification', {
+                type: 'ASSIGNMENT_GRADED',
+                message: `Your submission for an assignment has been graded.`,
+                submissionId: submission._id
+            });
+        }
 
         res.status(200).json({ message: 'Submission graded', submission });
     } catch (error) {
@@ -216,9 +242,20 @@ export const recordGrade = async (req: any, res: Response) => {
 
         const grade = await Grade.findOneAndUpdate(
             { exam: examId, student: studentId },
-            { obtainedMarks, remarks },
-            { new: true, upsert: true }
+            { 
+                obtainedMarks, 
+                feedback: remarks, 
+                gradedBy: req.user.id 
+            },
+            { new: true, upsert: true, runValidators: true }
         );
+
+        // Notify student about new grade
+        req.io.to(String(studentId)).emit('notification', {
+            type: 'EXAM_GRADE_RECORDED',
+            message: `A new grade has been recorded for your exam: ${exam.title}`,
+            examId: exam._id
+        });
 
         res.status(200).json({ message: 'Grade recorded', grade });
     } catch (error) {
@@ -237,6 +274,68 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
         
         res.status(200).json({ exams, grades });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * TEACHER - MESSAGING
+ */
+export const getTeacherChatHistory = async (req: any, res: Response) => {
+    try {
+        const { partnerId } = req.query;
+        if (!partnerId) return res.status(400).json({ message: 'Partner ID is required' });
+
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id, receiver: partnerId },
+                { sender: partnerId, receiver: req.user.id }
+            ]
+        }).sort({ createdAt: 1 });
+
+        res.status(200).json({ messages });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getTeacherConversations = async (req: any, res: Response) => {
+    try {
+        const messages = await Message.find({
+            $or: [{ sender: req.user.id }, { receiver: req.user.id }]
+        }).sort({ createdAt: -1 });
+
+        const partnerIds = new Set();
+        messages.forEach(m => {
+            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
+            partnerIds.add(partnerId);
+        });
+
+        const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');
+        res.status(200).json({ partners });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const sendTeacherMessage = async (req: any, res: Response) => {
+    try {
+        const { receiver, content } = req.body;
+        const sender = req.user.id;
+
+        const newMessage = await Message.create({
+            sender,
+            receiver,
+            content
+        });
+
+        // Emit via Socket.IO
+        req.io.to(receiver).emit('receiveMessage', newMessage);
+        req.io.to(sender).emit('messageSent', newMessage);
+
+        res.status(201).json({ message: 'Message sent successfully', newMessage });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] sendTeacherMessage error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

@@ -83,6 +83,7 @@
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
                 if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
                 
                 document.getElementById('userName').textContent = user.name;

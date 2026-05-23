@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
     <script src="/components/ui-components.js?v=1.1" type="module" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -53,6 +54,12 @@
                     return;
                 }
                 const { user } = await response.json();
+                
+                // Initialize Socket.IO
+                if (window.initSocket) {
+                    window.initSocket(user);
+                }
+                
                 renderDashboard(user);
             } catch (err) {
                 console.error('Failed to fetch profile:', err);

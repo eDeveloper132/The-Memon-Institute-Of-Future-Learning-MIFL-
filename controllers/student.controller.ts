@@ -8,6 +8,8 @@ import { Class } from '../schemas/models/class.model.js';
 import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Material } from '../schemas/models/material.model.js';
 import { Quiz, QuizAttempt } from '../schemas/models/quiz.model.js';
+import { Message } from '../schemas/models/message.model.js';
+import chalk from 'chalk';
 
 /**
  * STUDENT - PROFILE MANAGEMENT
@@ -120,6 +122,17 @@ export const submitAssignment = async (req: any, res: Response) => {
             student: req.user.id,
             submittedAt: new Date()
         });
+
+        // Notify the teacher
+        const assignment = await Assignment.findById(assignmentId);
+        if (assignment) {
+            req.io.to(String(assignment.teacher)).emit('notification', {
+                type: 'ASSIGNMENT_SUBMISSION',
+                message: `A student has submitted an assignment: ${assignment.title}`,
+                submissionId: submission._id
+            });
+        }
+
         res.status(201).json({ message: 'Assignment submitted', submission });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -164,13 +177,94 @@ export const getAvailableQuizzes = async (req: any, res: Response) => {
 export const attemptQuiz = async (req: any, res: Response) => {
     try {
         const { quizId } = req.params;
+        const { answers } = req.body; // Expecting [{ questionIndex: Number, selectedOption: Number }]
+
+        const quiz = await Quiz.findById(quizId);
+        if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
+        if (!quiz.isActive) return res.status(400).json({ message: 'Quiz is no longer active' });
+
+        // Calculate score
+        let score = 0;
+        if (answers && Array.isArray(answers)) {
+            answers.forEach((ans: any) => {
+                const question = quiz.questions[ans.questionIndex];
+                if (question && question.correctAnswer === ans.selectedOption) {
+                    score += (question.points || 1);
+                }
+            });
+        }
+
         const attempt = await QuizAttempt.create({
-            ...req.body,
             quiz: quizId,
-            student: req.user.id
+            student: req.user.id,
+            answers: answers || [],
+            score
         });
+
         res.status(201).json({ message: 'Quiz attempt recorded', attempt });
     } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * STUDENT - MESSAGING
+ */
+export const getStudentChatHistory = async (req: any, res: Response) => {
+    try {
+        const { partnerId } = req.query;
+        if (!partnerId) return res.status(400).json({ message: 'Partner ID is required' });
+
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id, receiver: partnerId },
+                { sender: partnerId, receiver: req.user.id }
+            ]
+        }).sort({ createdAt: 1 });
+
+        res.status(200).json({ messages });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getStudentConversations = async (req: any, res: Response) => {
+    try {
+        const messages = await Message.find({
+            $or: [{ sender: req.user.id }, { receiver: req.user.id }]
+        }).sort({ createdAt: -1 });
+
+        const partnerIds = new Set();
+        messages.forEach(m => {
+            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
+            partnerIds.add(partnerId);
+        });
+
+        const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');
+        res.status(200).json({ partners });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const sendStudentMessage = async (req: any, res: Response) => {
+    try {
+        const { receiver, content } = req.body;
+        const sender = req.user.id;
+
+        const newMessage = await Message.create({
+            sender,
+            receiver,
+            content
+        });
+
+        // Emit via Socket.IO
+        req.io.to(receiver).emit('receiveMessage', newMessage);
+        req.io.to(sender).emit('messageSent', newMessage);
+
+        res.status(201).json({ message: 'Message sent successfully', newMessage });
+    } catch (error) {
+        console.error(chalk.red('[Student Controller] sendStudentMessage error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

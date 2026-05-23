@@ -151,3 +151,25 @@ export const getMyConversations = async (req: any, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
+export const sendMessage = async (req: any, res: Response) => {
+    try {
+        const { receiver, content } = req.body;
+        const sender = req.user.id;
+
+        const newMessage = await Message.create({
+            sender,
+            receiver,
+            content
+        });
+
+        // Emit via Socket.IO
+        req.io.to(receiver).emit('receiveMessage', newMessage);
+        req.io.to(sender).emit('messageSent', newMessage);
+
+        res.status(201).json({ message: 'Message sent successfully', newMessage });
+    } catch (error) {
+        console.error(chalk.red('[Parent Controller] sendMessage error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};

@@ -76,6 +76,7 @@
                 const response = await fetch('/api/student/profile');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
                 
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');

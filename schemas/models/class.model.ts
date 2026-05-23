@@ -7,6 +7,7 @@ const classSchema = new Schema<IClass>(
         gradeLevel: { type: Number, required: true },
         section: { type: String, required: true },
         roomNumber: String,
+        capacity: Number,
         classTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         academicYear: { type: String, required: true },

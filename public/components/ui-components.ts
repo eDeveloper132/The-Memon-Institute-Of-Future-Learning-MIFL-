@@ -193,3 +193,61 @@ export const showToast = (message: string, type: 'success' | 'error' | 'info' = 
 
 // Make it globally accessible for non-module scripts if needed
 (window as any).showToast = showToast;
+
+/**
+ * Socket.IO Initialization
+ */
+let socket: any = null;
+
+export const initSocket = async (user: any) => {
+    if (socket) return socket;
+
+    // Dynamically load Socket.IO client if not already present
+    if (typeof (window as any).io === 'undefined') {
+        console.log('[Socket] Loading Socket.IO client script...');
+        await new Promise<void>((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = '/socket.io/socket.io.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load Socket.IO script'));
+            document.head.appendChild(script);
+        });
+    }
+
+    const io = (window as any).io;
+    socket = io();
+
+    // Join personal room
+    if (user._id) {
+        socket.emit('join', user._id);
+        console.log(`[Socket] Joined personal room: ${user._id}`);
+    }
+    
+    // Join role room
+    if (user.role) {
+        socket.emit('joinRole', user.role);
+        console.log(`[Socket] Joined role room: ${user.role}`);
+    }
+
+    // Join class room if applicable
+    if (user.currentClass) {
+        const classId = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
+        socket.emit('joinClass', classId);
+        console.log(`[Socket] Joined class room: ${classId}`);
+    }
+
+    // Listeners
+    socket.on('notification', (data: any) => {
+        showToast(data.message, 'info');
+    });
+
+    socket.on('receiveMessage', (message: any) => {
+        showToast('New message received!', 'info');
+        // Dispatch a custom event in case a specific view (like chat) needs to update its UI
+        document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));
+    });
+
+    return socket;
+};
+
+(window as any).initSocket = initSocket;

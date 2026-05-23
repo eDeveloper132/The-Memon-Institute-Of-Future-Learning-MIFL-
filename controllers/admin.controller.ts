@@ -5,6 +5,7 @@ import { Course } from '../schemas/models/course.model.js';
 import { Attendance } from '../schemas/models/attendance.model.js';
 import { Fee } from '../schemas/models/fee.model.js';
 import { Batch } from '../schemas/models/batch.model.js';
+import { Message } from '../schemas/models/message.model.js';
 import chalk from 'chalk';
 
 /**
@@ -70,8 +71,14 @@ export const crudClasses = {
         res.status(201).json({ message: 'Class created', class: newClass });
     },
     update: async (req: Request, res: Response) => {
-        const updated = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json({ message: 'Class updated', class: updated });
+        const updatedClass = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        
+        // Sync the currentClass field for all assigned students
+        if (req.body.students && updatedClass) {
+            await User.updateMany({ _id: { $in: req.body.students } }, { currentClass: updatedClass._id });
+        }
+
+        res.status(200).json({ message: 'Class updated', class: updatedClass });
     },
     delete: async (req: Request, res: Response) => {
         await Class.findByIdAndDelete(req.params.id);
@@ -175,11 +182,29 @@ export const generateFeeVoucher = async (req: Request, res: Response) => {
             }));
             
             await Fee.bulkWrite(operations);
+
+            // Notify all students about new fee vouchers
+            req.io.emit('notification', {
+                type: 'GENERAL_FEE_VOUCHER',
+                message: `New fee vouchers for ${type} have been generated. Please check your account.`,
+                amount,
+                dueDate
+            });
+
             return res.status(201).json({ message: `Vouchers generated for ${students.length} students` });
         }
 
         // Single student voucher
         const fee = await Fee.create({ student: studentId, amount, type, dueDate, status: 'unpaid', remarks });
+
+        // Notify specific student
+        req.io.to(String(studentId)).emit('notification', {
+            type: 'SINGLE_FEE_VOUCHER',
+            message: `A new fee voucher for ${type} (Amount: ${amount}) has been generated.`,
+            feeId: fee._id,
+            dueDate
+        });
+
         res.status(201).json({ message: 'Voucher generated', fee });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -210,6 +235,68 @@ export const getAdminStats = async (req: Request, res: Response) => {
             pendingFeesAmount: pendingFees[0]?.total || 0
         });
     } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * ADMIN - MESSAGING
+ */
+export const getAdminChatHistory = async (req: any, res: Response) => {
+    try {
+        const { partnerId } = req.query;
+        if (!partnerId) return res.status(400).json({ message: 'Partner ID is required' });
+
+        const messages = await Message.find({
+            $or: [
+                { sender: req.user.id, receiver: partnerId },
+                { sender: partnerId, receiver: req.user.id }
+            ]
+        }).sort({ createdAt: 1 });
+
+        res.status(200).json({ messages });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getAdminConversations = async (req: any, res: Response) => {
+    try {
+        const messages = await Message.find({
+            $or: [{ sender: req.user.id }, { receiver: req.user.id }]
+        }).sort({ createdAt: -1 });
+
+        const partnerIds = new Set();
+        messages.forEach(m => {
+            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
+            partnerIds.add(partnerId);
+        });
+
+        const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');
+        res.status(200).json({ partners });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const sendAdminMessage = async (req: any, res: Response) => {
+    try {
+        const { receiver, content } = req.body;
+        const sender = req.user.id;
+
+        const newMessage = await Message.create({
+            sender,
+            receiver,
+            content
+        });
+
+        // Emit via Socket.IO
+        req.io.to(receiver).emit('receiveMessage', newMessage);
+        req.io.to(sender).emit('messageSent', newMessage);
+
+        res.status(201).json({ message: 'Message sent successfully', newMessage });
+    } catch (error) {
+        console.error(chalk.red('[Admin Controller] sendAdminMessage error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

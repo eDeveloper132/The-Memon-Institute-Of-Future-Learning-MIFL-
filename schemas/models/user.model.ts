@@ -22,6 +22,12 @@ const userSchema = new Schema<IUser>(
         profilePicture: String,
         dateOfBirth: Date,
         gender: { type: String, enum: ['male', 'female', 'other'] },
+        bloodGroup: { type: String, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+        emergencyContact: {
+            name: String,
+            relationship: String,
+            phoneNumber: String,
+        },
 
         // Student specific
         studentId: { type: String, unique: true, sparse: true },

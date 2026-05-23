@@ -24,7 +24,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 const httpServer = createServer(app);
-setupSocket(httpServer);
+const io = setupSocket(httpServer);
 const PORT = parseInt(process.env.PORT || "2500", 10);
 
 // Diagnostic Route
@@ -42,6 +42,10 @@ app.use(generalLimiter);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
+app.use((req, res, next) => {
+    req.io = io;
+    next();
+});
     app.use(async (req, res, next) => {
          try {
              await connectDB();

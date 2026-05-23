@@ -19,6 +19,18 @@ export const setupSocket = (httpServer: any) => {
             console.log(chalk.cyan(`[Socket] User ${userId} joined their personal room`));
         });
 
+        // Join a class-specific room for broadcasts
+        socket.on('joinClass', (classId) => {
+            socket.join(`class:${classId}`);
+            console.log(chalk.cyan(`[Socket] User joined class room: class:${classId}`));
+        });
+
+        // Join a role-specific room (e.g., role:admin)
+        socket.on('joinRole', (role) => {
+            socket.join(`role:${role}`);
+            console.log(chalk.cyan(`[Socket] User joined role room: role:${role}`));
+        });
+
         // Handle sending a message
         socket.on('sendMessage', async (data) => {
             const { sender, receiver, content } = data;
