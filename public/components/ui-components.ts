@@ -32,7 +32,7 @@ class UINavbar extends HTMLElement {
 
         const links: Record<string, { label: string, href: string }[]> = {
             admin: [
-                { label: 'Dashboard', href: '/protected/index.html' },
+                { label: 'Dashboard', href: '/protected/admin/index.html' },
                 { label: 'Students', href: '/protected/admin/students.html' },
                 { label: 'Teachers', href: '/protected/admin/teachers.html' },
                 { label: 'Classes', href: '/protected/admin/classes.html' },

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Class Management - MIFL Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+        rel="stylesheet">
     <script src="/components/ui-components.js" type="module" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -16,9 +18,13 @@
         <div class="mb-8 flex justify-between items-center">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900">Academic Classes</h2>
-                <p class="text-gray-500 mt-2">Create and manage academic classes and their assigned teachers.</p>
+                <p class="text-gray-500 mt-2">
+                    Create and manage academic classes and their assigned teachers.
+                </p>
             </div>
-            <button id="openClassModal" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg">
+            <button
+                id="openClassModal"
+                class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg">
                 <i class="fa-solid fa-plus mr-2"></i> Create Class
             </button>
         </div>
@@ -30,138 +36,660 @@
         </div>
     </main>
 
-    <!-- Add Class Modal -->
-    <div id="addClassModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
-                <h3 class="text-xl font-bold">New Academic Class</h3>
-                <button id="closeClassModal" class="hover:text-gray-200 text-2xl">&times;</button>
+    <!-- VIEW STUDENTS MODAL -->
+    <div id="viewStudentsModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div
+                class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-user-graduate text-2xl mr-3"></i>
+                    <h3 class="text-xl font-bold" id="viewStudentsTitle">
+                        Class Students
+                    </h3>
+                </div>
+                <button id="closeViewModal"
+                        class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">
+                    &times;
+                </button>
             </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div id="studentsList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGE BATCHES MODAL -->
+    <div id="manageBatchesModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div
+                class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-layer-group text-2xl mr-3"></i>
+                    <h3 class="text-xl font-bold" id="manageBatchesTitle">
+                        Manage Batches
+                    </h3>
+                </div>
+                <button id="closeBatchModal"
+                        class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">
+                    &times;
+                </button>
+            </div>
+
+            <div class="p-6 border-b bg-gray-50">
+                <form id="addBatchForm" class="flex gap-4">
+                    <input
+                        type="text"
+                        id="newBatchName"
+                        placeholder="e.g. Morning Batch"
+                        required
+                        class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button
+                        type="submit"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">
+                        Add Batch
+                    </button>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 border-b bg-blue-50">
+                <h4 class="text-xs font-bold text-blue-600 uppercase mb-2 flex items-center">
+                    <i class="fa-solid fa-user-check mr-2"></i>
+                    Unassigned Students (Click to Assign)
+                </h4>
+                <div id="populate_students"
+                     class="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-6" id="batchesContainer"></div>
+        </div>
+    </div>
+
+    <!-- QUICK ASSIGN MODAL -->
+    <div id="quickAssignModal"
+         class="fixed inset-0 bg-black bg-opacity-60 hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden">
+            <div class="p-4 bg-gray-900 text-white text-center">
+                <p class="text-xs uppercase font-bold tracking-widest opacity-70">
+                    Assign Student
+                </p>
+                <h4 id="quickAssignStudentName" class="text-lg font-bold">
+                    Student Name
+                </h4>
+            </div>
+            <div id="quickAssignBatchList" class="p-2 space-y-1"></div>
+            <button id="closeQuickAssign"
+                    class="w-full py-3 bg-gray-50 text-gray-500 text-sm font-bold border-t hover:bg-gray-100">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- ADD CLASS MODAL -->
+    <div id="addClassModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div
+                class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-chalkboard text-2xl mr-3"></i>
+                    <h3 class="text-xl font-bold">New Academic Class</h3>
+                </div>
+                <button id="closeClassModal"
+                        class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">
+                    &times;
+                </button>
+            </div>
+
             <form id="addClassForm" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Class Name</label>
-                    <input type="text" name="name" placeholder="e.g. Grade 10-A" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Class Name
+                        </label>
+                        <input
+                            type="text"
+                            name="name"
+                            placeholder="e.g. Grade 10-A"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Grade Level
+                        </label>
+                        <input
+                            type="number"
+                            name="gradeLevel"
+                            placeholder="e.g. 10"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Section
+                        </label>
+                        <input
+                            type="text"
+                            name="section"
+                            placeholder="e.g. A"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Academic Year
+                        </label>
+                        <input
+                            type="text"
+                            name="academicYear"
+                            placeholder="e.g. 2026"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
                 </div>
+
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Grade Level</label>
-                    <input type="number" name="gradeLevel" placeholder="e.g. 10" required class="w-full px-4 py-2 border rounded-lg outline-none">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">
+                        Class Teacher
+                    </label>
+                    <div class="relative">
+                        <input type="hidden" name="classTeacher" id="selectedTeacherId">
+                        <div id="teacherSelectorTrigger"
+                             class="w-full px-4 py-2 border rounded-lg cursor-pointer flex justify-between items-center hover:bg-gray-50 transition">
+                            <span id="selectedTeacherName" class="text-gray-500 italic">
+                                Select a teacher...
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+                        </div>
+                        <div id="teacherDropdown"
+                             class="absolute left-0 right-0 mt-1 bg-white border rounded-lg shadow-xl hidden z-50">
+                            <div class="p-2 bg-white border-b">
+                                <input
+                                    type="text"
+                                    id="teacherSearch"
+                                    placeholder="Search teachers..."
+                                    class="w-full px-3 py-1 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div id="teacherList"
+                                 class="py-1 max-h-48 overflow-y-auto">
+                                <p class="p-4 text-center text-xs text-gray-400">
+                                    Loading teachers...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Class Teacher ID</label>
-                    <input type="text" name="classTeacher" placeholder="Teacher User ID" class="w-full px-4 py-2 border rounded-lg outline-none">
+
+                <div class="pt-2">
+                    <button
+                        type="submit"
+                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition shadow-lg">
+                        Create Class
+                    </button>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Academic Year</label>
-                    <input type="text" name="academicYear" placeholder="e.g. 2026" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4">Create Class</button>
             </form>
         </div>
     </div>
 
+    <!-- SCRIPT -->
     <script type="module">
         import { showToast } from '/components/ui-components.js';
 
-        const classGrid = document.getElementById('classGrid');
-        const addForm = document.getElementById('addClassForm');
-        const modal = document.getElementById('addClassModal');
-        const openBtn = document.getElementById('openClassModal');
-        const closeBtn = document.getElementById('closeClassModal');
+        let allTeachers = [],
+            allStudents = [],
+            currentClassForBatches = null,
+            currentBatches = [];
 
-        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
-        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
-        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
-
-        async function fetchClasses() {
-            try {
-                const res = await fetch('/api/admin/classes');
-                const { classes } = await res.json();
-                renderClasses(classes);
-            } catch (err) {
-                classGrid.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load classes</div>';
-            }
-        }
-
-        function renderClasses(classes) {
-            if (!classes.length) {
-                classGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500">No classes found. Click "Create Class" to add one.</div>';
-                return;
-            }
-
-            classGrid.innerHTML = classes.map(c => `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">
-                            Level ${c.gradeLevel}
-                        </div>
-                        <span class="text-xs text-gray-400 font-bold">${c.academicYear}</span>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">${c.name}</h3>
-                    <p class="text-sm text-gray-500 mb-6">Teacher: <span class="text-blue-600 font-bold">${c.classTeacher?.name || 'Unassigned'}</span></p>
-                    
-                    <div class="flex border-t border-gray-50 pt-4 gap-2">
-                        <button class="flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">View Students</button>
-                        <button onclick="deleteClass('${c._id}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        addForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData(addForm);
-            const data = Object.fromEntries(formData);
-
-            try {
-                const res = await fetch('/api/admin/classes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                if (res.ok) {
-                    showToast('Class created successfully');
-                    document.getElementById('addClassModal').classList.add('hidden');
-                    addForm.reset();
-                    fetchClasses();
-                } else {
-                    showToast('Failed to create class', 'error');
-                }
-            } catch (err) {
-                showToast('An error occurred', 'error');
-            }
-        };
-
-        window.deleteClass = async (id) => {
-            if (confirm('Are you sure you want to delete this class?')) {
-                try {
-                    const res = await fetch(`/api/admin/classes/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        showToast('Class deleted');
-                        fetchClasses();
-                    }
-                } catch (err) {
-                    showToast('Operation failed', 'error');
-                }
-            }
+        const modalElements = {
+            main: document.getElementById('addClassModal'),
+            view: document.getElementById('viewStudentsModal'),
+            batch: document.getElementById('manageBatchesModal'),
+            assign: document.getElementById('quickAssignModal')
         };
 
         async function init() {
             try {
                 const res = await fetch('/api/auth/me');
+                if (!res.ok) {
+                    window.location.href = '/api/auth/login';
+                    return;
+                }
+
                 const { user } = await res.json();
-                if (window.initSocket) window.initSocket(user);
-                if (!res.ok || user.role !== 'admin') { window.location.href = '/'; return; }
+                if (user.role !== 'admin') {
+                    window.location.href = '/';
+                    return;
+                }
+
                 document.getElementById('userName').textContent = user.name;
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
-                fetchClasses();
+                customElements.whenDefined('ui-navbar').then(() =>
+                    customElements.get('ui-navbar').renderLinks(user.role)
+                );
+
+                await Promise.all([
+                    fetchClasses(),
+                    fetchTeachers(),
+                    fetchStudents()
+                ]);
             } catch (err) {
-                window.location.href = '/api/auth/login';
+                console.error('Init error:', err);
             }
         }
+
+        document.getElementById('openClassModal').onclick =
+            () => modalElements.main.classList.remove('hidden');
+        document.getElementById('closeClassModal').onclick =
+            () => modalElements.main.classList.add('hidden');
+        document.getElementById('closeViewModal').onclick =
+            () => modalElements.view.classList.add('hidden');
+        document.getElementById('closeBatchModal').onclick =
+            () => modalElements.batch.classList.add('hidden');
+        document.getElementById('closeQuickAssign').onclick =
+            () => modalElements.assign.classList.add('hidden');
+
+        document.getElementById('teacherSelectorTrigger').onclick = (e) => {
+            e.stopPropagation();
+            document.getElementById('teacherDropdown').classList.toggle('hidden');
+            document.getElementById('teacherSearch').focus();
+        };
+
+        window.onclick = (e) => {
+            Object.values(modalElements).forEach(m => {
+                if (e.target === m) m.classList.add('hidden');
+            });
+
+            if (
+                !document.getElementById('teacherSelectorTrigger').contains(e.target) &&
+                !document.getElementById('teacherDropdown').contains(e.target)
+            ) {
+                document.getElementById('teacherDropdown').classList.add('hidden');
+            }
+        };
+
+        async function fetchTeachers() {
+            const res = await fetch('/api/admin/users?role=teacher');
+            const data = await res.json();
+            allTeachers = data.users;
+            renderTeacherList(allTeachers);
+        }
+
+        function renderTeacherList(teachers) {
+            const list = document.getElementById('teacherList');
+            list.innerHTML = teachers.length
+                ? ''
+                : '<p class="p-4 text-center text-xs text-gray-500">No teachers found</p>';
+
+            teachers.forEach(t => {
+                const item = document.createElement('div');
+                item.className =
+                    'px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0';
+                item.innerHTML = `
+                    <p class="font-bold">${t.name}</p>
+                    <p class="text-[10px] text-gray-400">${t.email}</p>
+                `;
+                item.onclick = () => {
+                    document.getElementById('selectedTeacherId').value = t._id;
+                    document.getElementById('selectedTeacherName').textContent = t.name;
+                    document.getElementById('selectedTeacherName').className =
+                        'text-gray-900 font-bold';
+                    document.getElementById('teacherDropdown').classList.add('hidden');
+                };
+                list.appendChild(item);
+            });
+        }
+
+        document.getElementById('teacherSearch').oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            renderTeacherList(
+                allTeachers.filter(t =>
+                    t.name.toLowerCase().includes(term) ||
+                    t.email.toLowerCase().includes(term)
+                )
+            );
+        };
+
+        async function fetchClasses() {
+            const res = await fetch('/api/admin/classes');
+            const { classes } = await res.json();
+            renderClasses(classes);
+        }
+
+        function renderClasses(classes) {
+            const grid = document.getElementById('classGrid');
+            grid.innerHTML = classes.length
+                ? ''
+                : '<div class="col-span-full text-center py-20 text-gray-500">No classes found.</div>';
+
+            classes.forEach(c => {
+                const card = document.createElement('div');
+                card.className =
+                    'bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex gap-2">
+                            <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-lg text-xs font-bold uppercase">
+                                Level ${c.gradeLevel}
+                            </span>
+                            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-bold uppercase">
+                                Sec ${c.section || 'N/A'}
+                            </span>
+                        </div>
+                        <span class="text-xs text-gray-400 font-bold">
+                            ${c.academicYear}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                        ${c.name}
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-6">
+                        Teacher:
+                        <span class="text-blue-600 font-bold">
+                            ${c.classTeacher?.name || 'Unassigned'}
+                        </span>
+                    </p>
+                    <div class="flex border-t border-gray-50 pt-4 gap-2">
+                        <button class="v-btn flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">
+                            View
+                        </button>
+                        <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">
+                            Batches
+                        </button>
+                        <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+                card.querySelector('.v-btn').onclick = () =>
+                    viewStudents(c._id, c.name);
+                card.querySelector('.b-btn').onclick = () =>
+                    manageBatches(c._id, c.name);
+                card.querySelector('.d-btn').onclick = () =>
+                    deleteClass(c._id);
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function fetchStudents() {
+            const res = await fetch('/api/admin/users?role=student');
+            const data = await res.json();
+            allStudents = data.users;
+        }
+
+        async function manageBatches(classId, className) {
+            currentClassForBatches = classId;
+            document.getElementById('manageBatchesTitle').textContent =
+                `Manage Batches - ${className}`;
+            modalElements.batch.classList.remove('hidden');
+            await refreshBatchView();
+        }
+
+        async function refreshBatchView() {
+            const res = await fetch('/api/admin/classes');
+            const { classes } = await res.json();
+            const cls = classes.find(c => c._id === currentClassForBatches);
+            currentBatches = cls.batches || [];
+            renderBatches(currentBatches);
+            renderPopulatedStudents();
+        }
+
+        function renderPopulatedStudents() {
+            const container = document.getElementById('populate_students');
+            const unassigned = allStudents.filter(s => !s.currentClass);
+            container.innerHTML = unassigned.length
+                ? ''
+                : '<p class="text-[10px] text-gray-400 italic">No available students.</p>';
+
+            unassigned.forEach(s => {
+                const tag = document.createElement('div');
+                tag.className =
+                    'bg-white border border-blue-200 rounded-full px-3 py-1 text-[11px] shadow-sm flex items-center hover:bg-blue-600 hover:text-white transition cursor-pointer';
+                tag.innerHTML = `
+                    <div class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></div>
+                    <span class="font-bold">${s.name}</span>
+                `;
+                tag.onclick = () => openQuickAssign(s);
+                container.appendChild(tag);
+            });
+        }
+
+        function openQuickAssign(student) {
+            if (!currentBatches.length) {
+                showToast('Create a batch first', 'error');
+                return;
+            }
+
+            document.getElementById('quickAssignStudentName').textContent =
+                student.name;
+
+            const list = document.getElementById('quickAssignBatchList');
+            list.innerHTML = '';
+
+            currentBatches.forEach(b => {
+                const btn = document.createElement('button');
+                btn.className =
+                    'w-full p-3 text-left hover:bg-blue-50 flex justify-between items-center group transition border-b last:border-0';
+                btn.innerHTML = `
+                    <span class="font-bold text-gray-700">${b.name}</span>
+                    <i class="fa-solid fa-plus text-blue-500"></i>
+                `;
+                btn.onclick = async () => {
+                    if (!b.students.some(id => (id._id || id) === student._id)) {
+                        b.students.push(student._id);
+                        await saveBatches(currentBatches);
+                        modalElements.assign.classList.add('hidden');
+                    } else {
+                        showToast('Already in batch', 'error');
+                    }
+                };
+                list.appendChild(btn);
+            });
+
+            modalElements.assign.classList.remove('hidden');
+        }
+
+        function renderBatches(batches) {
+            const container = document.getElementById('batchesContainer');
+            container.innerHTML = batches.length
+                ? ''
+                : '<div class="text-center py-10 text-gray-400 italic">No batches created yet.</div>';
+
+            batches.forEach((b, idx) => {
+                const div = document.createElement('div');
+                div.className =
+                    'bg-white rounded-xl p-5 border border-gray-200 shadow-sm';
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-blue-600">${b.name}</h4>
+                        <button class="rb-btn text-red-400 hover:text-red-600 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${(b.students || []).map(sid => {
+                            const s = allStudents.find(
+                                st => st._id === (sid._id || sid)
+                            );
+                            return s
+                                ? `
+                                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-lg text-xs flex items-center border border-gray-200">
+                                        ${s.name}
+                                        <button class="rs-btn ml-2 text-gray-400 hover:text-red-500"
+                                                data-sid="${s._id}">
+                                            &times;
+                                        </button>
+                                    </span>
+                                  `
+                                : '';
+                        }).join('')}
+                    </div>
+
+                    <div class="relative">
+                        <input
+                            type="text"
+                            placeholder="Search student..."
+                            class="bs-input w-full px-3 py-2 text-sm border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                        <div
+                            class="bs-res absolute left-0 right-0 mt-1 bg-white border rounded-lg shadow-xl hidden z-20 max-h-32 overflow-y-auto">
+                        </div>
+                    </div>
+                `;
+
+                div.querySelector('.rb-btn').onclick = async () => {
+                    if (confirm('Delete batch?')) {
+                        currentBatches.splice(idx, 1);
+                        await saveBatches(currentBatches);
+                    }
+                };
+
+                div.querySelectorAll('.rs-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        b.students = b.students.filter(
+                            s => (s._id || s) !== btn.dataset.sid
+                        );
+                        await saveBatches(currentBatches);
+                    };
+                });
+
+                const input = div.querySelector('.bs-input');
+                const resDiv = div.querySelector('.bs-res');
+
+                input.oninput = () => {
+                    const term = input.value.toLowerCase();
+                    if (!term) {
+                        resDiv.classList.add('hidden');
+                        return;
+                    }
+
+                    const filtered = allStudents.filter(
+                        s =>
+                            s.name.toLowerCase().includes(term) &&
+                            (!s.currentClass ||
+                                s.currentClass === currentClassForBatches)
+                    );
+
+                    resDiv.innerHTML = '';
+                    filtered.forEach(s => {
+                        const item = document.createElement('div');
+                        item.className =
+                            'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0';
+                        item.textContent = s.name;
+                        item.onclick = async () => {
+                            if (!b.students.some(id => (id._id || id) === s._id)) {
+                                b.students.push(s._id);
+                                await saveBatches(currentBatches);
+                            }
+                        };
+                        resDiv.appendChild(item);
+                    });
+
+                    resDiv.classList.remove('hidden');
+                };
+
+                container.appendChild(div);
+            });
+        }
+
+        async function saveBatches(batches) {
+            const clean = batches.map(b => ({
+                name: b.name,
+                students: b.students.map(s => s._id || s)
+            }));
+
+            const res = await fetch(
+                `/api/admin/classbatches/${currentClassForBatches}`,
+                {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ batches: clean })
+                }
+            );
+
+            if (res.ok) {
+                showToast('Updated Successfully');
+                await fetchStudents();
+                await refreshBatchView();
+            }
+        }
+
+        document.getElementById('addBatchForm').onsubmit = async (e) => {
+            e.preventDefault();
+            currentBatches.push({
+                name: document.getElementById('newBatchName').value,
+                students: []
+            });
+            await saveBatches(currentBatches);
+            e.target.reset();
+        };
+
+        async function deleteClass(id) {
+            if (confirm('Delete class?')) {
+                const res = await fetch(`/api/admin/classes/${id}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    showToast('Deleted');
+                    fetchClasses();
+                }
+            }
+        }
+
+        async function viewStudents(cid, name) {
+            modalElements.view.classList.remove('hidden');
+            document.getElementById('viewStudentsTitle').textContent =
+                `Students in ${name}`;
+
+            const res = await fetch(
+                `/api/admin/users?role=student&currentClass=${cid}`
+            );
+            const { users } = await res.json();
+
+            document.getElementById('studentsList').innerHTML = users.length
+                ? users.map(s => `
+                    <div class="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4">
+                            ${s.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900">${s.name}</p>
+                            <p class="text-xs text-gray-500">${s.email}</p>
+                        </div>
+                    </div>
+                `).join('')
+                : '<p class="text-center py-10 text-gray-500">No students.</p>';
+        }
+
+        document.getElementById('addClassForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/admin/classes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(
+                    Object.fromEntries(new FormData(e.target))
+                )
+            });
+
+            if (res.ok) {
+                showToast('Created!');
+                modalElements.main.classList.add('hidden');
+                e.target.reset();
+                fetchClasses();
+            } else {
+                showToast('Error - check fields', 'error');
+            }
+        };
+
         init();
     </script>
 </body>

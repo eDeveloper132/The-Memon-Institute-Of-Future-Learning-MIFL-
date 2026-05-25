@@ -1,6 +1,10 @@
 import mongoose, { Schema } from 'mongoose';
 import type { IClass } from '../types/class.type.js';
-
+     const batchSchema = new Schema({
+         name: { type: String, required: true },
+         students: [{ type: Schema.Types.ObjectId, ref: 'User' }]
+     });
+    
 const classSchema = new Schema<IClass>(
     {
         name: { type: String, required: true, trim: true },
@@ -10,6 +14,7 @@ const classSchema = new Schema<IClass>(
         capacity: Number,
         classTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+        batches: [batchSchema], // NEW: Embedded batches
         academicYear: { type: String, required: true },
     },
     { timestamps: true }

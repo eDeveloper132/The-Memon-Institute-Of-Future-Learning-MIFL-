@@ -68,6 +68,10 @@
         }
 
         function renderDashboard(user) {
+            if (user.role === 'admin') {
+                window.location.href = '/protected/admin/index.html';
+                return;
+            }
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('dashboardContent').classList.remove('hidden');
             

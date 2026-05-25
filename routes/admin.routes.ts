@@ -4,7 +4,7 @@ import {
     crudClasses, crudCourses, crudBatches,
     getSystemAttendance, getPendingFees, getAdminStats,
     generateFeeVoucher,
-    getAdminChatHistory, getAdminConversations, sendAdminMessage
+    getAdminChatHistory, getAdminConversations, sendAdminMessage, updateClassBatches
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -50,7 +50,7 @@ router.get('/batches', crudBatches.getAll);
 router.post('/batches', crudBatches.create);
 router.patch('/batches/:id', crudBatches.update);
 router.delete('/batches/:id', crudBatches.delete);
-
+router.patch('/classbatches/:id', updateClassBatches)
 /**
  * Attendance Oversight
  */
