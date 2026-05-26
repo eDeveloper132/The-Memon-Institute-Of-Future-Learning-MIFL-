@@ -18,11 +18,10 @@
             <p class="text-gray-500 mt-2">Welcome, <span id="displayFirstName">Administrator</span>. Here is the system-wide overview.</p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
             <ui-card id="totalStudents" title="Total Students" value="..." color="blue"></ui-card>
             <ui-card id="totalTeachers" title="Total Teachers" value="..." color="green"></ui-card>
             <ui-card id="totalClasses" title="Classes" value="..." color="purple"></ui-card>
-            <ui-card id="activeBatches" title="Batches" value="..." color="indigo"></ui-card>
             <ui-card id="pendingFees" title="Pending Fees" value="..." color="red"></ui-card>
         </div>
 
@@ -42,10 +41,6 @@
                     <a href="/protected/admin/classes.html" class="p-4 bg-gray-50 rounded-lg hover:bg-purple-50 transition group">
                         <i class="fa-solid fa-chalkboard text-purple-500 text-2xl mb-2"></i>
                         <p class="font-bold text-gray-700 group-hover:text-purple-600">Class Management</p>
-                    </a>
-                    <a href="/protected/admin/batches.html" class="p-4 bg-gray-50 rounded-lg hover:bg-indigo-50 transition group">
-                        <i class="fa-solid fa-layer-group text-indigo-500 text-2xl mb-2"></i>
-                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Batch Control</p>
                     </a>
                     <a href="/protected/admin/fees.html" class="p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition group">
                         <i class="fa-solid fa-money-bill-wave text-red-500 text-2xl mb-2"></i>
@@ -88,7 +83,6 @@
                     updateCard('totalStudents', stats.totalStudents);
                     updateCard('totalTeachers', stats.totalTeachers);
                     updateCard('totalClasses', stats.totalClasses);
-                    updateCard('activeBatches', stats.activeBatches);
                     updateCard('pendingFees', `$${stats.pendingFeesAmount.toLocaleString()}`);
                 }
             } catch (err) {

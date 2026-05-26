@@ -11,7 +11,8 @@ import {
     getAvailableQuizzes,
     attemptQuiz,
     enrollCourse,
-    getStudentChatHistory, getStudentConversations, sendStudentMessage
+    getStudentChatHistory, getStudentConversations, sendStudentMessage,
+    getMyNotices
 } from '../controllers/student.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -26,6 +27,7 @@ router.patch('/profile', updateMyDetails);
 router.get('/attendance', getMyAttendance);
 router.get('/results', getMyResults);
 router.get('/fees', getMyFees);
+router.get('/notices', getMyNotices);
 router.post('/enroll/:courseId', enrollCourse);
 
 /**

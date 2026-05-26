@@ -13,7 +13,8 @@ import {
     createExam,
     recordGrade,
     getExamsAndGrades,
-    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage
+    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage,
+    getTeacherNotices
 } from '../controllers/teacher.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -59,6 +60,7 @@ router.post('/quizzes', createQuiz);
 router.post('/exams', createExam);
 router.post('/grades', recordGrade);
 router.get('/results', getExamsAndGrades);
+router.get('/notices', getTeacherNotices);
 
 /**
  * Messaging

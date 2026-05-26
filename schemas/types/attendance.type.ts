@@ -7,6 +7,8 @@ export interface IAttendance extends Document {
     class: Types.ObjectId; // Ref to Class
     course?: Types.ObjectId; // Ref to Course (if tracking by subject)
     date: Date;
+    checkIn?: Date;
+    checkOut?: Date;
     status: AttendanceStatus;
     remarks?: string;
     recordedBy: Types.ObjectId; // Ref to User (Teacher/Admin)

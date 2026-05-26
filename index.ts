@@ -79,7 +79,7 @@ process.on("unhandledRejection", (reason, promise) => {
     // process.exit(1);
 });
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
     httpServer.listen(PORT, () => {
         console.log(chalk.blue("Server is running on http://localhost:" + PORT));
     });

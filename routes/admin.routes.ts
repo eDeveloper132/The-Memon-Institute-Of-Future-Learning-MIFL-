@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { 
     getAllUsers, createUser, updateUser, deleteUser,
-    crudClasses, crudCourses, crudBatches,
-    getSystemAttendance, getPendingFees, getAdminStats,
+    crudClasses, crudCourses, crudNotices, crudDepartments,
+    getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
     generateFeeVoucher,
     getAdminChatHistory, getAdminConversations, sendAdminMessage, updateClassBatches
 } from '../controllers/admin.controller.js';
@@ -43,18 +43,30 @@ router.post('/courses', crudCourses.create);
 router.patch('/courses/:id', crudCourses.update);
 router.delete('/courses/:id', crudCourses.delete);
 
+router.patch('/classbatches/:id', updateClassBatches);
+
 /**
- * Batch Management
+ * Department Management
  */
-router.get('/batches', crudBatches.getAll);
-router.post('/batches', crudBatches.create);
-router.patch('/batches/:id', crudBatches.update);
-router.delete('/batches/:id', crudBatches.delete);
-router.patch('/classbatches/:id', updateClassBatches)
+router.get('/departments', crudDepartments.getAll);
+router.post('/departments', crudDepartments.create);
+router.patch('/departments/:id', crudDepartments.update);
+router.delete('/departments/:id', crudDepartments.delete);
+
+/**
+ * Notice Management
+ */
+router.get('/notices', crudNotices.getAll);
+router.post('/notices', crudNotices.create);
+router.patch('/notices/:id', crudNotices.update);
+router.delete('/notices/:id', crudNotices.delete);
+
 /**
  * Attendance Oversight
  */
 router.get('/attendance', getSystemAttendance);
+router.post('/attendance', manualRecordAttendance);
+router.patch('/attendance/:id', updateAttendance);
 
 /**
  * Financial Oversight

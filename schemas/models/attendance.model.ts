@@ -4,9 +4,11 @@ import type { IAttendance } from '../types/attendance.type.js';
 const attendanceSchema = new Schema<IAttendance>(
     {
         student: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        class: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
+        class: { type: Schema.Types.ObjectId, ref: 'Class' },
         course: { type: Schema.Types.ObjectId, ref: 'Course' },
         date: { type: Date, required: true, default: Date.now },
+        checkIn: Date,
+        checkOut: Date,
         status: {
             type: String,
             enum: ['present', 'absent', 'late', 'excused'],

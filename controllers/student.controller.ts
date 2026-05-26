@@ -9,6 +9,7 @@ import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Material } from '../schemas/models/material.model.js';
 import { Quiz, QuizAttempt } from '../schemas/models/quiz.model.js';
 import { Message } from '../schemas/models/message.model.js';
+import { Notice } from '../schemas/models/notice.model.js';
 import chalk from 'chalk';
 
 /**
@@ -202,6 +203,39 @@ export const attemptQuiz = async (req: any, res: Response) => {
         });
 
         res.status(201).json({ message: 'Quiz attempt recorded', attempt });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * STUDENT - NOTICES
+ */
+export const getMyNotices = async (req: any, res: Response) => {
+    try {
+        const studentClass = req.user.currentClass;
+        const now = new Date();
+
+        const query: any = {
+            $and: [
+                {
+                    $or: [
+                        { audience: 'all' },
+                        { audience: 'students' },
+                        ...(studentClass ? [{ targetClass: studentClass }] : [])
+                    ]
+                },
+                {
+                    $or: [
+                        { expiryDate: { $exists: false } },
+                        { expiryDate: { $gte: now } }
+                    ]
+                }
+            ]
+        };
+
+        const notices = await Notice.find(query).sort({ isPinned: -1, createdAt: -1 });
+        res.status(200).json({ notices });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }

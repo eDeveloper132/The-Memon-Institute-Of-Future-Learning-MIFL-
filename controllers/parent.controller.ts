@@ -100,9 +100,10 @@ export const getFamilyFees = async (req: any, res: Response) => {
  */
 export const getNotices = async (req: Request, res: Response) => {
     try {
+        const now = new Date();
         const notices = await Notice.find({ 
             audience: { $in: ['all', 'parents'] },
-            expiryDate: { $gte: new Date() } 
+            $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }] 
         }).sort({ isPinned: -1, createdAt: -1 });
         
         res.status(200).json({ notices });

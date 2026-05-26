@@ -3,81 +3,202 @@
  */
 
 class UINavbar extends HTMLElement {
+    private mobileMenuOpen = false;
+
     connectedCallback(): void {
         const title = this.getAttribute('title') || 'MIFL';
         this.innerHTML = `
-            <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+            <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-[1000]">
                 <div class="flex items-center space-x-8">
-                    <h1 id="navTitle" class="text-2xl font-bold text-blue-600 cursor-pointer">${title}</h1>
-                    <div id="navLinks" class="hidden md:flex space-x-4">
+                    <h1 id="navTitle" class="text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">${title}</h1>
+                    <!-- Desktop Links -->
+                    <div id="navLinks" class="hidden lg:flex space-x-1 xl:space-x-2">
                         <!-- Links injected here -->
                     </div>
                 </div>
+
                 <div class="flex items-center space-x-4">
-                    <span id="userName" class="text-gray-700 font-medium">Loading...</span>
-                    <button id="logoutBtn" class="text-red-500 hover:text-red-700 transition">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    <div class="hidden sm:flex flex-col text-right mr-2">
+                        <span id="userName" class="text-gray-900 font-bold text-sm leading-none">Loading...</span>
+                        <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
+                    </div>
+                    
+                    <button id="logoutBtn" class="hidden sm:flex text-gray-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-xl">
+                        <i class="fa-solid fa-power-off text-lg"></i>
+                    </button>
+
+                    <!-- Mobile Menu Toggle -->
+                    <button id="mobileMenuToggle" class="lg:hidden text-gray-600 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl active:scale-95">
+                        <i class="fa-solid fa-bars-staggered text-2xl"></i>
                     </button>
                 </div>
             </nav>
+
+            <!-- Mobile Slide-over Menu -->
+            <div id="mobileMenuOverlay" class="fixed inset-0 bg-black/50 z-[2000] hidden transition-opacity duration-300 opacity-0"></div>
+            <div id="mobileSidebar" class="fixed inset-y-0 left-0 w-80 bg-white z-[2001] transform -translate-x-full transition-transform duration-300 ease-out shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-blue-600">${title}</h2>
+                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Navigation Menu</p>
+                    </div>
+                    <button id="closeMobileMenu" class="text-gray-400 hover:text-gray-600 p-2 text-2xl">&times;</button>
+                </div>
+                
+                <!-- Mobile User Info -->
+                <div class="p-6 bg-gray-50 flex items-center gap-4 sm:hidden">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-200">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <p id="mobileUserName" class="font-bold text-gray-900 leading-none">Loading...</p>
+                        <p id="mobileUserRole" class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-1">...</p>
+                    </div>
+                </div>
+
+                <div id="mobileNavLinks" class="flex-1 overflow-y-auto p-4 space-y-1">
+                    <!-- Mobile links injected here -->
+                </div>
+
+                <div class="p-4 border-t border-gray-100 space-y-3">
+                    <button id="mobileLogoutBtn" class="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-red-50 text-red-600 font-bold hover:bg-red-100 transition active:scale-95">
+                        <i class="fa-solid fa-power-off"></i> Sign Out
+                    </button>
+                    <p class="text-[10px] text-gray-300 text-center font-medium">MIFL Education System v1.0</p>
+                </div>
+            </div>
         `;
         
-        // Securely attach the redirect listener for CSP compliance
+        this.setupEventListeners();
+    }
+
+    private setupEventListeners(): void {
         this.querySelector('#navTitle')?.addEventListener('click', () => window.location.href = '/');
+        
+        const toggleBtn = this.querySelector('#mobileMenuToggle');
+        const closeBtn = this.querySelector('#closeMobileMenu');
+        const overlay = this.querySelector('#mobileMenuOverlay');
+        const logoutBtn = this.querySelector('#logoutBtn');
+        const mobileLogoutBtn = this.querySelector('#mobileLogoutBtn');
+
+        const toggleMenu = (open: boolean) => {
+            const sidebar = this.querySelector('#mobileSidebar');
+            const overlay = this.querySelector('#mobileMenuOverlay');
+            if (!sidebar || !overlay) return;
+
+            if (open) {
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.add('opacity-100'), 10);
+                sidebar.classList.remove('-translate-x-full');
+            } else {
+                overlay.classList.remove('opacity-100');
+                sidebar.classList.add('-translate-x-full');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+            }
+            this.mobileMenuOpen = open;
+        };
+
+        toggleBtn?.addEventListener('click', () => toggleMenu(true));
+        closeBtn?.addEventListener('click', () => toggleMenu(false));
+        overlay?.addEventListener('click', () => toggleMenu(false));
+
+        const handleLogout = async () => {
+            try {
+                const res = await fetch('/api/auth/logout', { method: 'POST' });
+                if (res.ok) window.location.href = '/api/auth/login';
+            } catch (err) {
+                console.error('Logout failed', err);
+            }
+        };
+
+        logoutBtn?.addEventListener('click', handleLogout);
+        mobileLogoutBtn?.addEventListener('click', handleLogout);
     }
 
     static renderLinks(role: string): void {
         const navLinks = document.getElementById('navLinks');
-        if (!navLinks) return;
+        const mobileNavLinks = document.getElementById('mobileNavLinks');
+        const userRoleBadge = document.getElementById('userRoleBadge');
+        const mobileUserRole = document.getElementById('mobileUserRole');
+        
+        if (userRoleBadge) userRoleBadge.textContent = role;
+        if (mobileUserRole) mobileUserRole.textContent = role;
 
-        const links: Record<string, { label: string, href: string }[]> = {
+        if (!navLinks && !mobileNavLinks) return;
+
+        const links: Record<string, { label: string, href: string, icon: string }[]> = {
             admin: [
-                { label: 'Dashboard', href: '/protected/admin/index.html' },
-                { label: 'Students', href: '/protected/admin/students.html' },
-                { label: 'Teachers', href: '/protected/admin/teachers.html' },
-                { label: 'Classes', href: '/protected/admin/classes.html' },
-                { label: 'Batches', href: '/protected/admin/batches.html' },
-                { label: 'Courses', href: '/protected/admin/courses.html' },
-                { label: 'Time Tracking', href: '/protected/admin/teacher-time.html' },
-                { label: 'Staff Attendance', href: '/protected/admin/teacher-attendance.html' },
-                { label: 'Student Attendance', href: '/protected/admin/student-attendance.html' },
-                { label: 'Pending Fees', href: '/protected/admin/fees.html' }
+                { label: 'Dashboard', href: '/protected/admin/index.html', icon: 'fa-chart-pie' },
+                { label: 'Students', href: '/protected/admin/students.html', icon: 'fa-users' },
+                { label: 'Teachers', href: '/protected/admin/teachers.html', icon: 'fa-chalkboard-user' },
+                { label: 'Departments', href: '/protected/admin/departments.html', icon: 'fa-sitemap' },
+                { label: 'Classes', href: '/protected/admin/classes.html', icon: 'fa-school' },
+                { label: 'Courses', href: '/protected/admin/courses.html', icon: 'fa-book' },
+                { label: 'Staff Attendance', href: '/protected/admin/teacher-attendance.html', icon: 'fa-user-clock' },
+                { label: 'Student Attendance', href: '/protected/admin/student-attendance.html', icon: 'fa-calendar-check' },
+                { label: 'Fees', href: '/protected/admin/fees.html', icon: 'fa-file-invoice-dollar' }
             ],
             teacher: [
-                { label: 'Dashboard', href: '/protected/index.html' },
-                { label: 'Attendance', href: '/protected/teacher/attendance.html' },
-                { label: 'Assignments', href: '/protected/teacher/assignments.html' },
-                { label: 'Curriculum', href: '/protected/teacher/curriculum.html' },
-                { label: 'Results', href: '/protected/teacher/results.html' },
-                { label: 'Stopwatch', href: '/protected/teacher/stopwatch.html' },
-                { label: 'Student Reviews', href: '/protected/teacher/reviews.html' },
-                { label: 'Inventory', href: '/protected/staff/index.html' }
+                { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
+                { label: 'Attendance', href: '/protected/teacher/attendance.html', icon: 'fa-calendar-day' },
+                { label: 'Assignments', href: '/protected/teacher/assignments.html', icon: 'fa-clipboard-list' },
+                { label: 'Curriculum', href: '/protected/teacher/curriculum.html', icon: 'fa-layer-group' },
+                { label: 'Results', href: '/protected/teacher/results.html', icon: 'fa-square-poll-vertical' },
+                { label: 'Stopwatch', href: '/protected/teacher/stopwatch.html', icon: 'fa-stopwatch' },
+                { label: 'Reviews', href: '/protected/teacher/reviews.html', icon: 'fa-star' },
+                { label: 'Inventory', href: '/protected/staff/index.html', icon: 'fa-boxes-stacked' }
             ],
             student: [
-                { label: 'Dashboard', href: '/protected/index.html' },
-                { label: 'Registration & Attendance', href: '/protected/student/registration-attendance.html' },
-                { label: 'Fee Vouchers', href: '/protected/student/vouchers.html' },
-                { label: 'My Results', href: '/protected/student/results.html' },
-                { label: 'My Details', href: '/protected/student/details.html' },
-                { label: 'Assignments', href: '/protected/student/assignments.html' },
-                { label: 'Quizzes', href: '/protected/student/quizzes.html' },
-                { label: 'Course Files', href: '/protected/student/course-files.html' }
+                { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
+                { label: 'Attendance', href: '/protected/student/registration-attendance.html', icon: 'fa-user-check' },
+                { label: 'Fees', href: '/protected/student/vouchers.html', icon: 'fa-money-bill-wave' },
+                { label: 'Results', href: '/protected/student/results.html', icon: 'fa-graduation-cap' },
+                { label: 'Profile', href: '/protected/student/details.html', icon: 'fa-user-gear' },
+                { label: 'Assignments', href: '/protected/student/assignments.html', icon: 'fa-file-lines' },
+                { label: 'Quizzes', href: '/protected/student/quizzes.html', icon: 'fa-bolt' },
+                { label: 'Resources', href: '/protected/student/course-files.html', icon: 'fa-folder-open' }
             ],
             parent: [
-                { label: 'Dashboard', href: '/protected/index.html' },
-                { label: 'My Children', href: '/protected/parent/index.html' },
-                { label: 'Academic Results', href: '/protected/parent/results.html' },
-                { label: 'Attendance', href: '/protected/parent/attendance.html' },
-                { label: 'Fees & Payments', href: '/protected/parent/fees.html' },
-                { label: 'Notice Board', href: '/protected/parent/notices.html' },
-                { label: 'Messages', href: '/protected/parent/messages.html' }
+                { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
+                { label: 'Children', href: '/protected/parent/index.html', icon: 'fa-children' },
+                { label: 'Results', href: '/protected/parent/results.html', icon: 'fa-award' },
+                { label: 'Attendance', href: '/protected/parent/attendance.html', icon: 'fa-clock-rotate-left' },
+                { label: 'Payments', href: '/protected/parent/fees.html', icon: 'fa-credit-card' },
+                { label: 'Notice Board', href: '/protected/parent/notices.html', icon: 'fa-bullhorn' },
+                { label: 'Messages', href: '/protected/parent/messages.html', icon: 'fa-comments' }
             ]
         };
 
         const roleLinks = links[role] || [];
-        navLinks.innerHTML = roleLinks.map(link => `
-            <a href="${link.href}" class="text-gray-600 hover:text-blue-600 font-medium transition px-2 py-1 rounded hover:bg-gray-50">${link.label}</a>
-        `).join('');
+        const currentPath = window.location.pathname;
+
+        if (navLinks) {
+            navLinks.innerHTML = roleLinks.map(link => {
+                const active = currentPath.includes(link.href);
+                return `
+                    <a href="${link.href}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 
+                        ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'}">
+                        <i class="fa-solid ${link.icon} text-xs opacity-70"></i>
+                        <span>${link.label}</span>
+                    </a>
+                `;
+            }).join('');
+        }
+
+        if (mobileNavLinks) {
+            mobileNavLinks.innerHTML = roleLinks.map(link => {
+                const active = currentPath.includes(link.href);
+                return `
+                    <a href="${link.href}" class="flex items-center gap-4 px-6 py-4 rounded-2xl text-base font-bold transition-all
+                        ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'}">
+                        <div class="w-8 flex justify-center">
+                            <i class="fa-solid ${link.icon} text-xl"></i>
+                        </div>
+                        <span>${link.label}</span>
+                    </a>
+                `;
+            }).join('');
+        }
     }
 }
 
@@ -125,9 +246,9 @@ class UISpinner extends HTMLElement {
     connectedCallback(): void {
         const text = this.getAttribute('text') || 'Loading...';
         this.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p class="mt-4 text-gray-600 font-medium">${text}</p>
+            <div class="flex flex-col items-center justify-center py-20 w-full">
+                <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-100 border-t-blue-600"></div>
+                <p class="mt-4 text-gray-400 font-bold text-sm tracking-widest uppercase">${text}</p>
             </div>
         `;
     }

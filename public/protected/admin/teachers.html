@@ -6,150 +6,502 @@
     <title>Teacher Management - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/components/ui-components.js" type="module" defer></script>
+    <!-- UI Components must be loaded first -->
+    <script src="/components/ui-components.js" type="module"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen text-gray-900 font-sans">
     
     <ui-navbar title="Teacher Management"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
-        <div class="mb-8 flex justify-between items-center">
+        <div class="mb-8 flex justify-between items-center gap-4">
             <div>
-                <h2 class="text-3xl font-bold text-gray-900">Faculty Management</h2>
-                <p class="text-gray-500 mt-2">Oversee and manage teaching faculty and designations.</p>
+                <h2 class="text-3xl font-bold text-gray-900">Faculty Directory</h2>
+                <p class="text-gray-500 mt-2">Manage all registered teachers and academic staff.</p>
             </div>
-            <button id="openTeacherModal" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center shadow-lg">
-                <i class="fa-solid fa-chalkboard-user mr-2"></i> Register Teacher
+            <button type="button" id="openAddModalBtn" class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center shadow-lg active:scale-95">
+                <i class="fa-solid fa-chalkboard-user mr-2"></i> Add Teacher
             </button>
         </div>
 
-        <!-- Teacher Cards Grid -->
-        <div id="teacherGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full text-center py-20">
-                <ui-spinner text="Fetching faculty list..."></ui-spinner>
+        <!-- Search and Filter -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-wrap gap-4 border border-gray-200">
+            <div class="flex-1 min-w-[300px] relative">
+                <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
+                <input type="text" id="searchInput" placeholder="Search by name, email or employee ID..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-all">
+            </div>
+            <div class="flex gap-2">
+                <select id="statusFilter" class="px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 transition-all cursor-pointer bg-white text-sm">
+                    <option value="">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="suspended">Suspended</option>
+                </select>
+                <select id="verifyFilter" class="px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-green-500 transition-all cursor-pointer bg-white text-sm">
+                    <option value="">All Verification</option>
+                    <option value="true">Verified Only</option>
+                    <option value="false">Not Verified</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Teacher Table (Ported from Student Directory) -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Teacher</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Department</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Designation</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacherTableBody" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-400 italic">
+                                Initializing faculty list...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </main>
 
-    <!-- Add Teacher Modal -->
-    <div id="addTeacherModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <!-- Add Modal (Simplified) -->
+    <div id="addTeacherModal" data-modal-backdrop
+         class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4 overflow-y-auto"
+         aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-auto" data-modal-panel>
             <div class="p-6 bg-green-600 text-white flex justify-between items-center">
-                <h3 class="text-xl font-bold">Register New Faculty</h3>
-                <button id="closeTeacherModal" class="hover:text-gray-200 text-2xl">&times;</button>
+                <h3 class="text-xl font-bold">Onboard New Faculty</h3>
+                <button type="button" data-close-modal="addTeacherModal" class="hover:text-gray-200 text-2xl leading-none transition-transform hover:rotate-90" aria-label="Close add teacher modal">&times;</button>
             </div>
-            <form id="addTeacherForm" class="p-6 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                        <input type="text" name="name" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
+            <form id="addTeacherForm" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="addName" class="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                        <input id="addName" type="text" name="name" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="addEmail" class="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                        <input id="addEmail" type="email" name="email" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Designation</label>
-                        <input type="text" name="designation" placeholder="e.g. Senior Lecturer" class="w-full px-4 py-2 border rounded-lg outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Email Address</label>
-                    <input type="email" name="email" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Password</label>
-                    <input type="password" name="password" required class="w-full px-4 py-2 border rounded-lg outline-none">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Phone</label>
-                        <input type="text" name="phoneNumber" required class="w-full px-4 py-2 border rounded-lg outline-none">
+                        <label for="addPassword" class="block text-xs font-bold text-gray-500 uppercase mb-1">Initial Password</label>
+                        <input id="addPassword" type="password" name="password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none transition-all">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Staff ID</label>
-                        <input type="text" name="staffId" placeholder="MFL-T-001" class="w-full px-4 py-2 border rounded-lg outline-none">
+                        <label for="addPhone" class="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                        <input id="addPhone" type="text" name="phoneNumber" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="addGender" class="block text-xs font-bold text-gray-500 uppercase mb-1">Gender</label>
+                        <select id="addGender" name="gender" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-green-500 transition-all cursor-pointer bg-white">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Address</label>
-                    <textarea name="address" required class="w-full px-4 py-2 border rounded-lg outline-none h-20"></textarea>
+                    <label for="addAddress" class="block text-xs font-bold text-gray-500 uppercase mb-1">Office/Home Address</label>
+                    <textarea id="addAddress" name="address" required class="w-full px-4 py-2 border rounded-lg outline-none h-20 focus:ring-2 focus:ring-green-500 transition-all"></textarea>
                 </div>
-                <button type="submit" class="w-full bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700 transition mt-4 shadow-lg">Onboard Faculty</button>
+                <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    <input type="checkbox" name="isEmailVerified" checked id="addVerified" class="w-4 h-4 text-green-600 rounded cursor-pointer">
+                    <label for="addVerified" class="text-sm text-gray-600 cursor-pointer select-none font-medium">Pre-verify faculty email</label>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-green-600 text-white py-3.5 rounded-xl font-bold hover:bg-green-700 transition shadow-md active:scale-[0.98] tracking-wide">
+                        Register Faculty Member
+                    </button>
+                </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal (Full Features) -->
+    <div id="editTeacherModal" data-modal-backdrop
+         class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4 overflow-y-auto"
+         aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-auto" data-modal-panel>
+            <div class="p-6 bg-indigo-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold">Edit Teacher Profile</h3>
+                <button type="button" data-close-modal="editTeacherModal" class="hover:text-gray-200 text-2xl leading-none transition-transform hover:rotate-90" aria-label="Close edit modal">&times;</button>
+            </div>
+            <form id="editTeacherForm" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                <input type="hidden" name="id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="editName" class="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                        <input id="editName" type="text" name="name" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="editEmail" class="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Read Only)</label>
+                        <input id="editEmail" type="email" name="email" required class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none bg-gray-50 text-gray-500 cursor-not-allowed shadow-inner" readonly>
+                    </div>
+                    <div>
+                        <label for="editDesignation" class="block text-xs font-bold text-gray-500 uppercase mb-1">Designation</label>
+                        <input id="editDesignation" type="text" name="designation" placeholder="e.g. Senior Lecturer" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="editPassword" class="block text-xs font-bold text-gray-500 uppercase mb-1">Reset Password</label>
+                        <input id="editPassword" type="password" name="password" placeholder="••••••••" class="w-full px-4 py-2 border border-green-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <p class="text-[10px] text-gray-400 mt-1 italic font-medium">Leave blank to keep current</p>
+                    </div>
+                    <div>
+                        <label for="editPhone" class="block text-xs font-bold text-gray-500 uppercase mb-1">Phone Number</label>
+                        <input id="editPhone" type="text" name="phoneNumber" class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="editStatus" class="block text-xs font-bold text-gray-500 uppercase mb-1">Account Status</label>
+                        <select id="editStatus" name="status" class="w-full px-4 py-2 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer bg-white">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="editAddress" class="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
+                    <textarea id="editAddress" name="address" class="w-full px-4 py-2 border rounded-lg outline-none h-20 focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md active:scale-[0.98] tracking-wide">
+                        Update Teacher Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div id="deleteTeacherModal" data-modal-backdrop
+         class="fixed inset-0 bg-black/50 hidden z-50 items-center justify-center p-4 overflow-y-auto"
+         aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto" data-modal-panel>
+            <div class="p-6 bg-red-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold">Remove Faculty</h3>
+                <button type="button" data-close-modal="deleteTeacherModal" class="hover:text-gray-200 text-2xl leading-none transition-transform hover:rotate-90" aria-label="Close delete modal">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl">
+                    <i class="fa-solid fa-user-slash"></i>
+                </div>
+                <div class="text-center">
+                    <p class="text-gray-800 font-bold text-lg">Are you sure?</p>
+                    <p class="text-gray-500 mt-1 leading-relaxed text-sm">
+                        You are about to remove this teacher from the system. They will lose access to all courses and historical records.
+                    </p>
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" data-close-modal="deleteTeacherModal" class="flex-1 px-4 py-3 rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-50 transition active:scale-95">
+                        Cancel
+                    </button>
+                    <button type="button" id="confirmDeleteBtn" class="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition shadow-sm active:scale-95 tracking-wide">
+                        Remove Teacher
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { showToast } from '/components/ui-components.js';
 
-        const teacherGrid = document.getElementById('teacherGrid');
+        // DOM References
+        const tableBody = document.getElementById('teacherTableBody');
         const addForm = document.getElementById('addTeacherForm');
-        const modal = document.getElementById('addTeacherModal');
-        const openBtn = document.getElementById('openTeacherModal');
-        const closeBtn = document.getElementById('closeTeacherModal');
+        const editForm = document.getElementById('editTeacherForm');
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const verifyFilter = document.getElementById('verifyFilter');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const openAddModalBtn = document.getElementById('openAddModalBtn');
 
-        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
-        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
-        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+        let allTeachers = [];
+        let teacherToDeleteId = null;
 
-        async function fetchTeachers() {
-            try {
-                const res = await fetch('/api/admin/users?role=teacher');
-                const data = await res.json();
-                renderTeachers(data.users);
-            } catch (err) {
-                teacherGrid.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load teachers</div>';
-            }
-        }
+        /**
+         * UTILITIES
+         */
 
-        function renderTeachers(teachers) {
-            if (!teachers.length) {
-                teacherGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500">No teachers found. Click "Register Teacher" to add one.</div>';
+        const normalizeId = (id) => id ? String(id) : '';
+
+        const safeStaffId = (teacher) => {
+            if (teacher?.staffId) return String(teacher.staffId).toUpperCase();
+            if (teacher?._id) return 'T-' + String(teacher._id).slice(-6).toUpperCase();
+            return 'N/A';
+        };
+
+        /**
+         * MODAL ACTIONS
+         */
+
+        const setModalVisible = (id, visible) => {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+
+            modal.classList.toggle('hidden', !visible);
+            modal.classList.toggle('flex', visible);
+            modal.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            document.body.classList.toggle('overflow-hidden', visible);
+        };
+
+        window.openAddModal = () => {
+            if (addForm) addForm.reset();
+            const verifiedCheckbox = addForm?.querySelector('[name="isEmailVerified"]');
+            if (verifiedCheckbox) verifiedCheckbox.checked = true;
+            setModalVisible('addTeacherModal', true);
+        };
+
+        window.closeModal = (id) => {
+            setModalVisible(id, false);
+            if (id === 'addTeacherModal' && addForm) addForm.reset();
+            if (id === 'editTeacherModal' && editForm) editForm.reset();
+            if (id === 'deleteTeacherModal') teacherToDeleteId = null;
+        };
+
+        window.openEditModal = (id) => {
+            const tId = normalizeId(id);
+            const teacher = allTeachers.find(t => normalizeId(t?._id) === tId);
+            
+            if (!teacher) {
+                showToast('Teacher data not found', 'error');
                 return;
             }
 
-            teacherGrid.innerHTML = teachers.map(t => `
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition">
-                    <div class="h-2 bg-green-500"></div>
-                    <div class="p-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="w-16 h-16 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center text-2xl font-bold">
-                                ${t.name.split(' ').map(n => n[0]).join('')}
-                            </div>
-                            <div class="flex flex-col items-end">
-                                <span class="px-2 py-1 rounded-md text-[10px] font-bold uppercase ${t.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} mb-2">
-                                    ${t.status}
-                                </span>
-                                <span class="text-xs text-gray-400 font-mono">${t.staffId || 'NO-ID'}</span>
-                            </div>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-900 truncate">${t.name}</h3>
-                        <p class="text-green-600 text-sm font-semibold mb-4">${t.designation || 'Faculty Member'}</p>
-                        
-                        <div class="space-y-2 mb-6">
-                            <div class="flex items-center text-sm text-gray-600">
-                                <i class="fa-solid fa-envelope w-5 text-gray-400"></i>
-                                <span class="truncate">${t.email}</span>
-                            </div>
-                            <div class="flex items-center text-sm text-gray-600">
-                                <i class="fa-solid fa-phone w-5 text-gray-400"></i>
-                                <span>${t.phoneNumber || 'N/A'}</span>
-                            </div>
-                        </div>
+            if (!editForm) return;
 
-                        <div class="flex border-t border-gray-50 pt-4 gap-2">
-                            <button class="flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition">View Details</button>
-                            <button onclick="deleteTeacher('${t._id}')" class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+            const f = editForm.elements;
+            f.id.value = teacher._id || '';
+            f.name.value = teacher.name || '';
+            f.email.value = teacher.email || '';
+            f.designation.value = teacher.designation || '';
+            f.phoneNumber.value = teacher.phoneNumber || '';
+            f.status.value = teacher.status || 'active';
+            f.address.value = teacher.address || '';
+            if (f.password) f.password.value = '';
 
-        addForm.onsubmit = async (e) => {
+            setModalVisible('editTeacherModal', true);
+        };
+
+        window.openDeleteModal = (id) => {
+            teacherToDeleteId = normalizeId(id) || null;
+            setModalVisible('deleteTeacherModal', true);
+        };
+
+        const doDeleteTeacher = async () => {
+            if (!teacherToDeleteId) return;
+
+            try {
+                const res = await fetch(`/api/admin/users/${teacherToDeleteId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Faculty member removed');
+                    window.closeModal('deleteTeacherModal');
+                    await fetchTeachers();
+                } else {
+                    const data = await res.json();
+                    showToast(data.message || 'Removal failed', 'error');
+                }
+            } catch (err) {
+                showToast('Server connection error', 'error');
+            }
+        };
+
+        /**
+         * DATA FETCHING & RENDERING
+         */
+
+        const fetchTeachers = async () => {
+            try {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-20 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-10 h-10 border-4 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                                <span class="text-gray-400 font-medium italic">Refreshing faculty database...</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                const res = await fetch('/api/admin/users?role=teacher');
+                const data = await res.json();
+                allTeachers = Array.isArray(data.users) ? data.users : [];
+                filterAndRender();
+            } catch (err) {
+                console.error('Fetch error:', err);
+                tableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-16 text-center text-red-500 font-bold uppercase tracking-widest text-xs">Sync Failed: Database Offline</td></tr>';
+            }
+        };
+
+        const filterAndRender = () => {
+            const searchTerm = (searchInput?.value || '').toLowerCase().trim();
+            const statusTerm = statusFilter?.value || '';
+            const verifyTerm = verifyFilter?.value || '';
+
+            const filtered = allTeachers.filter(t => {
+                const name = (t?.name || '').toLowerCase();
+                const email = (t?.email || '').toLowerCase();
+                const sId = (t?.staffId || '').toLowerCase();
+                const rawId = normalizeId(t?._id).toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm) || sId.includes(searchTerm) || rawId.includes(searchTerm);
+                const matchesStatus = !statusTerm || t?.status === statusTerm;
+                
+                let matchesVerify = true;
+                if (verifyTerm === 'true') matchesVerify = t?.isEmailVerified === true;
+                if (verifyTerm === 'false') matchesVerify = t?.isEmailVerified === false;
+
+                return matchesSearch && matchesStatus && matchesVerify;
+            });
+
+            renderTeachers(filtered);
+        };
+
+        const renderTeachers = (teachers) => {
+            if (!teachers.length) {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-24 text-gray-400 font-medium italic border-b border-gray-100">No matching faculty members found</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = teachers.map(t => {
+                const initial = (t?.name || '?').charAt(0).toUpperCase();
+                const status = t?.status || 'inactive';
+                const id = normalizeId(t?._id);
+                const isVerified = t?.isEmailVerified === true;
+
+                return `
+                    <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center font-bold mr-4 text-xl border border-green-200 shadow-sm transition-transform group-hover:scale-105 group-hover:shadow-md relative">
+                                    ${initial}
+                                    ${isVerified ? `
+                                        <div class="absolute -right-1 -top-1 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center text-[10px] border-2 border-white shadow-sm" title="Email Verified">
+                                            <i class="fa-solid fa-check"></i>
+                                        </div>
+                                    ` : `
+                                        <div class="absolute -right-1 -top-1 w-5 h-5 bg-gray-300 text-white rounded-full flex items-center justify-center text-[10px] border-2 border-white shadow-sm" title="Not Verified">
+                                            <i class="fa-solid fa-clock"></i>
+                                        </div>
+                                    `}
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-gray-900 group-hover:text-green-600 transition-colors truncate max-w-[200px]">${t?.name || 'Unnamed Teacher'}</div>
+                                    <div class="flex items-center gap-2 mt-0.5">
+                                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono uppercase tracking-tight font-black border border-gray-200">UID: ${safeStaffId(t)}</span>
+                                        <span class="text-[10px] text-gray-400 truncate max-w-[150px]">${t?.email || ''}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-semibold ${t?.department ? 'text-gray-800' : 'text-gray-400 italic'} truncate max-w-[150px]">
+                                ${t?.department?.name || 'No Dept'}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-semibold text-gray-800 truncate max-w-[150px]">
+                                ${t?.designation || 'Faculty'}
+                            </div>
+                            <div class="text-[10px] text-gray-400">${t?.phoneNumber || 'No contact'}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-block px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm
+                                ${status === 'active' ? 'bg-green-50 text-green-700 border-green-200' :
+                                  status === 'suspended' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                  'bg-red-50 text-red-700 border-red-200'}">
+                                ${status}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end items-center gap-2">
+                                <button type="button" data-action="edit" data-id="${id}" class="w-10 h-10 flex items-center justify-center text-blue-500 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 hover:border-blue-600 shadow-sm hover:shadow active:scale-90" title="Edit Profile" aria-label="Edit teacher">
+                                    <i class="fa-solid fa-pen-to-square pointer-events-none text-lg"></i>
+                                </button>
+                                <button type="button" data-action="delete" data-id="${id}" class="w-10 h-10 flex items-center justify-center text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-red-100 hover:border-red-600 shadow-sm hover:shadow active:scale-90" title="Remove Teacher" aria-label="Delete teacher">
+                                    <i class="fa-solid fa-trash-can pointer-events-none text-lg"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        /**
+         * EVENT LISTENERS
+         */
+
+        // Table actions delegation
+        tableBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.getAttribute('data-action');
+            const id = btn.getAttribute('data-id');
+            if (action === 'edit') window.openEditModal(id);
+            if (action === 'delete') window.openDeleteModal(id);
+        });
+
+        // Global Modal Close delegation
+        document.addEventListener('click', (e) => {
+            const closeBtn = e.target.closest('[data-close-modal]');
+            if (closeBtn) {
+                window.closeModal(closeBtn.getAttribute('data-close-modal'));
+                return;
+            }
+            const backdrop = e.target.closest('[data-modal-backdrop]');
+            if (backdrop && e.target === backdrop) {
+                window.closeModal(backdrop.id);
+            }
+        });
+
+        if (openAddModalBtn) openAddModalBtn.addEventListener('click', window.openAddModal);
+        if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', doDeleteTeacher);
+        if (searchInput) searchInput.addEventListener('input', filterAndRender);
+        if (statusFilter) statusFilter.addEventListener('change', filterAndRender);
+        if (verifyFilter) verifyFilter.addEventListener('change', filterAndRender);
+
+        // Forms
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(editForm);
+            const data = Object.fromEntries(formData.entries());
+            const id = data.id;
+            delete data.id;
+            if (!data.password) delete data.password;
+
+            try {
+                const res = await fetch(`/api/admin/users/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Teacher profile updated');
+                    window.closeModal('editTeacherModal');
+                    await fetchTeachers();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Update failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        });
+
+        addForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(addForm);
-            const data = Object.fromEntries(formData);
+            const data = Object.fromEntries(formData.entries());
             data.role = 'teacher';
+            const v = addForm.querySelector('[name="isEmailVerified"]');
+            data.isEmailVerified = v ? v.checked : true;
 
             try {
                 const res = await fetch('/api/admin/users', {
@@ -157,51 +509,56 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                
                 if (res.ok) {
-                    showToast('Teacher onboarding complete');
-                    document.getElementById('addTeacherModal').classList.add('hidden');
-                    addForm.reset();
-                    fetchTeachers();
+                    showToast('New faculty onboarded');
+                    window.closeModal('addTeacherModal');
+                    await fetchTeachers();
                 } else {
                     const err = await res.json();
-                    showToast(err.message || 'Onboarding failed', 'error');
+                    showToast(err.message || 'Registration failed', 'error');
                 }
             } catch (err) {
-                showToast('An error occurred', 'error');
+                showToast('Network error', 'error');
             }
-        };
+        });
 
-        window.deleteTeacher = async (id) => {
-            if (confirm('Are you sure? This will remove the teacher from all assigned courses.')) {
-                try {
-                    const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        showToast('Teacher record removed');
-                        fetchTeachers();
-                    }
-                } catch (err) {
-                    showToast('Operation failed', 'error');
-                }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const openModal = document.querySelector('[data-modal-backdrop]:not(.hidden)');
+                if (openModal) window.closeModal(openModal.id);
             }
-        };
+        });
+
+        /**
+         * INITIALIZATION
+         */
 
         async function init() {
             try {
                 const res = await fetch('/api/auth/me');
+                if (!res.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await res.json();
+                if (user.role !== 'admin') { window.location.href = '/'; return; }
+                
                 if (window.initSocket) window.initSocket(user);
-                if (!res.ok || user.role !== 'admin') { window.location.href = '/'; return; }
-                
-                document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
-                
-                fetchTeachers();
+                if (navbar && typeof navbar.renderLinks === 'function') {
+                    navbar.renderLinks(user.role);
+                }
+
+                await fetchTeachers();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }
         }
+
+        // Global Navbar Logout Listener
+        document.addEventListener('click', async (e) => {
+            if (e.target.closest('#logoutBtn')) {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/api/auth/login';
+            }
+        });
 
         init();
     </script>

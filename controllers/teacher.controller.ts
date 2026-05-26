@@ -8,6 +8,7 @@ import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Quiz } from '../schemas/models/quiz.model.js';
 import { Material } from '../schemas/models/material.model.js';
 import { Message } from '../schemas/models/message.model.js';
+import { Notice } from '../schemas/models/notice.model.js';
 import chalk from 'chalk';
 
 /**
@@ -274,6 +275,26 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
         
         res.status(200).json({ exams, grades });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * TEACHER - NOTICES
+ */
+export const getTeacherNotices = async (req: any, res: Response) => {
+    try {
+        const now = new Date();
+        const query: any = {
+            $and: [
+                { audience: { $in: ['all', 'teachers'] } },
+                { $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }] }
+            ]
+        };
+
+        const notices = await Notice.find(query).sort({ isPinned: -1, createdAt: -1 });
+        res.status(200).json({ notices });
+    } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
 };

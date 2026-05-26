@@ -67,11 +67,19 @@
                         <input type="number" name="credits" value="3" required class="w-full px-4 py-2 border rounded-lg outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Department ID</label>
-                        <input type="text" name="department" placeholder="Dept ID" class="w-full px-4 py-2 border rounded-lg outline-none">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Department</label>
+                        <select name="department" id="departmentSelect" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                            <option value="">Select Department</option>
+                        </select>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4">Save Course</button>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Assigned Teacher</label>
+                    <select name="teacher" id="teacherSelect" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-sm">
+                        <option value="">Select Teacher</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4 shadow-md active:scale-95">Save Course</button>
             </form>
         </div>
     </div>
@@ -84,6 +92,8 @@
         const modal = document.getElementById('addCourseModal');
         const openBtn = document.getElementById('openCourseModal');
         const closeBtn = document.getElementById('closeCourseModal');
+        const departmentSelect = document.getElementById('departmentSelect');
+        const teacherSelect = document.getElementById('teacherSelect');
 
         if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
         if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
@@ -104,10 +114,37 @@
                     addForm.reset();
                     fetchCourses();
                 } else {
-                    showToast('Failed to add course', 'error');
+                    const err = await res.json();
+                    showToast(err.message || 'Failed to add course', 'error');
                 }
             } catch (err) { showToast('An error occurred', 'error'); }
         };
+
+        async function fetchDepartments() {
+            try {
+                const res = await fetch('/api/admin/departments');
+                const { departments } = await res.json();
+                if (departmentSelect) {
+                    departmentSelect.innerHTML = '<option value="">Select Department</option>' + 
+                        departments.map(d => `<option value="${d._id}">${d.name}</option>`).join('');
+                }
+            } catch (err) {
+                console.error('Failed to fetch departments', err);
+            }
+        }
+
+        async function fetchTeachers() {
+            try {
+                const res = await fetch('/api/admin/users?role=teacher');
+                const { users } = await res.json();
+                if (teacherSelect) {
+                    teacherSelect.innerHTML = '<option value="">Select Teacher</option>' + 
+                        users.map(t => `<option value="${t._id}">${t.name} (${t.staffId || 'No ID'})</option>`).join('');
+                }
+            } catch (err) {
+                console.error('Failed to fetch teachers', err);
+            }
+        }
 
         async function fetchCourses() {
             try {
@@ -148,7 +185,12 @@
                 document.getElementById('userName').textContent = user.name;
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
-                fetchCourses();
+                
+                await Promise.all([
+                    fetchDepartments(),
+                    fetchTeachers(),
+                    fetchCourses()
+                ]);
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }
