@@ -328,7 +328,7 @@ export const initSocket = async (user: any) => {
         console.log('[Socket] Loading Socket.IO client script...');
         await new Promise<void>((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = '/socket.io/socket.io.js';
+            script.src = 'https://cdn.socket.io/4.8.3/socket.io.min.js';
             script.onload = () => resolve();
             script.onerror = () => reject(new Error('Failed to load Socket.IO script'));
             document.head.appendChild(script);
