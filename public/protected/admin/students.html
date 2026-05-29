@@ -370,8 +370,8 @@
             tableBody.innerHTML = students.map(s => {
                 const className = s?.currentClass?.name || 'Not Enrolled';
                 const classGrade = s?.currentClass?.gradeLevel ? 'Grade ' + s?.currentClass?.gradeLevel : '';
-                const parentName = s?.parent?.name || 'Unlinked';
-                const parentEmail = s?.parent?.email || '';
+                const parentName = s?.parent?.name || s?.parentName || 'Unlinked';
+                const parentEmail = s?.parent?.email || s?.parentContact || '';
                 const id = normalizeId(s?._id);
                 const isVerified = s?.isEmailVerified === true;
 

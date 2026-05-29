@@ -133,6 +133,7 @@ class UINavbar extends HTMLElement {
             admin: [
                 { label: 'Dashboard', href: '/protected/admin/index.html', icon: 'fa-chart-pie' },
                 { label: 'Students', href: '/protected/admin/students.html', icon: 'fa-users' },
+                { label: 'Parents', href: '/protected/admin/parents.html', icon: 'fa-children' },
                 { label: 'Teachers', href: '/protected/admin/teachers.html', icon: 'fa-chalkboard-user' },
                 { label: 'Departments', href: '/protected/admin/departments.html', icon: 'fa-sitemap' },
                 { label: 'Classes', href: '/protected/admin/classes.html', icon: 'fa-school' },

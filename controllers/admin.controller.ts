@@ -17,6 +17,16 @@ export const getAllUsers = async (req: Request, res: Response) => {
     try {
         const { role, populate } = req.query;
         const query = role ? { role } : {};
+
+        if (role === 'parent') {
+            const parents = await User.find({ role: 'parent' }).sort({ createdAt: -1 });
+            const parentsWithChildren = await Promise.all(parents.map(async (p) => {
+                const children = await User.find({ parent: p._id, role: 'student' }).select('name email studentId');
+                return { ...p.toObject(), linkedStudents: children };
+            }));
+            return res.status(200).json({ users: parentsWithChildren });
+        }
+
         let usersQuery = User.find(query as any);
 
         if (role === 'student' || populate === 'true') {
@@ -463,6 +473,38 @@ export const generateFeeVoucher = async (req: Request, res: Response) => {
 
         res.status(201).json({ message: 'Voucher generated', fee });
     } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * PARENT MANAGEMENT
+ */
+export const linkParentToStudents = async (req: Request, res: Response) => {
+    try {
+        const { parentId, studentIds } = req.body;
+        
+        const parent = await User.findById(parentId);
+        if (!parent || parent.role !== 'parent') {
+            return res.status(404).json({ message: 'Parent account not found' });
+        }
+
+        // Update all selected students
+        const result = await User.updateMany(
+            { _id: { $in: studentIds }, role: 'student' },
+            { 
+                parent: parent._id,
+                parentName: parent.name,
+                parentContact: parent.phoneNumber
+            }
+        );
+
+        res.status(200).json({ 
+            message: 'Students successfully linked to parent', 
+            updatedCount: result.modifiedCount 
+        });
+    } catch (error) {
+        console.error('[Admin Controller] linkParentToStudents error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

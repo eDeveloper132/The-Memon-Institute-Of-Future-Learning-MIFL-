@@ -3,7 +3,8 @@ import {
     getAllUsers, createUser, updateUser, deleteUser,
     crudClasses, crudCourses, crudNotices, crudDepartments,
     getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
-    generateFeeVoucher, updateClassBatches, updateCourseBatches
+    generateFeeVoucher, updateClassBatches, updateCourseBatches,
+    linkParentToStudents
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -44,6 +45,8 @@ router.delete('/courses/:id', crudCourses.delete);
 
 router.patch('/classbatches/:id', updateClassBatches);
 router.patch('/coursebatches/:id', updateCourseBatches);
+
+router.post('/parents/link', linkParentToStudents);
 
 /**
  * Department Management
