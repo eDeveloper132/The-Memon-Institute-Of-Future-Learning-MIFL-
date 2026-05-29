@@ -383,8 +383,37 @@ export const initSocket = async (user: any) => {
 
     // Socket Failure - Trigger Polling Fallback
     socket.on('connect_error', (err: any) => {
-        console.warn('[Socket] Connection failed, switching to Polling Fallback:', err.message);
-        startPollingFallback(user, updateStatus);
+        if (!syncInterval) {
+            console.warn('[Socket] Connection failed, switching to Polling Fallback:', err.message);
+            
+            // Stop socket retries to clean up console
+            socket.close();
+            socket.connected = false;
+
+            // Transparent Fallback: Redirect sendMessage emits to REST API
+            socket.emit = async (event: string, data: any) => {
+                if (event === 'sendMessage') {
+                    try {
+                        const res = await fetch('/api/chat/messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        if (res.ok) {
+                            const { message } = await res.json();
+                            // Dispatch locally so the sender sees their own message
+                            document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));
+                        }
+                    } catch (e) {
+                        console.error('[Sync Fallback] Failed to send message via REST', e);
+                    }
+                } else {
+                    console.log(`[Sync Fallback] Socket event "${event}" ignored in polling mode.`);
+                }
+            };
+
+            startPollingFallback(user, updateStatus);
+        }
     });
 
     socket.on('disconnect', () => {
@@ -428,14 +457,14 @@ const startPollingFallback = (user: any, updateStatus: Function) => {
             }
         } catch (err) {
             console.error('[Sync] Polling error:', err);
-            updateStatus('disconnected');
+        } finally {
+            // Schedule next sync
+            syncInterval = setTimeout(sync, 5000);
         }
     };
 
-    // Initial sync
-    sync();
-    // Poll every 5 seconds
-    syncInterval = setInterval(sync, 5000);
+    // Start the first sync
+    syncInterval = setTimeout(sync, 1000);
 };
 
 (window as any).initSocket = initSocket;
