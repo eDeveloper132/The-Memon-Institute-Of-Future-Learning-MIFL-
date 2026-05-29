@@ -4,10 +4,7 @@ import {
     getChildResults, 
     getChildAttendance, 
     getFamilyFees, 
-    getNotices,
-    getChatHistory,
-    getMyConversations,
-    sendMessage
+    getNotices
 } from '../controllers/parent.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -22,12 +19,5 @@ router.get('/results', getChildResults);
 router.get('/attendance', getChildAttendance);
 router.get('/fees', getFamilyFees);
 router.get('/notices', getNotices);
-
-/**
- * Communication
- */
-router.get('/messages', getChatHistory);
-router.get('/conversations', getMyConversations);
-router.post('/messages', sendMessage);
 
 export default router;

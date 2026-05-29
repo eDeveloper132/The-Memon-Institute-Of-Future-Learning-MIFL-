@@ -95,7 +95,22 @@
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
+                
+                // Initialize Socket.IO
+                if (window.initSocket) {
+                    const socket = await window.initSocket(user);
+                    
+                    // Real-time Activity Listener
+                    socket.on('activity', (data) => {
+                        console.log('[Admin] Real-time activity:', data);
+                        if (data.type === 'USER_LOGIN') {
+                            showToast(`${data.user.name} just logged in`, 'info');
+                            // Refresh stats to update counts
+                            fetchAdminStats();
+                        }
+                    });
+                }
+
                 if (user.role !== 'admin') { window.location.href = '/'; return; }
                 
                 document.getElementById('userName').textContent = user.name;

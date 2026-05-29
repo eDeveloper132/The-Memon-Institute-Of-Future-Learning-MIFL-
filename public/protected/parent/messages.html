@@ -100,11 +100,12 @@
         </div>
     </main>
 
-    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
     <script type="module">
+        import { initSocket } from '/components/ui-components.js';
+
         let currentUser = null;
         let activePartner = null;
-        const socket = io();
+        let socket = null;
 
         const chatSidebar = document.querySelector('.flex-1.overflow-y-auto');
         const messageArea = document.querySelector('.flex-1.p-8.overflow-y-auto');
@@ -186,18 +187,20 @@
             messageInput.value = '';
         };
 
-        socket.on('receiveMessage', (msg) => {
-            if (activePartner && (msg.sender === activePartner._id || msg.sender === currentUser._id)) {
-                appendMessage(msg);
-            }
-            fetchConversations();
-        });
+        function setupSocketListeners(s) {
+            s.on('receiveMessage', (msg) => {
+                if (activePartner && (msg.sender === activePartner._id || msg.sender === currentUser._id)) {
+                    appendMessage(msg);
+                }
+                fetchConversations();
+            });
 
-        socket.on('messageSent', (msg) => {
-            if (activePartner && msg.receiver === activePartner._id) {
-                appendMessage(msg);
-            }
-        });
+            s.on('messageSent', (msg) => {
+                if (activePartner && msg.receiver === activePartner._id) {
+                    appendMessage(msg);
+                }
+            });
+        }
 
         function appendMessage(m) {
             const isSent = m.sender === currentUser._id;
@@ -218,14 +221,16 @@
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
+                
+                socket = await initSocket(user);
+                setupSocketListeners(socket);
+                
                 currentUser = user;
                 document.getElementById('userName').textContent = user.name;
                 
                 const navbar = customElements.get('ui-navbar');
                 if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
 
-                socket.emit('join', user._id);
                 fetchConversations();
             } catch (err) {
                 window.location.href = '/api/auth/login';

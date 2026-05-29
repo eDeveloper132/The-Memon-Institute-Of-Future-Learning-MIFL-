@@ -3,8 +3,7 @@ import {
     getAllUsers, createUser, updateUser, deleteUser,
     crudClasses, crudCourses, crudNotices, crudDepartments,
     getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
-    generateFeeVoucher,
-    getAdminChatHistory, getAdminConversations, sendAdminMessage, updateClassBatches
+    generateFeeVoucher, updateClassBatches
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -73,12 +72,5 @@ router.patch('/attendance/:id', updateAttendance);
  */
 router.get('/fees', getPendingFees);
 router.post('/fees/generate', generateFeeVoucher);
-
-/**
- * Messaging Oversight
- */
-router.get('/messages', getAdminChatHistory);
-router.get('/conversations', getAdminConversations);
-router.post('/messages', sendAdminMessage);
 
 export default router;

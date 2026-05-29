@@ -77,7 +77,7 @@ export const signup = async (req: Request, res: Response) => {
     }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: any, res: Response) => {
     try {
         console.log(`[Auth] Processing login for email: ${req.body.email}`);
         const { email, password, rememberMe } = req.body;
@@ -109,6 +109,19 @@ export const login = async (req: Request, res: Response) => {
             path: '/',
         });
 
+        // Emit activity to admins
+        if (req.io) {
+            req.io.to('role:admin').emit('activity', {
+                type: 'USER_LOGIN',
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    role: user.role
+                },
+                timestamp: new Date()
+            });
+        }
+
         res.status(200).json({
             message: 'Logged in successfully',
             user: {
@@ -124,8 +137,18 @@ export const login = async (req: Request, res: Response) => {
     }
 };
 
-export const logout = (req: Request, res: Response) => {
+export const logout = (req: any, res: Response) => {
     console.log(`[Auth] User logging out`);
+    
+    // Optional: Emit activity to admins
+    if (req.io && req.user) {
+        req.io.to('role:admin').emit('activity', {
+            type: 'USER_LOGOUT',
+            userId: req.user.id,
+            timestamp: new Date()
+        });
+    }
+
     res.cookie('token', '', { maxAge: 1, path: '/' });
     res.status(200).json({ message: 'Logged out successfully' });
 };

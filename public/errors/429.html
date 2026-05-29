@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Too Many Requests - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @keyframes drift {
+            from { transform: rotate(0deg) translateX(10px) rotate(0deg); }
+            to   { transform: rotate(360deg) translateX(10px) rotate(-360deg); }
+        }
+        .float-animation {
+            animation: drift 10s infinite linear;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full text-center">
+        <!-- Icon/Illustration -->
+        <div class="relative mb-10">
+            <div class="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mx-auto relative z-10">
+                <i class="fa-solid fa-hourglass-half text-red-600 text-5xl animate-pulse"></i>
+            </div>
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-red-200 rounded-full blur-2xl opacity-50 float-animation"></div>
+        </div>
+
+        <!-- Text Content -->
+        <h1 class="text-6xl font-black text-gray-900 mb-4">429</h1>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Too Many Requests</h2>
+        <p class="text-gray-500 mb-8 leading-relaxed">
+            We've detected an unusual amount of activity from your connection. To keep the system safe and fast for everyone, we've temporarily paused your access.
+        </p>
+
+        <!-- Dynamic Timer -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Please wait at least</p>
+            <div class="text-3xl font-black text-blue-600" id="timer">15 Minutes</div>
+        </div>
+
+        <!-- Action -->
+        <div class="space-y-4">
+            <button id="reloadBtn" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95">
+                Try Reloading
+            </button>
+            <a href="/" class="block text-sm font-bold text-blue-600 hover:text-blue-800 transition">
+                Return to Home
+            </a>
+        </div>
+
+        <p class="mt-12 text-xs text-gray-400 font-medium italic">
+            MIFL Intelligent Protection System
+        </p>
+    </div>
+
+    <script>
+        document.getElementById('reloadBtn').onclick = () => window.location.reload();
+    </script>
+</body>
+</html>

@@ -18,6 +18,9 @@ class UINavbar extends HTMLElement {
                 </div>
 
                 <div class="flex items-center space-x-4">
+                    <!-- Connection Status -->
+                    <div id="connectionStatus" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-500" title="Checking connection..."></div>
+
                     <div class="hidden sm:flex flex-col text-right mr-2">
                         <span id="userName" class="text-gray-900 font-bold text-sm leading-none">Loading...</span>
                         <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
@@ -165,7 +168,7 @@ class UINavbar extends HTMLElement {
                 { label: 'Attendance', href: '/protected/parent/attendance.html', icon: 'fa-clock-rotate-left' },
                 { label: 'Payments', href: '/protected/parent/fees.html', icon: 'fa-credit-card' },
                 { label: 'Notice Board', href: '/protected/parent/notices.html', icon: 'fa-bullhorn' },
-                { label: 'Messages', href: '/protected/parent/messages.html', icon: 'fa-comments' }
+                { label: 'Messages', href: '/protected/messages.html', icon: 'fa-comments' }
             ]
         };
 
@@ -338,24 +341,46 @@ export const initSocket = async (user: any) => {
     const io = (window as any).io;
     socket = io();
 
-    // Join personal room
-    if (user._id) {
-        socket.emit('join', user._id);
-        console.log(`[Socket] Joined personal room: ${user._id}`);
-    }
-    
-    // Join role room
-    if (user.role) {
-        socket.emit('joinRole', user.role);
-        console.log(`[Socket] Joined role room: ${user.role}`);
-    }
+    const updateStatus = (connected: boolean) => {
+        const indicator = document.getElementById('connectionStatus');
+        if (indicator) {
+            indicator.style.backgroundColor = connected ? '#22c55e' : '#ef4444'; // green-500 : red-500
+            indicator.title = connected ? 'Real-time connection active' : 'Disconnected from server';
+        }
+    };
 
-    // Join class room if applicable
-    if (user.currentClass) {
-        const classId = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
-        socket.emit('joinClass', classId);
-        console.log(`[Socket] Joined class room: ${classId}`);
-    }
+    socket.on('connect', () => {
+        console.log('[Socket] Connected to server');
+        updateStatus(true);
+        
+        // Join personal room
+        if (user._id) {
+            socket.emit('join', user._id);
+        }
+        
+        // Join role room
+        if (user.role) {
+            socket.emit('joinRole', user.role);
+        }
+
+        // Join class room if applicable
+        if (user.currentClass) {
+            const classId = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
+            socket.emit('joinClass', classId);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.warn('[Socket] Disconnected from server');
+        updateStatus(false);
+        showToast('Real-time connection lost. Attempting to reconnect...', 'error');
+    });
+
+    socket.on('reconnect', (attempt: number) => {
+        console.log(`[Socket] Reconnected after ${attempt} attempts`);
+        showToast('Real-time connection restored', 'success');
+        updateStatus(true);
+    });
 
     // Listeners
     socket.on('notification', (data: any) => {

@@ -69,6 +69,16 @@ app.use("/api/teacher", teacherRoutes);
 app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/parent", parentRoutes);
+app.use("/api/chat", chatRoutes);
+
+// 404 Catch-all Handler
+app.use((req: Request, res: Response) => {
+    if (req.accepts('html')) {
+        return res.status(404).sendFile(path.join(process.cwd(), 'public', 'errors', '404.html'));
+    }
+    res.status(404).json({ message: "Route not found" });
+});
+
 process.on("uncaughtException", (err) => {
     console.error(chalk.red("Uncaught Exception:"), err);
     // process.exit(1);
@@ -86,3 +96,4 @@ if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
 }
 
 export default app;
+t default app;

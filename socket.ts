@@ -31,20 +31,31 @@ export const setupSocket = (httpServer: any) => {
             console.log(chalk.cyan(`[Socket] User joined role room: role:${role}`));
         });
 
+        // Join a group-specific room
+        socket.on('joinGroup', (groupId) => {
+            socket.join(`group:${groupId}`);
+            console.log(chalk.cyan(`[Socket] User joined group room: group:${groupId}`));
+        });
+
         // Handle sending a message
         socket.on('sendMessage', async (data) => {
-            const { sender, receiver, content } = data;
+            const { sender, receiver, groupId, content } = data;
             try {
                 const newMessage = await Message.create({
                     sender,
-                    receiver,
+                    receiver: receiver || undefined,
+                    group: groupId || undefined,
                     content
                 });
 
-                // Emit to receiver's room
-                io.to(receiver).emit('receiveMessage', newMessage);
-                // Emit confirmation to sender
-                io.to(sender).emit('messageSent', newMessage);
+                if (groupId) {
+                    // Emit to group room
+                    io.to(`group:${groupId}`).emit('receiveMessage', newMessage);
+                } else if (receiver) {
+                    // Emit to receiver's room and sender's room
+                    io.to(receiver).emit('receiveMessage', newMessage);
+                    io.to(sender).emit('messageSent', newMessage);
+                }
             } catch (error) {
                 console.error(chalk.red('[Socket] Error saving message:'), error);
             }

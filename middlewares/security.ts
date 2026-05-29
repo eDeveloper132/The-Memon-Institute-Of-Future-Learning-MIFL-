@@ -28,10 +28,10 @@ export const securityMiddleware = [
         contentSecurityPolicy: {
             directives: {
                 ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-                "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "https://vercel.live"],
+                "script-src": ["'self'", "'unsafe-inline'", "cdn.tailwindcss.com", "https://vercel.live", "https://cdn.socket.io", "cdnjs.cloudflare.com"],
                 "style-src": ["'self'", "'unsafe-inline'", "cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
                 "img-src": ["'self'", "data:", "https:"],
-                "connect-src": ["'self'", "https://vercel.live", "https://*.vercel.live"],
+                "connect-src": ["'self'", "https://vercel.live", "https://*.vercel.live", "wss://*.vercel.app", "https://cdn.socket.io"],
                 "font-src": ["'self'", "https://fonts.gstatic.com", "cdnjs.cloudflare.com"],
                 "frame-src": ["'self'", "https://vercel.live"],
             },

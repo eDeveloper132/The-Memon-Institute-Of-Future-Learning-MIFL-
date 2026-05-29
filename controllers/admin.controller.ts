@@ -133,7 +133,10 @@ export const crudNotices = {
 
 export const crudClasses = {
     getAll: async (req: Request, res: Response) => {
-        const classes = await Class.find().populate('classTeacher', 'name').sort({ gradeLevel: 1 });
+        const classes = await Class.find()
+            .populate('classTeacher', 'name')
+            .populate('batches.students', 'name email')
+            .sort({ gradeLevel: 1 });
         res.status(200).json({ classes });
     },
     create: async (req: Request, res: Response) => {
@@ -221,7 +224,9 @@ export const updateClassBatches = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { batches } = req.body;
-        const updatedClass = await Class.findByIdAndUpdate(id, { batches }, { new: true });
+        const updatedClass = await Class.findByIdAndUpdate(id, { batches }, { new: true })
+            .populate('classTeacher', 'name')
+            .populate('batches.students', 'name email');
         console.log(chalk.blue('[Admin Controller] updateClassBatches:'), { classId: id, batches });
         if (!updatedClass) return res.status(404).json({ message: 'Class not found' });
         res.status(200).json({ message: 'Batches updated', class: updatedClass });
@@ -370,68 +375,6 @@ export const getAdminStats = async (req: Request, res: Response) => {
             pendingFeesAmount: pendingFees[0]?.total || 0
         });
     } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
-/**
- * ADMIN - MESSAGING
- */
-export const getAdminChatHistory = async (req: any, res: Response) => {
-    try {
-        const { partnerId } = req.query;
-        if (!partnerId) return res.status(400).json({ message: 'Partner ID is required' });
-
-        const messages = await Message.find({
-            $or: [
-                { sender: req.user.id, receiver: partnerId },
-                { sender: partnerId, receiver: req.user.id }
-            ]
-        }).sort({ createdAt: 1 });
-
-        res.status(200).json({ messages });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
-export const getAdminConversations = async (req: any, res: Response) => {
-    try {
-        const messages = await Message.find({
-            $or: [{ sender: req.user.id }, { receiver: req.user.id }]
-        }).sort({ createdAt: -1 });
-
-        const partnerIds = new Set();
-        messages.forEach(m => {
-            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
-            partnerIds.add(partnerId);
-        });
-
-        const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');
-        res.status(200).json({ partners });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
-export const sendAdminMessage = async (req: any, res: Response) => {
-    try {
-        const { receiver, content } = req.body;
-        const sender = req.user.id;
-
-        const newMessage = await Message.create({
-            sender,
-            receiver,
-            content
-        });
-
-        // Emit via Socket.IO
-        req.io.to(receiver).emit('receiveMessage', newMessage);
-        req.io.to(sender).emit('messageSent', newMessage);
-
-        res.status(201).json({ message: 'Message sent successfully', newMessage });
-    } catch (error) {
-        console.error(chalk.red('[Admin Controller] sendAdminMessage error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

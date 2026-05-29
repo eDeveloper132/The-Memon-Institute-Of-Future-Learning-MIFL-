@@ -1,16 +1,35 @@
 import { rateLimit } from 'express-rate-limit';
+import jwt from 'jsonwebtoken';
+import path from 'path';
 
 /**
  * General rate limiter to prevent DoS and Brute Force attacks
  */
 export const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per `window`
+    max: 200, // Limit each IP to 100 requests per `window`
     standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     message: {
         status: 429,
         message: 'Too many requests from this IP, please try again after 15 minutes'
+    },
+    handler: (req, res, next, options) => {
+        if (req.accepts('html')) {
+            return res.status(options.statusCode).sendFile(path.join(process.cwd(), 'public', 'errors', '429.html'));
+        }
+        res.status(options.statusCode).send(options.message);
+    },
+    skip: (req: any) => {
+        try {
+            const token = req.cookies?.token || req.headers?.authorization?.split(' ')[1];
+            if (!token) return false;
+            const decoded = jwt.decode(token) as any;
+            // Skip rate limiting for admin and teacher roles
+            return decoded && (decoded.role === 'admin' || decoded.role === 'teacher');
+        } catch {
+            return false;
+        }
     }
 });
 
@@ -25,5 +44,11 @@ export const authLimiter = rateLimit({
     message: {
         status: 429,
         message: 'Too many login attempts, please try again after an hour'
+    },
+    handler: (req, res, next, options) => {
+        if (req.accepts('html')) {
+            return res.status(options.statusCode).sendFile(path.join(process.cwd(), 'public', 'errors', '429.html'));
+        }
+        res.status(options.statusCode).send(options.message);
     }
 });

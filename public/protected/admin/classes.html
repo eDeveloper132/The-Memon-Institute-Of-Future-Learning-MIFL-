@@ -650,24 +650,58 @@
             document.getElementById('viewStudentsTitle').textContent =
                 `Students in ${name}`;
 
-            const res = await fetch(
-                `/api/admin/users?role=student&currentClass=${cid}`
-            );
-            const { users } = await res.json();
+            const res = await fetch('/api/admin/classes');
+            const { classes } = await res.json();
+            const cls = classes.find(c => c._id === cid);
+            
+            const list = document.getElementById('studentsList');
+            list.innerHTML = '';
 
-            document.getElementById('studentsList').innerHTML = users.length
-                ? users.map(s => `
-                    <div class="flex items-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4">
-                            ${s.name.charAt(0)}
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-900">${s.name}</p>
-                            <p class="text-xs text-gray-500">${s.email}</p>
-                        </div>
+            if (!cls.batches || cls.batches.length === 0) {
+                list.innerHTML = '<p class="text-center py-10 text-gray-500">No batches or students assigned.</p>';
+                return;
+            }
+
+            cls.batches.forEach(batch => {
+                const batchSection = document.createElement('div');
+                batchSection.className = 'mb-6';
+                batchSection.innerHTML = `
+                    <h4 class="text-sm font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
+                        <i class="fa-solid fa-layer-group mr-2 opacity-50"></i>
+                        ${batch.name} 
+                        <span class="ml-2 px-2 py-0.5 bg-blue-100 text-[10px] rounded-full">
+                            ${(batch.students || []).length} Students
+                        </span>
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${(batch.students || []).map(sid => {
+                            // Hybrid lookup: use populated object or find in allStudents
+                            const s = (typeof sid === 'object' && sid !== null && sid.name) 
+                                ? sid 
+                                : allStudents.find(st => st._id === (sid._id || sid));
+                            
+                            if (!s) return '';
+
+                            return `
+                                <div class="flex items-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition group">
+                                    <div class="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center font-bold mr-3 shadow-sm border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition">
+                                        ${s.name ? s.name.charAt(0) : '?'}
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-gray-900 text-sm truncate">${s.name || 'Unknown Student'}</p>
+                                        <p class="text-[10px] text-gray-400 truncate">${s.email || 'No email'}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
-                `).join('')
-                : '<p class="text-center py-10 text-gray-500">No students.</p>';
+                `;
+                list.appendChild(batchSection);
+            });
+
+            if (list.innerHTML === '') {
+                list.innerHTML = '<p class="text-center py-10 text-gray-500">No students assigned to batches.</p>';
+            }
         }
 
         document.getElementById('addClassForm').onsubmit = async (e) => {
