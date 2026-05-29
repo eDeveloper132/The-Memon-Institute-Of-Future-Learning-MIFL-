@@ -43,6 +43,7 @@ router.patch('/courses/:id', crudCourses.update);
 router.delete('/courses/:id', crudCourses.delete);
 
 router.patch('/classbatches/:id', updateClassBatches);
+router.patch('/coursebatches/:id', updateCourseBatches);
 
 /**
  * Department Management
