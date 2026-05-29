@@ -139,7 +139,8 @@ class UINavbar extends HTMLElement {
                 { label: 'Courses', href: '/protected/admin/courses.html', icon: 'fa-book' },
                 { label: 'Staff Attendance', href: '/protected/admin/teacher-attendance.html', icon: 'fa-user-clock' },
                 { label: 'Student Attendance', href: '/protected/admin/student-attendance.html', icon: 'fa-calendar-check' },
-                { label: 'Fees', href: '/protected/admin/fees.html', icon: 'fa-file-invoice-dollar' }
+                { label: 'Fees', href: '/protected/admin/fees.html', icon: 'fa-file-invoice-dollar' },
+                { label: 'Messages', href: '/protected/messages.html', icon: 'fa-comments' }
             ],
             teacher: [
                 { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
