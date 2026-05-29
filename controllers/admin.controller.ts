@@ -198,7 +198,10 @@ export const crudClasses = {
 
 export const crudCourses = {
     getAll: async (req: Request, res: Response) => {
-        const courses = await Course.find().populate('teacher', 'name').populate('department', 'name');
+        const courses = await Course.find()
+            .populate('teacher', 'name')
+            .populate('department', 'name')
+            .populate('batches.students', 'name email');
         res.status(200).json({ courses });
     },
     create: async (req: Request, res: Response) => {
@@ -212,6 +215,24 @@ export const crudCourses = {
     delete: async (req: Request, res: Response) => {
         await Course.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: 'Course deleted' });
+    }
+};
+
+export const updateCourseBatches = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { batches } = req.body;
+        const updatedCourse = await Course.findByIdAndUpdate(id, { batches }, { new: true })
+            .populate('teacher', 'name')
+            .populate('department', 'name')
+            .populate('batches.students', 'name email');
+        
+        if (!updatedCourse) return res.status(404).json({ message: 'Course not found' });
+
+        res.status(200).json({ message: 'Batches updated', course: updatedCourse });
+    } catch (error) {
+        console.error('[Admin Controller] updateCourseBatches error:', error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 

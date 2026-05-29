@@ -1,6 +1,11 @@
 import mongoose, { Schema } from 'mongoose';
 import type { ICourse } from '../types/course.type.js';
 
+const batchSchema = new Schema({
+    name: { type: String, required: true },
+    students: [{ type: Schema.Types.ObjectId, ref: 'User' }]
+});
+
 const courseSchema = new Schema<ICourse>(
     {
         title: { type: String, required: true, trim: true },
@@ -10,6 +15,7 @@ const courseSchema = new Schema<ICourse>(
         department: { type: Schema.Types.ObjectId, ref: 'Department', required: true },
         teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         enrolledStudents: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+        batches: [batchSchema],
         syllabus: String,
     },
     { timestamps: true }

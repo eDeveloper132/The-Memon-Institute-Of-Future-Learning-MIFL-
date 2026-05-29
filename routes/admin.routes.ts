@@ -3,7 +3,7 @@ import {
     getAllUsers, createUser, updateUser, deleteUser,
     crudClasses, crudCourses, crudNotices, crudDepartments,
     getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
-    generateFeeVoucher, updateClassBatches
+    generateFeeVoucher, updateClassBatches, updateCourseBatches
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -72,5 +72,8 @@ router.patch('/attendance/:id', updateAttendance);
  */
 router.get('/fees', getPendingFees);
 router.post('/fees/generate', generateFeeVoucher);
+
+export default router;
+Voucher);
 
 export default router;

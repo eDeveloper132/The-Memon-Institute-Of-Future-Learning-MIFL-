@@ -19,40 +19,81 @@
                 <p class="text-gray-500 mt-2">Manage the curriculum and subject offerings across all departments.</p>
             </div>
             <button id="openCourseModal" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg active:scale-95">
-                <i class="fa-solid fa-book-medical mr-2"></i> Add Course
+                <i class="fa-solid fa-plus mr-2"></i> Add Course
             </button>
         </div>
 
-        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th class="px-8 py-5 text-sm font-bold text-gray-600 uppercase tracking-wider">Course Code</th>
-                            <th class="px-8 py-5 text-sm font-bold text-gray-600 uppercase tracking-wider">Title</th>
-                            <th class="px-8 py-5 text-sm font-bold text-gray-600 uppercase tracking-wider">Department</th>
-                            <th class="px-8 py-5 text-sm font-bold text-gray-600 uppercase tracking-wider text-center">Credits</th>
-                            <th class="px-8 py-5 text-sm font-bold text-gray-600 uppercase tracking-wider text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="courseTableBody" class="divide-y divide-gray-100">
-                        <tr>
-                            <td colspan="5" class="p-20 text-center">
-                                <ui-spinner text="Loading courses..."></ui-spinner>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div id="courseGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="col-span-full text-center py-20">
+                <ui-spinner text="Loading course catalog..."></ui-spinner>
             </div>
         </div>
     </main>
+
+    <!-- VIEW STUDENTS MODAL -->
+    <div id="viewStudentsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-user-graduate text-2xl mr-3"></i>
+                    <h3 class="text-xl font-bold" id="viewStudentsTitle">Course Students</h3>
+                </div>
+                <button id="closeViewModal" class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto flex-1">
+                <div id="studentsList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MANAGE BATCHES MODAL -->
+    <div id="manageBatchesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-layer-group text-2xl mr-3"></i>
+                    <h3 class="text-xl font-bold" id="manageBatchesTitle">Manage Course Batches</h3>
+                </div>
+                <button id="closeBatchModal" class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">&times;</button>
+            </div>
+
+            <div class="p-6 border-b bg-gray-50">
+                <form id="addBatchForm" class="flex gap-4">
+                    <input type="text" id="newBatchName" placeholder="e.g. Morning Batch" required class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Add Batch</button>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 border-b bg-blue-50">
+                <h4 class="text-xs font-bold text-blue-600 uppercase mb-2 flex items-center">
+                    <i class="fa-solid fa-user-check mr-2"></i>
+                    Available Students (Click to Enroll)
+                </h4>
+                <div id="populate_students" class="flex flex-wrap gap-2 max-h-32 overflow-y-auto"></div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-6" id="batchesContainer"></div>
+        </div>
+    </div>
+
+    <!-- QUICK ASSIGN MODAL -->
+    <div id="quickAssignModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xs overflow-hidden">
+            <div class="p-4 bg-gray-900 text-white text-center">
+                <p class="text-xs uppercase font-bold tracking-widest opacity-70">Enroll Student</p>
+                <h4 id="quickAssignStudentName" class="text-lg font-bold">Student Name</h4>
+            </div>
+            <div id="quickAssignBatchList" class="p-2 space-y-1"></div>
+            <button id="closeQuickAssign" class="w-full py-3 bg-gray-50 text-gray-500 text-sm font-bold border-t hover:bg-gray-100">Cancel</button>
+        </div>
+    </div>
 
     <!-- Course Modal (Add/Edit) -->
     <div id="courseModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div id="modalHeader" class="p-6 bg-blue-600 text-white flex justify-between items-center transition-colors">
                 <h3 id="modalTitle" class="text-xl font-bold">Register New Course</h3>
-                <button data-close-modal="courseModal" class="text-2xl leading-none">&times;</button>
+                <button id="closeCourseModal" class="text-2xl leading-none">&times;</button>
             </div>
             <form id="courseForm" class="p-6 space-y-4">
                 <input type="hidden" name="id">
@@ -88,7 +129,7 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
             <div class="p-6 bg-red-600 text-white text-center">
                 <i class="fa-solid fa-triangle-exclamation text-4xl mb-2"></i>
@@ -97,7 +138,7 @@
             <div class="p-6 text-center">
                 <p class="text-gray-500">Are you sure you want to remove <span id="deleteCourseTitle" class="font-bold text-gray-900"></span>? This action cannot be undone.</p>
                 <div class="flex gap-3 mt-6">
-                    <button data-close-modal="deleteModal" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
+                    <button id="cancelDeleteBtn" class="flex-1 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
                     <button id="confirmDeleteBtn" class="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition">Delete</button>
                 </div>
             </div>
@@ -107,14 +148,52 @@
     <script type="module">
         import { showToast } from '/components/ui-components.js?v=1.6';
 
-        const tableBody = document.getElementById('courseTableBody');
-        const courseForm = document.getElementById('courseForm');
-        const modal = document.getElementById('courseModal');
-        const openBtn = document.getElementById('openCourseModal');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        let allTeachers = [],
+            allStudents = [],
+            allCourses = [],
+            currentCourseForBatches = null,
+            currentBatches = [],
+            courseToDeleteId = null;
 
-        let allCourses = [];
-        let courseToDeleteId = null;
+        const modalElements = {
+            main: document.getElementById('courseModal'),
+            view: document.getElementById('viewStudentsModal'),
+            batch: document.getElementById('manageBatchesModal'),
+            assign: document.getElementById('quickAssignModal'),
+            delete: document.getElementById('deleteConfirmModal')
+        };
+
+        const courseForm = document.getElementById('courseForm');
+
+        async function init() {
+            try {
+                const res = await fetch('/api/auth/me');
+                if (!res.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await res.json();
+                if (user.role !== 'admin') { window.location.href = '/'; return; }
+
+                document.getElementById('userName').textContent = user.name;
+                customElements.whenDefined('ui-navbar').then(() =>
+                    customElements.get('ui-navbar').renderLinks(user.role)
+                );
+
+                await Promise.all([fetchCourses(), fetchTeachers(), fetchStudents()]);
+            } catch (err) { console.error('Init error:', err); }
+        }
+
+        // Modal Controls
+        document.getElementById('openCourseModal').onclick = () => openModal(false);
+        document.getElementById('closeCourseModal').onclick = () => modalElements.main.classList.add('hidden');
+        document.getElementById('closeViewModal').onclick = () => modalElements.view.classList.add('hidden');
+        document.getElementById('closeBatchModal').onclick = () => modalElements.batch.classList.add('hidden');
+        document.getElementById('closeQuickAssign').onclick = () => modalElements.assign.classList.add('hidden');
+        document.getElementById('cancelDeleteBtn').onclick = () => modalElements.delete.classList.add('hidden');
+
+        window.onclick = (e) => {
+            Object.values(modalElements).forEach(m => {
+                if (e.target === m) m.classList.add('hidden');
+            });
+        };
 
         const openModal = (isEdit = false, course = null) => {
             const title = document.getElementById('modalTitle');
@@ -133,7 +212,7 @@
                 courseForm.elements.id.value = course._id;
                 courseForm.elements.title.value = course.title || '';
                 courseForm.elements.code.value = course.code || '';
-                courseForm.elements.credits.value = course.credits || 3;
+                courseForm.elements.credits.value = course.credits || 0;
                 courseForm.elements.department.value = course.department?._id || course.department || '';
                 courseForm.elements.teacher.value = course.teacher?._id || course.teacher || '';
             } else {
@@ -143,161 +222,252 @@
                 submitBtn.textContent = 'Save Course';
             }
 
-            modal.classList.remove('hidden');
+            modalElements.main.classList.remove('hidden');
         };
 
-        const closeModal = (id) => {
-            document.getElementById(id).classList.add('hidden');
+        async function fetchTeachers() {
+            const res = await fetch('/api/admin/users?role=teacher');
+            const data = await res.json();
+            allTeachers = data.users;
+            document.getElementById('teacherSelect').innerHTML = '<option value="">Select Teacher</option>' + 
+                allTeachers.map(t => `<option value="${t._id}">${t.name}</option>`).join('');
+        }
+
+        async function fetchDepartments() {
+            const res = await fetch('/api/admin/departments');
+            const { departments } = await res.json();
+            document.getElementById('departmentSelect').innerHTML = '<option value="">Select Dept</option>' + 
+                departments.map(d => `<option value="${d._id}">${d.name}</option>`).join('');
+        }
+        fetchDepartments();
+
+        async function fetchCourses() {
+            const res = await fetch('/api/admin/courses');
+            const data = await res.json();
+            allCourses = data.courses || [];
+            renderCourses(allCourses);
+        }
+
+        function renderCourses(courses) {
+            const grid = document.getElementById('courseGrid');
+            grid.innerHTML = courses.length ? '' : '<div class="col-span-full text-center py-20 text-gray-500">No courses found.</div>';
+
+            courses.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex gap-2">
+                            <span class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                                ${c.code}
+                            </span>
+                            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                ${c.credits} Credits
+                            </span>
+                        </div>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                            ${c.department?.name || 'General'}
+                        </span>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 truncate" title="${c.title}">
+                        ${c.title}
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-6">
+                        Teacher: <span class="text-blue-600 font-bold">${c.teacher?.name || 'Unassigned'}</span>
+                    </p>
+                    <div class="flex border-t border-gray-50 pt-4 gap-2">
+                        <button class="v-btn flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">View</button>
+                        <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">Batches</button>
+                        <button class="e-btn w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                `;
+                card.querySelector('.v-btn').onclick = () => viewStudents(c._id, c.title);
+                card.querySelector('.b-btn').onclick = () => manageBatches(c._id, c.title);
+                card.querySelector('.e-btn').onclick = () => openModal(true, c);
+                card.querySelector('.d-btn').onclick = () => {
+                    courseToDeleteId = c._id;
+                    document.getElementById('deleteCourseTitle').textContent = c.title;
+                    modalElements.delete.classList.remove('hidden');
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        async function fetchStudents() {
+            const res = await fetch('/api/admin/users?role=student');
+            const data = await res.json();
+            allStudents = data.users;
+        }
+
+        async function manageBatches(courseId, courseTitle) {
+            currentCourseForBatches = courseId;
+            document.getElementById('manageBatchesTitle').textContent = `Manage Batches - ${courseTitle}`;
+            modalElements.batch.classList.remove('hidden');
+            await refreshBatchView();
+        }
+
+        async function refreshBatchView() {
+            const res = await fetch('/api/admin/courses');
+            const { courses } = await res.json();
+            const course = courses.find(c => c._id === currentCourseForBatches);
+            currentBatches = course.batches || [];
+            renderBatches(currentBatches);
+            renderPopulatedStudents();
+        }
+
+        function renderPopulatedStudents() {
+            const container = document.getElementById('populate_students');
+            // For courses, we show all students not yet in this specific course's batches
+            const studentsInBatches = new Set();
+            currentBatches.forEach(b => b.students.forEach(s => studentsInBatches.add(String(s._id || s))));
+            
+            const available = allStudents.filter(s => !studentsInBatches.has(String(s._id)));
+            
+            container.innerHTML = available.length ? '' : '<p class="text-[10px] text-gray-400 italic">No more students available.</p>';
+
+            available.forEach(s => {
+                const tag = document.createElement('div');
+                tag.className = 'bg-white border border-blue-200 rounded-full px-3 py-1 text-[11px] shadow-sm flex items-center hover:bg-blue-600 hover:text-white transition cursor-pointer';
+                tag.innerHTML = `<div class="w-1.5 h-1.5 rounded-full bg-green-500 mr-2"></div><span class="font-bold">${s.name}</span>`;
+                tag.onclick = () => openQuickAssign(s);
+                container.appendChild(tag);
+            });
+        }
+
+        function openQuickAssign(student) {
+            if (!currentBatches.length) { showToast('Create a batch first', 'error'); return; }
+            document.getElementById('quickAssignStudentName').textContent = student.name;
+            const list = document.getElementById('quickAssignBatchList');
+            list.innerHTML = '';
+            currentBatches.forEach(b => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full p-3 text-left hover:bg-blue-50 flex justify-between items-center group transition border-b last:border-0';
+                btn.innerHTML = `<span class="font-bold text-gray-700">${b.name}</span><i class="fa-solid fa-plus text-blue-500"></i>`;
+                btn.onclick = async () => {
+                    if (!b.students.some(id => String(id._id || id) === String(student._id))) {
+                        b.students.push(student._id);
+                        await saveBatches(currentBatches);
+                        modalElements.assign.classList.add('hidden');
+                    } else { showToast('Already in batch', 'error'); }
+                };
+                list.appendChild(btn);
+            });
+            modalElements.assign.classList.remove('hidden');
+        }
+
+        function renderBatches(batches) {
+            const container = document.getElementById('batchesContainer');
+            container.innerHTML = batches.length ? '' : '<div class="text-center py-10 text-gray-400 italic">No batches created yet.</div>';
+
+            batches.forEach((b, idx) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white rounded-xl p-5 border border-gray-200 shadow-sm';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-blue-600">${b.name}</h4>
+                        <button class="rb-btn text-red-400 hover:text-red-600 transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${(b.students || []).map(sid => {
+                            const s = allStudents.find(st => String(st._id) === String(sid._id || sid));
+                            return s ? `<span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-lg text-xs flex items-center border border-gray-200">${s.name}<button class="rs-btn ml-2 text-gray-400 hover:text-red-500" data-sid="${s._id}">&times;</button></span>` : '';
+                        }).join('')}
+                    </div>
+                `;
+                div.querySelector('.rb-btn').onclick = async () => {
+                    if (confirm('Delete batch?')) { currentBatches.splice(idx, 1); await saveBatches(currentBatches); }
+                };
+                div.querySelectorAll('.rs-btn').forEach(btn => {
+                    btn.onclick = async () => { b.students = b.students.filter(s => String(s._id || s) !== String(btn.dataset.sid)); await saveBatches(currentBatches); };
+                });
+                container.appendChild(div);
+            });
+        }
+
+        async function saveBatches(batches) {
+            const clean = batches.map(b => ({ name: b.name, students: b.students.map(s => s._id || s) }));
+            const res = await fetch(`/api/admin/coursebatches/${currentCourseForBatches}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ batches: clean })
+            });
+            if (res.ok) { showToast('Updated Successfully'); await fetchStudents(); await refreshBatchView(); }
+        }
+
+        document.getElementById('addBatchForm').onsubmit = async (e) => {
+            e.preventDefault();
+            currentBatches.push({ name: document.getElementById('newBatchName').value, students: [] });
+            await saveBatches(currentBatches);
+            e.target.reset();
         };
 
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('[data-close-modal]')) {
-                closeModal(e.target.closest('[data-close-modal]').dataset.closeModal);
-            }
-            if (e.target === modal || e.target === document.getElementById('deleteModal')) {
-                e.target.classList.add('hidden');
-            }
-        });
+        confirmDeleteBtn.onclick = async () => {
+            if (!courseToDeleteId) return;
+            const res = await fetch(`/api/admin/courses/${courseToDeleteId}`, { method: 'DELETE' });
+            if (res.ok) { showToast('Deleted'); modalElements.delete.classList.add('hidden'); fetchCourses(); }
+        };
 
-        openBtn.onclick = () => openModal(false);
+        async function viewStudents(cid, name) {
+            modalElements.view.classList.remove('hidden');
+            document.getElementById('viewStudentsTitle').textContent = `Students in ${name}`;
+            const res = await fetch('/api/admin/courses');
+            const { courses } = await res.json();
+            const course = courses.find(c => c._id === cid);
+            const list = document.getElementById('studentsList');
+            list.innerHTML = '';
+
+            if (!course.batches || course.batches.length === 0) {
+                list.innerHTML = '<p class="text-center py-10 text-gray-500">No batches or students assigned.</p>';
+                return;
+            }
+
+            course.batches.forEach(batch => {
+                const batchSection = document.createElement('div');
+                batchSection.className = 'mb-6';
+                batchSection.innerHTML = `
+                    <h4 class="text-sm font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
+                        <i class="fa-solid fa-layer-group mr-2 opacity-50"></i>
+                        ${batch.name} <span class="ml-2 px-2 py-0.5 bg-blue-100 text-[10px] rounded-full">${(batch.students || []).length} Students</span>
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${(batch.students || []).map(s => `
+                            <div class="flex items-center p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition group">
+                                <div class="w-8 h-8 rounded-lg bg-white text-blue-600 flex items-center justify-center font-bold mr-3 shadow-sm border border-gray-100 group-hover:bg-blue-600 group-hover:text-white transition">${s.name ? s.name.charAt(0) : '?'}</div>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-gray-900 text-sm truncate">${s.name || 'Unknown Student'}</p>
+                                    <p class="text-[10px] text-gray-400 truncate">${s.email || 'No email'}</p>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                list.appendChild(batchSection);
+            });
+        }
 
         courseForm.onsubmit = async (e) => {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(courseForm));
             const id = data.id;
             delete data.id;
-
             const url = id ? `/api/admin/courses/${id}` : '/api/admin/courses';
             const method = id ? 'PATCH' : 'POST';
 
-            try {
-                const res = await fetch(url, {
-                    method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (res.ok) {
-                    showToast(id ? 'Course updated' : 'Course added');
-                    closeModal('courseModal');
-                    fetchCourses();
-                } else {
-                    const err = await res.json();
-                    showToast(err.message || 'Operation failed', 'error');
-                }
-            } catch (err) { showToast('Server error', 'error'); }
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                showToast(id ? 'Updated!' : 'Created!');
+                modalElements.main.classList.add('hidden');
+                fetchCourses();
+            } else { showToast('Error saving course', 'error'); }
         };
 
-        async function fetchDepartments() {
-            try {
-                const res = await fetch('/api/admin/departments');
-                const { departments } = await res.json();
-                document.getElementById('departmentSelect').innerHTML = 
-                    '<option value="">Select Dept</option>' + 
-                    departments.map(d => `<option value="${d._id}">${d.name}</option>`).join('');
-            } catch (err) {}
-        }
-
-        async function fetchTeachers() {
-            try {
-                const res = await fetch('/api/admin/users?role=teacher');
-                const { users } = await res.json();
-                document.getElementById('teacherSelect').innerHTML = 
-                    '<option value="">Select Teacher</option>' + 
-                    users.map(t => `<option value="${t._id}">${t.name}</option>`).join('');
-            } catch (err) {}
-        }
-
-        async function fetchCourses() {
-            try {
-                const res = await fetch('/api/admin/courses');
-                const data = await res.json();
-                allCourses = data.courses || [];
-                renderCourses(allCourses);
-            } catch (err) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-red-500 font-bold">Failed to load courses</td></tr>';
-            }
-        }
-
-        function renderCourses(courses) {
-            if (!courses.length) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="p-20 text-center text-gray-400 font-medium italic">No courses available.</td></tr>';
-                return;
-            }
-
-            tableBody.innerHTML = courses.map(c => `
-                <tr class="hover:bg-gray-50 transition border-b border-gray-100 group">
-                    <td class="px-8 py-5">
-                        <span class="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-widest border border-blue-100">
-                            ${c.code}
-                        </span>
-                    </td>
-                    <td class="px-8 py-5 font-bold text-gray-900">${c.title}</td>
-                    <td class="px-8 py-5">
-                        <div class="text-sm font-semibold text-gray-700">${c.department?.name || 'General'}</div>
-                        <div class="text-[10px] text-gray-400 uppercase tracking-widest font-black">Department</div>
-                    </td>
-                    <td class="px-8 py-5 text-center">
-                        <span class="text-sm font-black text-gray-700">${c.credits || 3}</span>
-                    </td>
-                    <td class="px-8 py-5 text-right">
-                        <div class="flex justify-end gap-2">
-                            <button data-action="edit" data-id="${c._id}" class="w-10 h-10 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 shadow-sm active:scale-90">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button data-action="delete" data-id="${c._id}" class="w-10 h-10 flex items-center justify-center text-red-400 hover:bg-red-600 hover:text-white rounded-xl transition-all border border-red-100 shadow-sm active:scale-90">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        tableBody.onclick = (e) => {
-            const btn = e.target.closest('button[data-action]');
-            if (!btn) return;
-
-            const id = btn.dataset.id;
-            const action = btn.dataset.action;
-            const course = allCourses.find(c => c._id === id);
-
-            if (action === 'edit') openModal(true, course);
-            if (action === 'delete') {
-                courseToDeleteId = id;
-                document.getElementById('deleteCourseTitle').textContent = course?.title || 'this course';
-                document.getElementById('deleteModal').classList.remove('hidden');
-            }
-        };
-
-        confirmDeleteBtn.onclick = async () => {
-            if (!courseToDeleteId) return;
-            try {
-                const res = await fetch(`/api/admin/courses/${courseToDeleteId}`, { method: 'DELETE' });
-                if (res.ok) {
-                    showToast('Course deleted');
-                    closeModal('deleteModal');
-                    fetchCourses();
-                } else {
-                    const err = await res.json();
-                    showToast(err.message || 'Delete failed', 'error');
-                }
-            } catch (err) { showToast('Server error', 'error'); }
-        };
-
-        async function init() {
-            try {
-                const res = await fetch('/api/auth/me');
-                if (!res.ok) { window.location.href = '/api/auth/login'; return; }
-                const { user } = await res.json();
-                if (user.role !== 'admin') { window.location.href = '/'; return; }
-                if (window.initSocket) window.initSocket(user);
-                
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
-                
-                await Promise.all([fetchDepartments(), fetchTeachers(), fetchCourses()]);
-            } catch (err) { window.location.href = '/api/auth/login'; }
-        }
         init();
     </script>
 </body>
