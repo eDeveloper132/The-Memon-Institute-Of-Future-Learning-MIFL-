@@ -74,6 +74,3 @@ router.get('/fees', getPendingFees);
 router.post('/fees/generate', generateFeeVoucher);
 
 export default router;
-Voucher);
-
-export default router;
