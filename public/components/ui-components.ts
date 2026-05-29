@@ -160,7 +160,8 @@ class UINavbar extends HTMLElement {
                 { label: 'Profile', href: '/protected/student/details.html', icon: 'fa-user-gear' },
                 { label: 'Assignments', href: '/protected/student/assignments.html', icon: 'fa-file-lines' },
                 { label: 'Quizzes', href: '/protected/student/quizzes.html', icon: 'fa-bolt' },
-                { label: 'Resources', href: '/protected/student/course-files.html', icon: 'fa-folder-open' }
+                { label: 'Resources', href: '/protected/student/course-files.html', icon: 'fa-folder-open' },
+                { label: 'Messages', href: '/protected/messages.html', icon: 'fa-comments' }
             ],
             parent: [
                 { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
