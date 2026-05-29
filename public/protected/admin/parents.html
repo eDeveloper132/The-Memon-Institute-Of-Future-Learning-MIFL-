@@ -446,8 +446,8 @@
                 const sid = normalizeId(s._id);
                 const isSelected = selectedStudentIds.has(sid);
                 return `
-                    <div class="p-3 flex items-center justify-between hover:bg-gray-50 transition cursor-pointer group" onclick="document.getElementById('check-${sid}').click()">
-                        <div class="flex items-center gap-3">
+                    <div class="p-3 flex items-center justify-between hover:bg-gray-50 transition cursor-pointer group" data-student-row="${sid}">
+                        <div class="flex items-center gap-3 pointer-events-none">
                             <div class="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold">
                                 ${s.name.charAt(0).toUpperCase()}
                             </div>
@@ -456,15 +456,14 @@
                                 <div class="text-[10px] text-gray-400">${s.email}</div>
                             </div>
                         </div>
-                        <input type="checkbox" id="check-${sid}" value="${sid}" ${isSelected ? 'checked' : ''} 
-                               class="w-5 h-5 text-blue-600 rounded cursor-pointer" 
-                               onclick="event.stopPropagation(); window.toggleStudentSelection('${sid}')">
+                        <input type="checkbox" data-student-check="${sid}" value="${sid}" ${isSelected ? 'checked' : ''} 
+                               class="w-5 h-5 text-blue-600 rounded cursor-pointer">
                     </div>
                 `;
             }).join('');
         };
 
-        window.toggleStudentSelection = (id) => {
+        const toggleStudentSelection = (id) => {
             if (selectedStudentIds.has(id)) {
                 selectedStudentIds.delete(id);
             } else {
@@ -491,6 +490,21 @@
         searchInput.oninput = filterAndRender;
         statusFilter.onchange = filterAndRender;
         studentSearchInput.oninput = renderStudentList;
+
+        studentListContainer.addEventListener('click', (e) => {
+            const row = e.target.closest('[data-student-row]');
+            const checkbox = e.target.closest('[data-student-check]');
+            
+            if (checkbox) {
+                // Checkbox clicked
+                toggleStudentSelection(checkbox.value);
+            } else if (row) {
+                // Row clicked - toggle checkbox manually
+                const cb = row.querySelector('input[type="checkbox"]');
+                cb.checked = !cb.checked;
+                toggleStudentSelection(cb.value);
+            }
+        });
 
         confirmLinkBtn.onclick = async () => {
             if (!activeParentForLinking) return;
