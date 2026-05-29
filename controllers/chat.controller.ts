@@ -217,6 +217,49 @@ export const getUnreadCounts = async (req: any, res: Response) => {
     }
 };
 
+export const syncData = async (req: any, res: Response) => {
+    try {
+        const userId = req.user.id;
+        const { since } = req.query;
+        
+        const lastSync = since ? new Date(since) : new Date(Date.now() - 60 * 60 * 1000); // Default to last hour
+        const now = new Date();
+
+        // 1. New Messages (DMs for user or Groups user is in)
+        const userGroups = await ChatGroup.find({ members: userId, isArchived: false }).select('_id');
+        const groupIds = userGroups.map(g => g._id);
+
+        const newMessages = await Message.find({
+            $or: [
+                { receiver: userId, createdAt: { $gt: lastSync } },
+                { group: { $in: groupIds }, createdAt: { $gt: lastSync } }
+            ],
+            sender: { $ne: userId } // Don't sync own messages back
+        })
+        .populate('sender', 'name profilePicture role')
+        .sort({ createdAt: 1 })
+        .limit(50);
+
+        // 2. New Notices (Audience based)
+        const role = req.user.role;
+        const audienceFilter = ['all'];
+        if (role === 'teacher') audienceFilter.push('teachers');
+        if (role === 'student') audienceFilter.push('students');
+        if (role === 'parent') audienceFilter.push('parents');
+
+        // Note: Notice model needs to be imported if we want to sync them here. 
+        // For now, let's focus on messages to restore teacher chat on Vercel.
+
+        res.status(200).json({
+            newMessages,
+            timestamp: now.toISOString()
+        });
+    } catch (error) {
+        console.error(chalk.red('[Chat] syncData error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const uploadAttachment = async (req: Request, res: Response) => {
     try {
         if (!req.file) {

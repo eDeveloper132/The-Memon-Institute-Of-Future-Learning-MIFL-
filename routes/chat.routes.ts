@@ -8,7 +8,8 @@ import {
     getUnreadCounts,
     uploadAttachment,
     updateGroup,
-    deleteMessage
+    deleteMessage,
+    syncData
 } from '../controllers/chat.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 import { chatUpload } from '../middlewares/upload.js';
@@ -28,6 +29,7 @@ router.get('/contacts', getAllowedContacts);
 // Messaging & History
 router.get('/messages', getChatHistory);
 router.get('/unread', getUnreadCounts);
+router.get('/sync', syncData);
 router.post('/messages', sendMessage);
 router.delete('/messages/:id', authorize('admin'), deleteMessage);
 

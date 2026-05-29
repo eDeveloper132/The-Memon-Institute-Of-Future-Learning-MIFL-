@@ -321,16 +321,19 @@ export const showToast = (message: string, type: 'success' | 'error' | 'info' = 
 (window as any).showToast = showToast;
 
 /**
- * Socket.IO Initialization
+ * Socket.IO Initialization & Polling Fallback
  */
 let socket: any = null;
+let syncInterval: any = null;
+let lastSyncTimestamp: string = new Date().toISOString();
 
 export const initSocket = async (user: any) => {
-    if (socket) return socket;
+    if (socket && socket.connected) return socket;
 
-    // Dynamically load Socket.IO client if not already present
+    console.log('[Socket] Initializing real-time connection...');
+
+    // 1. Try Socket.IO First
     if (typeof (window as any).io === 'undefined') {
-        console.log('[Socket] Loading Socket.IO client script...');
         await new Promise<void>((resolve, reject) => {
             const script = document.createElement('script');
             script.src = 'https://cdn.socket.io/4.8.3/socket.io.min.js';
@@ -341,61 +344,99 @@ export const initSocket = async (user: any) => {
     }
 
     const io = (window as any).io;
-    socket = io();
+    
+    // Configure socket with a timeout for connection
+    socket = io({
+        reconnectionAttempts: 3,
+        timeout: 5000,
+        transports: ['websocket', 'polling']
+    });
 
-    const updateStatus = (connected: boolean) => {
-        const indicator = document.getElementById('connectionStatus');
-        if (indicator) {
-            indicator.style.backgroundColor = connected ? '#22c55e' : '#ef4444'; // green-500 : red-500
-            indicator.title = connected ? 'Real-time connection active' : 'Disconnected from server';
+    const indicator = document.getElementById('connectionStatus');
+    const updateStatus = (mode: 'socket' | 'polling' | 'disconnected') => {
+        if (!indicator) return;
+        if (mode === 'socket') {
+            indicator.style.backgroundColor = '#22c55e'; // green
+            indicator.title = 'Real-time: Connected (Socket.IO)';
+        } else if (mode === 'polling') {
+            indicator.style.backgroundColor = '#eab308'; // yellow
+            indicator.title = 'Real-time: Connected (Polling Fallback)';
+        } else {
+            indicator.style.backgroundColor = '#ef4444'; // red
+            indicator.title = 'Real-time: Disconnected';
         }
     };
 
+    // Socket Success
     socket.on('connect', () => {
-        console.log('[Socket] Connected to server');
-        updateStatus(true);
+        console.log('[Socket] Connected successfully');
+        updateStatus('socket');
+        if (syncInterval) clearInterval(syncInterval);
         
-        // Join personal room
-        if (user._id) {
-            socket.emit('join', user._id);
-        }
-        
-        // Join role room
-        if (user.role) {
-            socket.emit('joinRole', user.role);
-        }
-
-        // Join class room if applicable
+        if (user._id) socket.emit('join', user._id);
+        if (user.role) socket.emit('joinRole', user.role);
         if (user.currentClass) {
-            const classId = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
-            socket.emit('joinClass', classId);
+            const cid = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
+            socket.emit('joinClass', cid);
         }
+    });
+
+    // Socket Failure - Trigger Polling Fallback
+    socket.on('connect_error', (err: any) => {
+        console.warn('[Socket] Connection failed, switching to Polling Fallback:', err.message);
+        startPollingFallback(user, updateStatus);
     });
 
     socket.on('disconnect', () => {
-        console.warn('[Socket] Disconnected from server');
-        updateStatus(false);
-        showToast('Real-time connection lost. Attempting to reconnect...', 'error');
+        console.warn('[Socket] Disconnected');
+        updateStatus('disconnected');
     });
 
-    socket.on('reconnect', (attempt: number) => {
-        console.log(`[Socket] Reconnected after ${attempt} attempts`);
-        showToast('Real-time connection restored', 'success');
-        updateStatus(true);
-    });
-
-    // Listeners
-    socket.on('notification', (data: any) => {
-        showToast(data.message, 'info');
-    });
-
+    // Unified Event Listeners (Same for Sockets and Polling)
+    socket.on('notification', (data: any) => showToast(data.message, 'info'));
     socket.on('receiveMessage', (message: any) => {
         showToast('New message received!', 'info');
-        // Dispatch a custom event in case a specific view (like chat) needs to update its UI
         document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));
     });
 
     return socket;
 };
 
+const startPollingFallback = (user: any, updateStatus: Function) => {
+    if (syncInterval) return; // Already polling
+    
+    updateStatus('polling');
+    console.log('[Sync] Polling engine started');
+
+    const sync = async () => {
+        try {
+            const res = await fetch(`/api/chat/sync?since=${lastSyncTimestamp}`);
+            if (res.ok) {
+                const data = await res.json();
+                lastSyncTimestamp = data.timestamp;
+                
+                // Dispatch messages
+                if (data.newMessages && data.newMessages.length > 0) {
+                    data.newMessages.forEach((msg: any) => {
+                        document.dispatchEvent(new CustomEvent('newMessage', { detail: msg }));
+                        // Also trigger a toast if not on the messages page
+                        if (!window.location.pathname.includes('messages.html')) {
+                            showToast(`New message from ${msg.sender.name}`, 'info');
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('[Sync] Polling error:', err);
+            updateStatus('disconnected');
+        }
+    };
+
+    // Initial sync
+    sync();
+    // Poll every 5 seconds
+    syncInterval = setInterval(sync, 5000);
+};
+
 (window as any).initSocket = initSocket;
+
