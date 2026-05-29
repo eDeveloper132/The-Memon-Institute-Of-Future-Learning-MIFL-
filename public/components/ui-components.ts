@@ -4,6 +4,7 @@
 
 class UINavbar extends HTMLElement {
     private mobileMenuOpen = false;
+    private userData: any = null;
 
     connectedCallback(): void {
         const title = this.getAttribute('title') || 'MIFL';
@@ -73,6 +74,7 @@ class UINavbar extends HTMLElement {
         `;
         
         this.setupEventListeners();
+        if (this.userData) this.renderLinks(this.userData);
     }
 
     private setupEventListeners(): void {
@@ -118,14 +120,23 @@ class UINavbar extends HTMLElement {
         mobileLogoutBtn?.addEventListener('click', handleLogout);
     }
 
-    renderLinks(role: string): void {
+    renderLinks(user: string | any): void {
+        const role = typeof user === 'string' ? user : user.role;
+        this.userData = typeof user === 'string' ? { role } : user;
+
         const navLinks = this.querySelector('#navLinks');
         const mobileNavLinks = this.querySelector('#mobileNavLinks');
         const userRoleBadge = this.querySelector('#userRoleBadge');
         const mobileUserRole = this.querySelector('#mobileUserRole');
+        const userName = this.querySelector('#userName');
+        const mobileUserName = this.querySelector('#mobileUserName');
         
         if (userRoleBadge) userRoleBadge.textContent = role;
         if (mobileUserRole) mobileUserRole.textContent = role;
+        if (typeof user === 'object' && user.name) {
+            if (userName) userName.textContent = user.name;
+            if (mobileUserName) mobileUserName.textContent = user.name;
+        }
 
         if (!navLinks && !mobileNavLinks) return;
 
@@ -489,4 +500,3 @@ const startPollingFallback = (user: any, updateStatus: Function) => {
 };
 
 (window as any).initSocket = initSocket;
-

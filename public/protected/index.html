@@ -80,12 +80,15 @@
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('dashboardContent').classList.remove('hidden');
             
-            document.getElementById('userName').textContent = user.name;
             document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
-                    const navbar = customElements.get('ui-navbar');
-        if (navbar && navbar.renderLinks) {
-            navbar.renderLinks(user.role);
-        }
+            
+            customElements.whenDefined('ui-navbar').then(() => {
+                const navbar = document.querySelector('ui-navbar');
+                if (navbar && (navbar as any).renderLinks) {
+                    (navbar as any).renderLinks(user);
+                }
+            });
+
             const badge = document.getElementById('roleBadge');
             badge.textContent = user.role;
             

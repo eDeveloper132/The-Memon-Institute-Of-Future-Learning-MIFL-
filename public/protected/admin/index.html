@@ -121,13 +121,14 @@
 
                 if (user.role !== 'admin') { window.location.href = '/'; return; }
                 
-                document.getElementById('userName').textContent = user.name;
-                document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
-                
                 customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = customElements.get('ui-navbar');
-                    if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && (navbar as any).renderLinks) { 
+                        (navbar as any).renderLinks(user); 
+                    }
                 });
+
+                document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
                 
                 fetchAdminStats();
             } catch (err) {
