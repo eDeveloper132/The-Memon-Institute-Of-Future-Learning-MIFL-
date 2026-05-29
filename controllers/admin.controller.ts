@@ -146,15 +146,48 @@ export const crudClasses = {
     update: async (req: Request, res: Response) => {
         const updatedClass = await Class.findByIdAndUpdate(req.params.id, req.body, { new: true });
         
-        // Sync the currentClass field for all assigned students
-        if (req.body.students && updatedClass) {
-            await User.updateMany({ _id: { $in: req.body.students } }, { currentClass: updatedClass._id });
+        if (!updatedClass) return res.status(404).json({ message: 'Class not found' });
+
+        // Extract all students who SHOULD be in this class
+        const studentIds = new Set<string>();
+        
+        // From flat students array
+        if (req.body.students) {
+            req.body.students.forEach((sid: any) => studentIds.add(String(sid)));
+        }
+
+        // From batches array
+        if (req.body.batches) {
+            req.body.batches.forEach((batch: any) => {
+                batch.students?.forEach((sid: any) => {
+                    const idStr = sid._id || sid;
+                    if (idStr) studentIds.add(String(idStr));
+                });
+            });
+        }
+
+        const finalStudentIds = Array.from(studentIds);
+
+        // 1. Unset currentClass for students who were in this class but are no longer listed
+        await User.updateMany(
+            { currentClass: updatedClass._id, _id: { $nin: finalStudentIds } },
+            { $unset: { currentClass: "" } }
+        );
+
+        // 2. Set currentClass for students who are now in this class
+        if (finalStudentIds.length > 0) {
+            await User.updateMany(
+                { _id: { $in: finalStudentIds } },
+                { currentClass: updatedClass._id }
+            );
         }
 
         res.status(200).json({ message: 'Class updated', class: updatedClass });
     },
     delete: async (req: Request, res: Response) => {
-        await Class.findByIdAndDelete(req.params.id);
+        const { id } = req.params;
+        await User.updateMany({ currentClass: id as string }, { $unset: { currentClass: "" } });
+        await Class.findByIdAndDelete(id);
         res.status(200).json({ message: 'Class deleted' });
     }
 };
@@ -227,10 +260,44 @@ export const updateClassBatches = async (req: Request, res: Response) => {
         const updatedClass = await Class.findByIdAndUpdate(id, { batches }, { new: true })
             .populate('classTeacher', 'name')
             .populate('batches.students', 'name email');
+        
         console.log(chalk.blue('[Admin Controller] updateClassBatches:'), { classId: id, batches });
+        
         if (!updatedClass) return res.status(404).json({ message: 'Class not found' });
+
+        // Extract all students who SHOULD be in this class via batches
+        const studentIds = new Set<string>();
+        batches.forEach((batch: any) => {
+            batch.students?.forEach((sid: any) => {
+                const idStr = sid._id || sid;
+                if (idStr) studentIds.add(String(idStr));
+            });
+        });
+
+        // Also include students in the flat list to be safe
+        if (updatedClass.students) {
+            updatedClass.students.forEach(sid => studentIds.add(String(sid)));
+        }
+
+        const finalStudentIds = Array.from(studentIds);
+
+        // 1. Unset currentClass for students who are no longer in any part of this class
+        await User.updateMany(
+            { currentClass: updatedClass._id, _id: { $nin: finalStudentIds } },
+            { $unset: { currentClass: "" } }
+        );
+
+        // 2. Set currentClass for students who are in this class
+        if (finalStudentIds.length > 0) {
+            await User.updateMany(
+                { _id: { $in: finalStudentIds } },
+                { currentClass: updatedClass._id }
+            );
+        }
+
         res.status(200).json({ message: 'Batches updated', class: updatedClass });
     } catch (error) {
+        console.error('[Admin Controller] updateClassBatches error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

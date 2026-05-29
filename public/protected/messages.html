@@ -12,8 +12,8 @@
     
     <ui-navbar title="Communication Center"></ui-navbar>
 
-    <main class="p-8 max-w-6xl mx-auto h-[calc(100vh-120px)] flex flex-col">
-        <div class="mb-6 flex justify-between items-end">
+    <main class="p-0 md:p-8 max-w-6xl mx-auto h-[calc(100vh-64px)] md:h-[calc(100vh-120px)] flex flex-col">
+        <div id="headerSection" class="hidden md:flex mb-6 justify-between items-end">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900">Direct Messages & Groups</h2>
                 <p class="text-gray-500 mt-1">Chat with teachers, administration, and students.</p>
@@ -23,10 +23,18 @@
             </button>
         </div>
 
-        <div class="flex-1 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex">
-            <!-- Sidebar -->
-            <div class="w-80 border-r border-gray-100 flex flex-col bg-white z-10">
-                <div class="p-6 border-b border-gray-100">
+        <div class="flex-1 bg-white md:rounded-3xl shadow-sm border-t md:border border-gray-100 overflow-hidden flex">
+            <!-- Sidebar (Chat List) -->
+            <div id="sidebarPanel" class="w-full md:w-80 border-r border-gray-100 flex flex-col bg-white z-10">
+                <div class="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center">
+                    <h3 class="md:hidden font-black text-xl text-gray-900">Messages</h3>
+                    <div class="md:hidden flex gap-2">
+                        <button id="mobileCreateGroupBtn" class="hidden w-10 h-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4 md:p-6 border-b border-gray-100">
                     <div class="relative">
                         <i class="fa-solid fa-search absolute left-3 top-3 text-gray-400"></i>
                         <input type="text" id="searchInput" placeholder="Search chats..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -39,7 +47,7 @@
             </div>
 
             <!-- Chat Window -->
-            <div class="flex-1 flex flex-col bg-gray-50 bg-opacity-50 relative">
+            <div id="chatPanel" class="flex-1 hidden md:flex flex-col bg-gray-50 bg-opacity-50 relative">
                 <!-- Empty State -->
                 <div id="emptyChatState" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-20">
                     <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-300 text-4xl mb-4">
@@ -50,36 +58,39 @@
                 </div>
 
                 <!-- Header -->
-                <div class="p-6 bg-white border-b border-gray-100 flex justify-between items-center z-10">
-                    <div class="flex items-center gap-4">
-                        <div id="activeChatAvatar" class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold"></div>
+                <div class="p-4 md:p-6 bg-white border-b border-gray-100 flex justify-between items-center z-10">
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <button id="backToListBtn" class="md:hidden w-8 h-8 flex items-center justify-center text-gray-500 hover:text-blue-600 transition">
+                            <i class="fa-solid fa-chevron-left text-lg"></i>
+                        </button>
+                        <div id="activeChatAvatar" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold"></div>
                         <div>
-                            <h4 id="activeChatName" class="font-bold text-gray-900 leading-none"></h4>
-                            <span id="activeChatRole" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest"></span>
+                            <h4 id="activeChatName" class="font-bold text-gray-900 leading-none text-sm md:text-base"></h4>
+                            <span id="activeChatRole" class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase tracking-widest"></span>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button id="editGroupBtn" class="hidden w-10 h-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition active:scale-90">
+                        <button id="editGroupBtn" class="hidden w-9 h-9 md:w-10 md:h-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition active:scale-90">
                             <i class="fa-solid fa-gear"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Messages area -->
-                <div id="messageArea" class="flex-1 p-8 overflow-y-auto space-y-6">
+                <div id="messageArea" class="flex-1 p-4 md:p-8 overflow-y-auto space-y-4 md:space-y-6">
                     <!-- Messages injected here -->
                 </div>
 
                 <!-- Input -->
-                <div class="p-6 bg-white border-t border-gray-100">
-                    <form id="messageForm" class="flex gap-4 items-center">
-                        <label class="w-12 h-12 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 cursor-pointer transition active:scale-95">
+                <div class="p-4 md:p-6 bg-white border-t border-gray-100">
+                    <form id="messageForm" class="flex gap-3 md:gap-4 items-center">
+                        <label class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 cursor-pointer transition active:scale-95">
                             <i class="fa-solid fa-paperclip"></i>
                             <input type="file" id="fileInput" class="hidden">
                         </label>
-                        <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-6 py-2 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" disabled>
-                        <button type="submit" id="sendBtn" class="w-12 h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg active:scale-95 disabled:opacity-50" disabled>
-                            <i class="fa-solid fa-paper-plane"></i>
+                        <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-4 md:px-6 py-2 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm md:text-base" disabled>
+                        <button type="submit" id="sendBtn" class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg active:scale-95 disabled:opacity-50" disabled>
+                            <i class="fa-solid fa-paper-plane text-sm md:text-base"></i>
                         </button>
                     </form>
                 </div>
@@ -135,17 +146,53 @@
 
         // Modal Elements
         const createGroupBtn = document.getElementById('createGroupBtn');
+        const mobileCreateGroupBtn = document.getElementById('mobileCreateGroupBtn');
         const groupModal = document.getElementById('groupModal');
         const closeGroupModal = document.getElementById('closeGroupModal');
         const groupForm = document.getElementById('groupForm');
         const memberSelection = document.getElementById('memberSelection');
 
+        // Responsive Panels
+        const sidebarPanel = document.getElementById('sidebarPanel');
+        const chatPanel = document.getElementById('chatPanel');
+        const backToListBtn = document.getElementById('backToListBtn');
+
+        // View Switching Logic
+        function toggleMobileView(view) {
+            const isMobile = window.innerWidth < 768;
+            if (!isMobile) return;
+
+            if (view === 'chat') {
+                sidebarPanel.classList.add('hidden');
+                chatPanel.classList.remove('hidden');
+                chatPanel.classList.add('flex');
+            } else {
+                sidebarPanel.classList.remove('hidden');
+                chatPanel.classList.add('hidden');
+                chatPanel.classList.remove('flex');
+                activeChat = null;
+                renderSidebar(searchInput.value);
+            }
+        }
+
+        backToListBtn.addEventListener('click', () => toggleMobileView('list'));
+
         // Modals Logic
-        createGroupBtn.addEventListener('click', () => {
+        const handleCreateGroupClick = () => {
             renderMemberSelection();
             groupModal.classList.remove('hidden');
+        };
+        createGroupBtn.addEventListener('click', handleCreateGroupClick);
+        mobileCreateGroupBtn.addEventListener('click', handleCreateGroupClick);
+        closeGroupModal.addEventListener('click', () => {
+            groupModal.classList.add('hidden');
+            // Reset modal title if it was edited
+            groupModal.querySelector('h3').textContent = 'Create New Group';
+            groupModal.querySelector('button[type="submit"]').textContent = 'Create Group';
+            groupForm.reset();
+            const idField = groupForm.querySelector('input[name="groupId"]');
+            if (idField) idField.remove();
         });
-        closeGroupModal.addEventListener('click', () => groupModal.classList.add('hidden'));
 
         function renderMemberSelection() {
             if (!allContacts.length) {
@@ -732,9 +779,14 @@
                 if (user.role === 'admin' || user.role === 'teacher') {
                     createGroupBtn.classList.remove('hidden');
                     createGroupBtn.classList.add('flex');
+                    mobileCreateGroupBtn.classList.remove('hidden');
+                    mobileCreateGroupBtn.classList.add('flex');
                 }
 
                 await fetchSidebarData();
+                
+                // Initialize Mobile View
+                toggleMobileView('list');
             } catch (err) {
                 console.error('[Chat] Init error:', err);
                 window.location.href = '/api/auth/login';
