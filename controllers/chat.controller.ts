@@ -18,13 +18,18 @@ export const createGroup = async (req: any, res: Response) => {
         // Add creator to members if not present
         const uniqueMembers = Array.from(new Set([...members, userId]));
 
-        const newGroup = await ChatGroup.create({
+        const groupData: any = {
             name,
             description,
             creator: userId,
-            members: uniqueMembers,
-            classBatch: classId && batchName ? { classId, batchName } : undefined
-        });
+            members: uniqueMembers
+        };
+        
+        if (classId && batchName) {
+            groupData.classBatch = { classId, batchName };
+        }
+
+        const newGroup = await ChatGroup.create(groupData);
 
         res.status(201).json({ group: newGroup });
     } catch (error) {

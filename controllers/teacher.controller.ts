@@ -328,8 +328,10 @@ export const getTeacherConversations = async (req: any, res: Response) => {
 
         const partnerIds = new Set();
         messages.forEach(m => {
-            const partnerId = m.sender.toString() === req.user.id ? m.receiver.toString() : m.sender.toString();
-            partnerIds.add(partnerId);
+            if (!m.group) {
+                const partnerId = m.sender.toString() === req.user.id ? m.receiver?.toString() : m.sender.toString();
+                if (partnerId) partnerIds.add(partnerId);
+            }
         });
 
         const partners = await User.find({ _id: { $in: Array.from(partnerIds) } } as any).select('name role profilePicture');

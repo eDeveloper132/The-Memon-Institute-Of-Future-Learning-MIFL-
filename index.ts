@@ -15,6 +15,7 @@ import teacherRoutes from "./routes/teacher.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import parentRoutes from "./routes/parent.routes.js";
+import chatRoutes from "./routes/chat.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 import { setupSocket } from "./socket.js";
 
@@ -96,4 +97,3 @@ if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
 }
 
 export default app;
-t default app;

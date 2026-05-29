@@ -6,11 +6,11 @@ import {
     getChatHistory,
     sendMessage
 } from '../controllers/chat.controller.js';
-import { verifyToken } from '../middlewares/auth.js';
+import { authenticate } from '../middlewares/auth.js';
 
 const router = Router();
 
-router.use(verifyToken);
+router.use(authenticate);
 
 // Group Management
 router.post('/groups', createGroup);
