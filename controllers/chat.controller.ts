@@ -170,6 +170,108 @@ export const getChatHistory = async (req: any, res: Response) => {
     }
 };
 
+export const getUnreadCounts = async (req: any, res: Response) => {
+    try {
+        const userId = req.user.id;
+
+        // 1. Direct Messages Unread Count
+        const unreadDMs = await Message.aggregate([
+            { $match: { receiver: userId, isRead: false, group: { $exists: false } } },
+            { $group: { _id: '$sender', count: { $sum: 1 } } }
+        ]);
+
+        const dmUnread: Record<string, number> = {};
+        unreadDMs.forEach(dm => {
+            dmUnread[dm._id.toString()] = dm.count;
+        });
+
+        // 2. Group Messages Unread Count
+        // Find all groups the user is a member of
+        const userGroups = await ChatGroup.find({ members: userId }).select('_id');
+        const groupIds = userGroups.map(g => g._id);
+
+        const unreadGroups = await Message.aggregate([
+            { $match: { group: { $in: groupIds }, readBy: { $ne: userId } } },
+            { $group: { _id: '$group', count: { $sum: 1 } } }
+        ]);
+
+        const groupUnread: Record<string, number> = {};
+        unreadGroups.forEach(g => {
+            groupUnread[g._id.toString()] = g.count;
+        });
+
+        res.status(200).json({ dmUnread, groupUnread });
+    } catch (error) {
+        console.error(chalk.red('[Chat] getUnreadCounts error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const uploadAttachment = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+        
+        // Return the public URL
+        const fileUrl = `/uploads/chat/${req.file.filename}`;
+        res.status(201).json({ url: fileUrl });
+    } catch (error) {
+        console.error(chalk.red('[Chat] uploadAttachment error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateGroup = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { name, description, members } = req.body;
+        const userId = req.user.id;
+        const role = req.user.role;
+
+        const group = await ChatGroup.findById(id);
+        if (!group) return res.status(404).json({ message: 'Group not found' });
+
+        // Authorization: Only creator or admin
+        if (group.creator.toString() !== userId && role !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized to edit this group' });
+        }
+
+        if (name) group.name = name;
+        if (description !== undefined) group.description = description;
+        if (members) {
+            // Ensure creator is always a member
+            const uniqueMembers = Array.from(new Set([...members, group.creator.toString()]));
+            group.members = uniqueMembers as any;
+        }
+
+        await group.save();
+        res.status(200).json({ group });
+    } catch (error) {
+        console.error(chalk.red('[Chat] updateGroup error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteMessage = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const role = req.user.role;
+
+        if (role !== 'admin') {
+            return res.status(403).json({ message: 'Only admins can delete messages' });
+        }
+
+        const message = await Message.findByIdAndDelete(id);
+        if (!message) return res.status(404).json({ message: 'Message not found' });
+
+        res.status(200).json({ message: 'Message deleted successfully' });
+    } catch (error) {
+        console.error(chalk.red('[Chat] deleteMessage error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const sendMessage = async (req: any, res: Response) => {
     try {
         const userId = req.user.id;
