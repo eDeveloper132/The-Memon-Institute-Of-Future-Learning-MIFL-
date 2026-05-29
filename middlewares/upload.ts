@@ -1,30 +1,16 @@
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 
-// Ensure upload directory exists
-const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'chat');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer configuration
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Use memory storage instead of disk for Vercel/Sanity compatibility
+const storage = multer.memoryStorage();
 
 // File filter to restrict types
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const allowedMimeTypes = [
         'image/jpeg', 
+        'image/jpg',
         'image/png', 
         'image/gif', 
+        'image/webp',
         'application/pdf', 
         'application/msword', 
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -33,12 +19,13 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
     if (allowedMimeTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Invalid file type. Only JPG, PNG, GIF, PDF, and DOC/DOCX are allowed.'));
+        console.warn(`[Multer] Blocked invalid MIME type: ${file.mimetype} for file: ${file.originalname}`);
+        cb(new Error(`Invalid file type (${file.mimetype}). Only JPG, PNG, GIF, WEBP, PDF, and DOC/DOCX are allowed.`));
     }
 };
 
 export const chatUpload = multer({ 
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    limits: { fileSize: 10 * 1024 * 1024 }, // Increase to 10MB for PDFs
     fileFilter: fileFilter
 });
