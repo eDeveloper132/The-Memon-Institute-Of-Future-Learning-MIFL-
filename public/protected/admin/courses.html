@@ -173,9 +173,12 @@
                 if (user.role !== 'admin') { window.location.href = '/'; return; }
 
                 document.getElementById('userName').textContent = user.name;
-                customElements.whenDefined('ui-navbar').then(() =>
-                    customElements.get('ui-navbar').renderLinks(user.role)
-                );
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const nav = document.querySelector('ui-navbar');
+                    if (nav && (nav as any).renderLinks) {
+                        (nav as any).renderLinks(user.role);
+                    }
+                });
 
                 await Promise.all([fetchCourses(), fetchTeachers(), fetchStudents()]);
             } catch (err) { console.error('Init error:', err); }

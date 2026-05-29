@@ -118,11 +118,11 @@ class UINavbar extends HTMLElement {
         mobileLogoutBtn?.addEventListener('click', handleLogout);
     }
 
-    static renderLinks(role: string): void {
-        const navLinks = document.getElementById('navLinks');
-        const mobileNavLinks = document.getElementById('mobileNavLinks');
-        const userRoleBadge = document.getElementById('userRoleBadge');
-        const mobileUserRole = document.getElementById('mobileUserRole');
+    renderLinks(role: string): void {
+        const navLinks = this.querySelector('#navLinks');
+        const mobileNavLinks = this.querySelector('#mobileNavLinks');
+        const userRoleBadge = this.querySelector('#userRoleBadge');
+        const mobileUserRole = this.querySelector('#mobileUserRole');
         
         if (userRoleBadge) userRoleBadge.textContent = role;
         if (mobileUserRole) mobileUserRole.textContent = role;
