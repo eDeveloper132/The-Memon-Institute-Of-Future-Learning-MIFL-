@@ -72,6 +72,11 @@
                 window.location.href = '/protected/admin/index.html';
                 return;
             }
+            if (user.role === 'teacher') {
+                window.location.href = '/protected/teacher/index.html';
+                return;
+            }
+            
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('dashboardContent').classList.remove('hidden');
             
