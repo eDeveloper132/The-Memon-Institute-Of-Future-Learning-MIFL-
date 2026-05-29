@@ -407,10 +407,9 @@ export const initSocket = async (user: any) => {
                     } catch (e) {
                         console.error('[Sync Fallback] Failed to send message via REST', e);
                     }
-                } else {
+                } else if (event !== 'typing' && event !== 'stopTyping') {
                     console.log(`[Sync Fallback] Socket event "${event}" ignored in polling mode.`);
                 }
-            };
 
             startPollingFallback(user, updateStatus);
         }

@@ -169,7 +169,7 @@
         editGroupBtn.addEventListener('click', () => {
             if (!activeChat || activeChat.type !== 'group') return;
             
-            const group = allGroups.find(g => g._id === activeChat.id);
+            const group = allGroups.find(g => String(g._id) === String(activeChat.id));
             if (!group) return;
 
             // Update Modal for Editing
@@ -184,7 +184,7 @@
             // Pre-check members
             const checkboxes = groupForm.querySelectorAll('input[name="members"]');
             checkboxes.forEach(cb => {
-                cb.checked = group.members.includes(cb.value);
+                cb.checked = group.members.some(mId => String(mId) === String(cb.value));
             });
 
             // Add a temporary hidden field for ID
@@ -410,9 +410,11 @@
                     // Mark as read
                     const unreadMessageIds = messages
                         .filter(m => {
-                            if (m.sender._id === currentUser._id) return false;
+                            const currentUserId = String(currentUser._id || currentUser.id);
+                            const mSenderId = String(m.sender._id || m.sender);
+                            if (mSenderId === currentUserId) return false;
                             if (type === 'group') {
-                                return !m.readBy?.includes(currentUser._id);
+                                return !m.readBy?.includes(currentUserId);
                             }
                             return !m.isRead;
                         })
@@ -422,7 +424,7 @@
                         socket.emit('messagesRead', {
                             messageIds: unreadMessageIds,
                             groupId: type === 'group' ? id : undefined,
-                            userId: currentUser._id
+                            userId: currentUser._id || currentUser.id
                         });
                     }
                 }
@@ -433,8 +435,10 @@
 
         function renderMessages(messages) {
             messageArea.innerHTML = messages.map(m => {
-                const isSent = m.sender._id === currentUser._id;
-                const senderName = isSent ? 'You' : m.sender.name;
+                const currentUserId = String(currentUser._id || currentUser.id);
+                const mSenderId = String(m.sender._id || m.sender);
+                const isSent = mSenderId === currentUserId;
+                const senderName = isSent ? 'You' : (m.sender.name || 'Unknown');
                 
                 // Determine read status for UI
                 let readStatusHtml = '';
@@ -444,23 +448,38 @@
                 }
                 
                 return `
-                    <div class="flex gap-4 max-w-[80%] ${isSent ? 'ml-auto flex-row-reverse' : ''}">
+                    <div class="flex gap-4 max-w-[80%] message-bubble-container ${isSent ? 'ml-auto flex-row-reverse' : ''}">
                         ${!isSent ? `<div class="w-8 h-8 rounded-lg bg-gray-200 text-gray-600 flex-shrink-0 flex items-center justify-center font-bold text-xs mt-auto uppercase" title="${senderName}">${senderName[0]}</div>` : ''}
                         
-                        <div class="flex flex-col ${isSent ? 'items-end' : 'items-start'}">
+                        <div class="flex flex-col group ${isSent ? 'items-end' : 'items-start'}">
                             ${activeChat.type === 'group' && !isSent ? `<span class="text-[10px] text-gray-400 font-bold ml-1 mb-1">${senderName}</span>` : ''}
                             <div class="bg-${isSent ? 'blue-600 text-white' : 'white text-gray-700'} p-4 rounded-2xl ${isSent ? 'rounded-br-none shadow-lg' : 'rounded-bl-none shadow-sm border border-gray-100'} text-sm break-words relative">
                                 ${m.content}
+                                ${m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments) : ''}
                                 <p class="text-[9px] ${isSent ? 'text-blue-200' : 'text-gray-400'} mt-2 font-bold uppercase flex items-center justify-${isSent ? 'end' : 'start'}">
                                     ${new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     ${readStatusHtml}
                                 </p>
                             </div>
                         </div>
+                        ${!isSent && currentUser.role === 'admin' ? `<button class="delete-msg-btn opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition self-center" data-msg-id="${m._id}"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
                     </div>
                 `;
             }).join('');
             messageArea.scrollTop = messageArea.scrollHeight;
+        }
+
+        function renderAttachments(attachments) {
+            return `<div class="mt-2 space-y-2">` + attachments.map(url => {
+                const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+                if (isImg) {
+                    return `<a href="${url}" target="_blank"><img src="${url}" class="max-w-full rounded-lg border border-gray-100 shadow-sm hover:opacity-90 transition"></a>`;
+                }
+                return `<a href="${url}" target="_blank" class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-blue-600 hover:bg-blue-50 transition border border-gray-100 text-xs font-bold">
+                    <i class="fa-solid fa-file-lines"></i>
+                    <span>Download Attachment</span>
+                </a>`;
+            }).join('') + `</div>`;
         }
 
         // Typing Indicators logic
@@ -476,7 +495,7 @@
             
             // Emit typing
             socket.emit('typing', {
-                userId: currentUser._id,
+                userId: currentUser._id || currentUser.id,
                 userName: currentUser.name.split(' ')[0],
                 groupId: activeChat.type === 'group' ? activeChat.id : undefined,
                 receiverId: activeChat.type === 'user' ? activeChat.id : undefined
@@ -486,7 +505,7 @@
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => {
                 socket.emit('stopTyping', {
-                    userId: currentUser._id,
+                    userId: currentUser._id || currentUser.id,
                     groupId: activeChat.type === 'group' ? activeChat.id : undefined,
                     receiverId: activeChat.type === 'user' ? activeChat.id : undefined
                 });
@@ -514,7 +533,7 @@
                     
                     // Send message immediately with the attachment
                     const payload = {
-                        sender: currentUser._id,
+                        sender: currentUser._id || currentUser.id,
                         content: `Shared a file: ${file.name}`,
                         attachments: [url]
                     };
@@ -545,7 +564,7 @@
             if (!content || !activeChat) return;
 
             const payload = {
-                sender: currentUser._id,
+                sender: currentUser._id || currentUser.id,
                 content
             };
 
@@ -559,7 +578,7 @@
             
             // Stop typing immediately when sending
             socket.emit('stopTyping', {
-                userId: currentUser._id,
+                userId: currentUser._id || currentUser.id,
                 groupId: activeChat.type === 'group' ? activeChat.id : undefined,
                 receiverId: activeChat.type === 'user' ? activeChat.id : undefined
             });
@@ -572,7 +591,9 @@
             s.on('receiveMessage', (msg) => {
                 const isRelevantGroup = activeChat?.type === 'group' && msg.group === activeChat.id;
                 const isRelevantDM = activeChat?.type === 'user' && !msg.group && (msg.sender._id === activeChat.id || msg.sender === activeChat.id);
-                const isSelf = (msg.sender._id || msg.sender) === currentUser._id;
+                const currentUserId = String(currentUser._id || currentUser.id);
+                const mSenderId = String(msg.sender._id || msg.sender);
+                const isSelf = mSenderId === currentUserId;
                 
                 if (isRelevantGroup || isRelevantDM || (isSelf && !msg.group && msg.receiver === activeChat?.id)) {
                     appendMessage(msg);
@@ -594,10 +615,11 @@
 
             // Typing listeners
             s.on('userTyping', (data) => {
-                if (data.userId === currentUser._id) return; // Ignore own typing broadcast
+                const currentUserId = String(currentUser._id || currentUser.id);
+                if (data.userId === currentUserId) return; // Ignore own typing broadcast
 
                 const isRelevantGroup = activeChat?.type === 'group' && data.groupId === activeChat.id;
-                const isRelevantDM = activeChat?.type === 'user' && !data.groupId;
+                const isRelevantDM = activeChat?.type === 'user' && !data.groupId && data.userId === activeChat.id;
 
                 if (isRelevantGroup || isRelevantDM) {
                     document.getElementById('typingText').textContent = `${data.userName || 'Someone'} is typing...`;
@@ -637,29 +659,19 @@
         }
 
         function appendMessage(m) {
-            const isSent = (m.sender._id || m.sender) === currentUser._id;
+            const currentUserId = String(currentUser._id || currentUser.id);
+            const mSenderId = String(m.sender._id || m.sender);
+            const isSent = mSenderId === currentUserId;
             const senderName = isSent ? 'You' : (m.sender.name || 'Unknown');
             
             // Render attachments
-            let attachmentsHtml = '';
-            if (m.attachments && m.attachments.length > 0) {
-                attachmentsHtml = `<div class="mt-2 space-y-2">` + m.attachments.map(url => {
-                    const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-                    if (isImg) {
-                        return `<a href="${url}" target="_blank"><img src="${url}" class="max-w-full rounded-lg border border-gray-100 shadow-sm hover:opacity-90 transition"></a>`;
-                    }
-                    return `<a href="${url}" target="_blank" class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-blue-600 hover:bg-blue-50 transition border border-gray-100 text-xs font-bold">
-                        <i class="fa-solid fa-file-lines"></i>
-                        <span>Download Attachment</span>
-                    </a>`;
-                }).join('') + `</div>`;
-            }
+            const attachmentsHtml = m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments) : '';
 
             const div = document.createElement('div');
             div.className = `flex gap-4 max-w-[80%] message-bubble-container ${isSent ? 'ml-auto flex-row-reverse' : ''}`;
             
             // Delete button for admins
-            const deleteBtnHtml = currentUser.role === 'admin' ? `
+            const deleteBtnHtml = !isSent && currentUser.role === 'admin' ? `
                 <button class="delete-msg-btn opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition self-center" data-msg-id="${m._id}">
                     <i class="fa-solid fa-trash-can text-xs"></i>
                 </button>
