@@ -220,7 +220,7 @@
             if (filteredGroups.length > 0) {
                 html += '<div class="px-6 pt-4 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Groups</div>';
                 html += filteredGroups.map(g => `
-                    <div onclick="selectChat('group', '${g._id}', '${g.name}', 'Group')" class="p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === g._id ? 'bg-blue-50 text-blue-700' : ''}">
+                    <div data-chat-type="group" data-chat-id="${g._id}" data-chat-name="${g.name}" data-chat-role="Group" class="chat-sidebar-item p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === g._id ? 'bg-blue-50 text-blue-700' : ''}">
                         <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-users"></i></div>
                         <div class="flex-1 min-w-0 flex flex-col justify-center">
                             <h4 class="font-bold truncate text-sm">${g.name}</h4>
@@ -233,7 +233,7 @@
             if (filteredContacts.length > 0) {
                 html += '<div class="px-6 pt-4 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400">Direct Messages</div>';
                 html += filteredContacts.map(c => `
-                    <div onclick="selectChat('user', '${c._id}', '${c.name}', '${c.role}')" class="p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === c._id ? 'bg-blue-50 text-blue-700' : ''}">
+                    <div data-chat-type="user" data-chat-id="${c._id}" data-chat-name="${c.name}" data-chat-role="${c.role}" class="chat-sidebar-item p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === c._id ? 'bg-blue-50 text-blue-700' : ''}">
                         <div class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold uppercase text-sm">${c.name[0]}</div>
                         <div class="flex-1 min-w-0 flex flex-col justify-center">
                             <h4 class="font-bold truncate text-sm">${c.name}</h4>
@@ -252,7 +252,18 @@
 
         searchInput.addEventListener('input', (e) => renderSidebar(e.target.value));
 
-        window.selectChat = async (type, id, name, role) => {
+        chatSidebar.addEventListener('click', (e) => {
+            const item = e.target.closest('.chat-sidebar-item');
+            if (item) {
+                const type = item.dataset.chatType;
+                const id = item.dataset.chatId;
+                const name = item.dataset.chatName;
+                const role = item.dataset.chatRole;
+                selectChat(type, id, name, role);
+            }
+        });
+
+        const selectChat = async (type, id, name, role) => {
             activeChat = { type, id, name, role };
             
             // Update UI State
