@@ -337,13 +337,14 @@ export const sendMessage = async (req: any, res: Response) => {
     try {
         const userId = req.user.id;
         const role = req.user.role;
-        const { receiver, groupId, content } = req.body;
+        const { receiver, groupId, content, attachments } = req.body;
 
         if (!content) return res.status(400).json({ message: 'Content is required' });
 
         const messageData: any = {
             sender: userId,
-            content
+            content,
+            attachments: attachments || []
         };
 
         if (groupId) {
