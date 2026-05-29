@@ -25,6 +25,10 @@ export const getAllUsers = async (req: Request, res: Response) => {
                 .populate('parent', 'name email');
         }
 
+        if (role === 'teacher') {
+            usersQuery = usersQuery.populate('department', 'name code');
+        }
+
         const users = await usersQuery.sort({ createdAt: -1 });
         res.status(200).json({ users });
     } catch (error) {
@@ -223,6 +227,12 @@ export const crudDepartments = {
     create: async (req: Request, res: Response) => {
         try {
             const department = await Department.create(req.body);
+            
+            // Sync HOD user record
+            if (department.headOfDepartment) {
+                await User.findByIdAndUpdate(department.headOfDepartment, { department: department._id });
+            }
+
             res.status(201).json({ message: 'Department created successfully', department });
         } catch (error: any) {
             if (error.code === 11000) return res.status(400).json({ message: 'Department name or code already exists' });
@@ -232,8 +242,20 @@ export const crudDepartments = {
     update: async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
+            const oldDept = await Department.findById(id);
             const updated = await Department.findByIdAndUpdate(id, req.body, { new: true });
             if (!updated) return res.status(404).json({ message: 'Department not found' });
+
+            // Sync HOD user records if changed
+            if (req.body.headOfDepartment && String(oldDept?.headOfDepartment) !== String(req.body.headOfDepartment)) {
+                // Remove from old HOD if they don't lead other depts (optional, keeping it simple)
+                if (oldDept?.headOfDepartment) {
+                    await User.findByIdAndUpdate(oldDept.headOfDepartment, { $unset: { department: "" } });
+                }
+                // Set for new HOD
+                await User.findByIdAndUpdate(req.body.headOfDepartment, { department: updated._id });
+            }
+
             res.status(200).json({ message: 'Department updated successfully', department: updated });
         } catch (error) {
             res.status(500).json({ message: 'Internal server error' });
@@ -242,6 +264,10 @@ export const crudDepartments = {
     delete: async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
+            const dept = await Department.findById(id);
+            if (dept?.headOfDepartment) {
+                await User.findByIdAndUpdate(dept.headOfDepartment, { $unset: { department: "" } });
+            }
             await Department.findByIdAndDelete(id);
             res.status(200).json({ message: 'Department deleted successfully' });
         } catch (error) {
