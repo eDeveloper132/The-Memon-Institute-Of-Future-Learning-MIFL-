@@ -93,9 +93,12 @@
                 if (window.initSocket) window.initSocket(user);
                 if (user.role !== 'parent' && user.role !== 'admin') { window.location.href = '/'; return; }
                 
-                document.getElementById('userName').textContent = user.name;
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
                 
                 fetchChildren();
             } catch (err) {

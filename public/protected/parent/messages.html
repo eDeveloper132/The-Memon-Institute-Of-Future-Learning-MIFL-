@@ -226,10 +226,13 @@
                 setupSocketListeners(socket);
                 
                 currentUser = user;
-                document.getElementById('userName').textContent = user.name;
                 
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
 
                 fetchConversations();
             } catch (err) {

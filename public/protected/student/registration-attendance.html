@@ -107,10 +107,15 @@
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
                 if (window.initSocket) window.initSocket(user);
-                
-                document.getElementById('userName').textContent = user.name;
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) { navbar.renderLinks(user.role); }
+
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
+
+                await Promise.all([
                 
                 fetchAcademicData();
             } catch (err) {

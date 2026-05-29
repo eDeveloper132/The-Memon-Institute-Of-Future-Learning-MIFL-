@@ -251,8 +251,12 @@
                 if (user.role !== 'admin') { window.location.href = '/'; return; }
                 if (window.initSocket) window.initSocket(user);
                 
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) navbar.renderLinks(user.role);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
                 
                 await Promise.all([
                     fetchTeachers(),
