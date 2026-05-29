@@ -6,7 +6,7 @@
     <title>Messages - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="/components/ui-components.js?v=1.5" type="module" defer></script>
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
@@ -115,7 +115,7 @@
     </div>
 
     <script type="module">
-        import { initSocket, showToast } from '/components/ui-components.js?v=1.5';
+        import { initSocket, showToast } from '/components/ui-components.js?v=1.6';
 
         let currentUser = null;
         let activeChat = null; // { type: 'user' | 'group', id, name, role }
@@ -400,11 +400,13 @@
         };
 
         async function fetchMessages(type, id) {
+            console.log(`[Chat] Fetching history for ${type}: ${id}`);
             try {
                 const query = type === 'group' ? `groupId=${id}` : `partnerId=${id}`;
                 const res = await fetch(`/api/chat/messages?${query}`);
                 if (res.ok) {
                     const { messages } = await res.json();
+                    console.log(`[Chat] Received ${messages.length} messages`);
                     renderMessages(messages);
                     
                     // Mark as read
@@ -544,7 +546,8 @@
                         payload.receiver = activeChat.id;
                     }
 
-                    socket.emit('sendMessage', payload);
+                    console.log(`[Chat] Sending message via socket. connected: ${socket.connected}`, payload);
+            socket.emit('sendMessage', payload);
                     showToast('File sent');
                 } else {
                     const err = await res.json();
@@ -574,6 +577,7 @@
                 payload.receiver = activeChat.id;
             }
 
+            console.log(`[Chat] Sending message via socket. connected: ${socket.connected}`, payload);
             socket.emit('sendMessage', payload);
             
             // Stop typing immediately when sending
@@ -588,14 +592,18 @@
         };
 
         function setupSocketListeners(s) {
-            s.on('receiveMessage', (msg) => {
-                const isRelevantGroup = activeChat?.type === 'group' && msg.group === activeChat.id;
-                const isRelevantDM = activeChat?.type === 'user' && !msg.group && (msg.sender._id === activeChat.id || msg.sender === activeChat.id);
-                const currentUserId = String(currentUser._id || currentUser.id);
+            // Helper to handle a new message regardless of source (Socket or Polling)
+            const handleIncomingMessage = (msg) => {
                 const mSenderId = String(msg.sender._id || msg.sender);
+                const mGroupId = msg.group ? String(msg.group._id || msg.group) : null;
+                const mReceiverId = msg.receiver ? String(msg.receiver._id || msg.receiver) : null;
+                const currentUserId = String(currentUser._id || currentUser.id);
+
+                const isRelevantGroup = activeChat?.type === 'group' && mGroupId === String(activeChat.id);
+                const isRelevantDM = activeChat?.type === 'user' && !mGroupId && (mSenderId === String(activeChat.id) || mReceiverId === String(activeChat.id));
                 const isSelf = mSenderId === currentUserId;
                 
-                if (isRelevantGroup || isRelevantDM || (isSelf && !msg.group && msg.receiver === activeChat?.id)) {
+                if (isRelevantGroup || isRelevantDM) {
                     appendMessage(msg);
                     // Hide typing indicator if a message comes in from them
                     typingIndicator.classList.add('hidden', 'opacity-0');
@@ -604,22 +612,30 @@
                     // Refresh unread counts
                     fetchSidebarData();
                 }
+            };
+
+            // Listen to Socket.IO (for local/persistent environments)
+            s.on('receiveMessage', handleIncomingMessage);
+
+            // Listen to Polling Fallback (for Vercel environment)
+            document.addEventListener('newMessage', (e) => {
+                handleIncomingMessage(e.detail);
             });
 
             s.on('messageSent', (msg) => {
-                const isRelevantDM = activeChat?.type === 'user' && !msg.group && msg.receiver === activeChat.id;
+                const isRelevantDM = activeChat?.type === 'user' && !msg.group && String(msg.receiver) === String(activeChat.id);
                 if (isRelevantDM) {
                     appendMessage(msg);
                 }
             });
 
-            // Typing listeners
+            // Typing listeners (Socket.IO only)
             s.on('userTyping', (data) => {
                 const currentUserId = String(currentUser._id || currentUser.id);
-                if (data.userId === currentUserId) return; // Ignore own typing broadcast
+                if (String(data.userId) === currentUserId) return; // Ignore own typing broadcast
 
-                const isRelevantGroup = activeChat?.type === 'group' && data.groupId === activeChat.id;
-                const isRelevantDM = activeChat?.type === 'user' && !data.groupId && data.userId === activeChat.id;
+                const isRelevantGroup = activeChat?.type === 'group' && String(data.groupId) === String(activeChat.id);
+                const isRelevantDM = activeChat?.type === 'user' && !data.groupId && String(data.userId) === String(activeChat.id);
 
                 if (isRelevantGroup || isRelevantDM) {
                     document.getElementById('typingText').textContent = `${data.userName || 'Someone'} is typing...`;
@@ -630,7 +646,7 @@
             });
 
             s.on('userStoppedTyping', (data) => {
-                const isRelevantGroup = activeChat?.type === 'group' && data.groupId === activeChat.id;
+                const isRelevantGroup = activeChat?.type === 'group' && String(data.groupId) === String(activeChat.id);
                 const isRelevantDM = activeChat?.type === 'user' && !data.groupId;
 
                 if (isRelevantGroup || isRelevantDM) {
@@ -643,8 +659,8 @@
             s.on('readReceipt', (data) => {
                 const { messageIds, groupId } = data;
                 // Only update if it's the active chat
-                const isRelevantGroup = activeChat?.type === 'group' && groupId === activeChat.id;
-                const isRelevantDM = activeChat?.type === 'user' && !groupId; // we could check partnerId if provided
+                const isRelevantGroup = activeChat?.type === 'group' && String(groupId) === String(activeChat.id);
+                const isRelevantDM = activeChat?.type === 'user' && !groupId;
 
                 if (isRelevantGroup || isRelevantDM) {
                     messageIds.forEach(id => {

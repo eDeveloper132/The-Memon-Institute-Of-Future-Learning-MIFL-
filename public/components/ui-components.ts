@@ -347,14 +347,15 @@ export const initSocket = async (user: any) => {
     
     // Configure socket with a timeout for connection
     socket = io({
-        reconnectionAttempts: 3,
-        timeout: 5000,
+        reconnectionAttempts: 2,
+        timeout: 3000,
         transports: ['websocket', 'polling']
     });
 
     const indicator = document.getElementById('connectionStatus');
     const updateStatus = (mode: 'socket' | 'polling' | 'disconnected') => {
         if (!indicator) return;
+        indicator.style.display = 'block';
         if (mode === 'socket') {
             indicator.style.backgroundColor = '#22c55e'; // green
             indicator.title = 'Real-time: Connected (Socket.IO)';
@@ -367,18 +368,50 @@ export const initSocket = async (user: any) => {
         }
     };
 
+    // Helper for REST fallback sending
+    const sendViaRest = async (data: any) => {
+        console.log('[Sync Fallback] Attempting to send message via REST...', data);
+        try {
+            const res = await fetch('/api/chat/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sender: data.sender,
+                    receiver: data.receiver,
+                    groupId: data.groupId,
+                    content: data.content,
+                    attachments: data.attachments || []
+                })
+            });
+            if (res.ok) {
+                const { message } = await res.json();
+                console.log('[Sync Fallback] Message sent successfully via REST:', message._id);
+                // Dispatch locally so the sender sees their own message immediately
+                document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));
+                return true;
+            } else {
+                const err = await res.json();
+                console.error('[Sync Fallback] API error:', err);
+                showToast(err.message || 'Failed to send message', 'error');
+            }
+        } catch (e) {
+            console.error('[Sync Fallback] REST network error:', e);
+            showToast('Connection error, try again.', 'error');
+        }
+        return false;
+    };
+
     // Socket Success
     socket.on('connect', () => {
         console.log('[Socket] Connected successfully');
         updateStatus('socket');
-        if (syncInterval) clearInterval(syncInterval);
+        if (syncInterval) {
+            clearTimeout(syncInterval);
+            syncInterval = null;
+        }
         
         if (user._id) socket.emit('join', user._id);
         if (user.role) socket.emit('joinRole', user.role);
-        if (user.currentClass) {
-            const cid = typeof user.currentClass === 'object' ? user.currentClass._id : user.currentClass;
-            socket.emit('joinClass', cid);
-        }
     });
 
     // Socket Failure - Trigger Polling Fallback
@@ -390,26 +423,14 @@ export const initSocket = async (user: any) => {
             socket.close();
             socket.connected = false;
 
-            // Transparent Fallback: Redirect sendMessage emits to REST API
-            socket.emit = async (event: string, data: any) => {
+            // Override emit for this instance
+            socket.emit = (event: string, data: any) => {
                 if (event === 'sendMessage') {
-                    try {
-                        const res = await fetch('/api/chat/messages', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data)
-                        });
-                        if (res.ok) {
-                            const { message } = await res.json();
-                            // Dispatch locally so the sender sees their own message
-                            document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));
-                        }
-                    } catch (e) {
-                        console.error('[Sync Fallback] Failed to send message via REST', e);
-                    }
-                } else if (event !== 'typing' && event !== 'stopTyping') {
-                    console.log(`[Sync Fallback] Socket event "${event}" ignored in polling mode.`);
+                    sendViaRest(data);
+                } else if (event !== 'typing' && event !== 'stopTyping' && event !== 'messagesRead') {
+                    console.log(`[Sync Fallback] Event "${event}" ignored.`);
                 }
+            };
 
             startPollingFallback(user, updateStatus);
         }
