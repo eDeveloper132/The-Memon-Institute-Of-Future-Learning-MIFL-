@@ -175,8 +175,8 @@
                 document.getElementById('userName').textContent = user.name;
                 customElements.whenDefined('ui-navbar').then(() => {
                     const nav = document.querySelector('ui-navbar');
-                    if (nav && (nav as any).renderLinks) {
-                        (nav as any).renderLinks(user.role);
+                    if (nav && nav.renderLinks) {
+                        nav.renderLinks(user);
                     }
                 });
 

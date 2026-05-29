@@ -272,8 +272,8 @@
 
                 customElements.whenDefined('ui-navbar').then(() => {
                     const nav = document.querySelector('ui-navbar');
-                    if (nav && (nav as any).renderLinks) {
-                        (nav as any).renderLinks(user);
+                    if (nav && nav.renderLinks) {
+                        nav.renderLinks(user);
                     }
                 });
 
