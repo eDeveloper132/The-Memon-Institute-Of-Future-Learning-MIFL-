@@ -17,6 +17,12 @@ const curriculumModuleSchema = new Schema({
     order: { type: Number, required: true, default: 0 }
 });
 
+const curriculumSectionSchema = new Schema({
+    title: { type: String, required: true },
+    modules: [curriculumModuleSchema],
+    order: { type: Number, required: true, default: 0 }
+});
+
 const classSchema = new Schema<IClass>(
     {
         name: { type: String, required: true, trim: true },
@@ -28,7 +34,7 @@ const classSchema = new Schema<IClass>(
         students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         batches: [batchSchema], // NEW: Embedded batches
         classOutline: String,
-        classCurriculum: [curriculumModuleSchema],
+        classCurriculumSections: [curriculumSectionSchema],
         classCurriculumLocked: { type: Boolean, default: false },
         academicYear: { type: String, required: true },
     },

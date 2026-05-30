@@ -18,6 +18,12 @@ const curriculumModuleSchema = new Schema({
     order: { type: Number, required: true, default: 0 }
 });
 
+const curriculumSectionSchema = new Schema({
+    title: { type: String, required: true },
+    modules: [curriculumModuleSchema],
+    order: { type: Number, required: true, default: 0 }
+});
+
 const courseSchema = new Schema<ICourse>(
     {
         title: { type: String, required: true, trim: true },
@@ -30,7 +36,7 @@ const courseSchema = new Schema<ICourse>(
         batches: [batchSchema],
         syllabus: String,
         outline: String,
-        curriculum: [curriculumModuleSchema],
+        curriculumSections: [curriculumSectionSchema],
         curriculumLocked: { type: Boolean, default: false },
     },
     { timestamps: true }

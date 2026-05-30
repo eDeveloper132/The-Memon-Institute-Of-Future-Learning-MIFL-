@@ -20,7 +20,7 @@ import chalk from 'chalk';
 export const updateCourseCurriculum = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const { outline, curriculum } = req.body;
+        const { outline, curriculumSections } = req.body;
 
         const course = await Course.findById(id);
         if (!course) return res.status(404).json({ message: 'Course not found' });
@@ -36,7 +36,7 @@ export const updateCourseCurriculum = async (req: any, res: Response) => {
         }
 
         course.outline = outline;
-        course.curriculum = curriculum;
+        course.curriculumSections = curriculumSections;
         await course.save();
 
         res.status(200).json({ message: 'Curriculum updated successfully', course });
@@ -48,7 +48,7 @@ export const updateCourseCurriculum = async (req: any, res: Response) => {
 export const updateClassCurriculum = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const { classOutline, classCurriculum } = req.body;
+        const { classOutline, classCurriculumSections } = req.body;
 
         const selectedClass = await Class.findById(id);
         if (!selectedClass) return res.status(404).json({ message: 'Class not found' });
@@ -64,7 +64,7 @@ export const updateClassCurriculum = async (req: any, res: Response) => {
         }
 
         selectedClass.classOutline = classOutline;
-        selectedClass.classCurriculum = classCurriculum;
+        selectedClass.classCurriculumSections = classCurriculumSections;
         await selectedClass.save();
 
         res.status(200).json({ message: 'Class curriculum updated successfully', class: selectedClass });
@@ -110,7 +110,8 @@ export const getDashboardStats = async (req: any, res: Response) => {
 export const getTeacherCourses = async (req: any, res: Response) => {
     try {
         const teacherId = req.user.id;
-        const courses = await Course.find({ teacher: teacherId }).select('title batches');
+        const courses = await Course.find({ teacher: teacherId })
+            .select('title batches outline curriculumSections curriculumLocked');
         res.status(200).json({ courses });
     } catch (error: any) {
         res.status(500).json({ message: 'Internal server error' });
@@ -120,7 +121,8 @@ export const getTeacherCourses = async (req: any, res: Response) => {
 export const getTeacherClasses = async (req: any, res: Response) => {
     try {
         const teacherId = req.user.id;
-        const classes = await Class.find({ classTeacher: teacherId }).select('name section gradeLevel students');
+        const classes = await Class.find({ classTeacher: teacherId })
+            .select('name section gradeLevel students classOutline classCurriculumSections classCurriculumLocked');
         res.status(200).json({ classes });
     } catch (error: any) {
         res.status(500).json({ message: 'Internal server error' });

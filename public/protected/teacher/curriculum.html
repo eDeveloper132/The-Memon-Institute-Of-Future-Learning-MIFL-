@@ -3,145 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curriculum Management - MIFL</title>
+    <title>Academic Studio - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
     <style>
-        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
-        .syllabus-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
+        .tab-active { background: #2563eb; color: #ffffff; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2); }
         .course-path-line { width: 2px; background: #e5e7eb; position: absolute; left: 24px; top: 0; bottom: 0; z-index: 0; }
-        .module-step { width: 50px; height: 50px; border-radius: 50%; background: #ffffff; border: 2px solid #e5e7eb; display: flex; items-center; justify-content: center; position: relative; z-index: 10; transition: all 0.3s ease; }
+        .module-step { width: 40px; height: 40px; border-radius: 50%; background: #ffffff; border: 2px solid #e5e7eb; display: flex; items-center; justify-content: center; position: relative; z-index: 10; transition: all 0.3s ease; }
         .module-step.active { border-color: #2563eb; color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-        .shimmer { background: linear-gradient(90deg, #f0f0f0 25%, #f8f8f8 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-        .rich-description { line-height: 1.6; color: #4b5563; }
         .objective-tag { background: #f3f4f6; color: #374151; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+        .section-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .section-card:hover { transform: translateY(-2px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans">
+<body class="bg-gray-50 min-h-screen font-sans text-gray-900">
     
-    <ui-navbar title="Academic Management"></ui-navbar>
+    <ui-navbar title="Academic Studio"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-                <h2 class="text-4xl font-extrabold text-gray-900 tracking-tight">Curriculum Studio</h2>
-                <p class="text-gray-500 mt-2 text-lg">Engineer advanced university-grade academic roadmaps and class milestones.</p>
+                <h2 class="text-4xl font-black text-gray-900 tracking-tight">Curriculum Studio</h2>
+                <p class="text-gray-500 mt-2 text-lg">Architect professional academic roadmaps and class-wide milestones.</p>
             </div>
             <div class="flex gap-3">
-                <button id="previewBtn" class="bg-white text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition border border-gray-200 flex items-center shadow-sm active:scale-95">
+                <button id="previewBtn" class="bg-white text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition border border-gray-200 flex items-center shadow-sm active:scale-95">
                     <i class="fa-solid fa-eye mr-2 text-blue-500"></i> Preview Syllabus
                 </button>
             </div>
         </div>
 
         <!-- Advanced Tabs -->
-        <div class="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 mb-10 max-w-fit">
-            <button id="tabCourse" class="px-8 py-3 font-bold text-sm transition-all rounded-xl tab-active">Course Syllabus</button>
-            <button id="tabClass" class="px-8 py-3 font-bold text-sm transition-all rounded-xl text-gray-400 hover:bg-gray-50 hidden">Class Roadmap</button>
-            <button id="tabMaterials" class="px-8 py-3 font-bold text-sm transition-all rounded-xl text-gray-400 hover:bg-gray-50">Global Resources</button>
+        <div class="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 mb-10 max-w-fit mx-auto md:mx-0">
+            <button id="tabCourse" class="px-8 py-3 font-bold text-sm transition-all rounded-xl tab-active">My Courses</button>
+            <button id="tabClass" class="px-8 py-3 font-bold text-sm transition-all rounded-xl text-gray-400 hover:bg-gray-50 hidden">My Class</button>
+            <button id="tabMaterials" class="px-8 py-3 font-bold text-sm transition-all rounded-xl text-gray-400 hover:bg-gray-50">Global Files</button>
         </div>
 
-        <!-- Course Curriculum View -->
+        <!-- Course View -->
         <div id="courseView" class="space-y-10">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
-                    <i class="fa-solid fa-graduation-cap text-9xl"></i>
-                </div>
-
-                <div class="flex flex-wrap gap-6 items-end mb-10 relative z-10">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
+                <div class="flex flex-wrap gap-6 items-end mb-10 border-b border-gray-50 pb-10">
                     <div class="flex-1 min-w-[300px]">
-                        <label class="block text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Academic Entity</label>
+                        <label class="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-3">Academic Selection</label>
                         <select id="courseSelect" class="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-700 cursor-pointer transition-all">
-                            <option value="">Select a course to manage...</option>
+                            <option value="">Choose a course to architect...</option>
                         </select>
                     </div>
                     <button id="saveCourseBtn" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-blue-700 transition hidden shadow-lg shadow-blue-200 active:scale-95">
-                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Publish Syllabus
+                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Deploy Syllabus
                     </button>
                 </div>
 
                 <div id="courseContent" class="hidden space-y-12">
                     <section>
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">1</div>
-                            <h3 class="text-xl font-bold text-gray-800 tracking-tight">Academic Outline</h3>
-                        </div>
-                        <textarea id="courseOutline" class="w-full p-6 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 outline-none h-40 text-gray-600 leading-relaxed font-medium" placeholder="Describe the course scope, prerequisites, and overarching goals..."></textarea>
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <i class="fa-solid fa-align-left text-blue-500"></i>
+                            Executive Outline
+                        </h3>
+                        <textarea id="courseOutline" class="w-full p-6 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-blue-500 outline-none h-40 text-gray-600 leading-relaxed font-medium" placeholder="Provide a high-level summary of the course objectives and requirements..."></textarea>
                     </section>
 
-                    <section>
-                        <div class="flex justify-between items-center mb-8">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold">2</div>
-                                <h3 class="text-xl font-bold text-gray-800 tracking-tight">Weekly Learning Path</h3>
-                            </div>
-                            <button type="button" id="addCourseModule" class="bg-blue-50 text-blue-600 px-5 py-2 rounded-xl font-bold text-xs hover:bg-blue-100 transition flex items-center gap-2">
-                                <i class="fa-solid fa-plus-circle"></i> Add Module
+                    <section class="space-y-8">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                <i class="fa-solid fa-layer-group text-blue-500"></i>
+                                Curriculum Sections
+                            </h3>
+                            <button type="button" id="addCourseSection" class="bg-blue-50 text-blue-600 px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-blue-100 transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> Add Learning Path
                             </button>
                         </div>
                         
-                        <div class="relative pl-4">
-                            <div class="course-path-line ml-2"></div>
-                            <div id="courseModulesContainer" class="space-y-8 relative z-10">
-                                <!-- Modules will be injected here -->
-                            </div>
+                        <div id="courseSectionsContainer" class="space-y-10">
+                            <!-- Dynamic Sections Here -->
                         </div>
                     </section>
                 </div>
                 
-                <div id="courseLockMessage" class="hidden mt-10 p-6 bg-orange-50 text-orange-800 rounded-2xl border border-orange-100 flex items-center gap-4">
-                    <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm text-orange-500">
-                        <i class="fa-solid fa-lock text-xl"></i>
+                <div id="courseLockMessage" class="hidden mt-10 p-8 bg-orange-50 text-orange-900 rounded-[2rem] border border-orange-100 flex items-center gap-6">
+                    <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-orange-500">
+                        <i class="fa-solid fa-lock text-2xl"></i>
                     </div>
                     <div>
-                        <p class="font-bold text-lg leading-none">Syllabus Finalized</p>
-                        <p class="text-sm opacity-80 mt-1">This roadmap has been verified and locked by administration. No further changes are permitted.</p>
+                        <p class="font-black text-xl leading-none">Curriculum Immutable</p>
+                        <p class="text-sm opacity-70 mt-2 font-medium">This roadmap has been formally approved and locked by administration. Modifications are restricted.</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Class Curriculum View -->
+        <!-- Class View -->
         <div id="classView" class="hidden space-y-10">
             <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div class="flex flex-wrap gap-6 items-end mb-10">
+                <div class="flex flex-wrap gap-6 items-end mb-10 border-b border-gray-50 pb-10">
                     <div class="flex-1 min-w-[300px]">
-                        <label class="block text-xs font-black text-indigo-600 uppercase tracking-widest mb-2">Assigned Class</label>
+                        <label class="block text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Managed Class</label>
                         <input type="text" id="classNameDisplay" class="w-full p-4 bg-gray-50 border-none rounded-2xl font-bold text-gray-700 outline-none" readonly>
                     </div>
                     <button id="saveClassBtn" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 active:scale-95">
-                        <i class="fa-solid fa-save mr-2"></i> Save Roadmap
+                        <i class="fa-solid fa-save mr-2"></i> Update Class Roadmap
                     </button>
                 </div>
 
                 <div class="space-y-12">
                     <section>
-                        <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">1</div>
-                            <h3 class="text-xl font-bold text-gray-800 tracking-tight">Class Values & Goals</h3>
-                        </div>
-                        <textarea id="classOutline" class="w-full p-6 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none h-40 text-gray-600 leading-relaxed font-medium" placeholder="Outline the class's collective mission, rules, and yearly milestones..."></textarea>
+                        <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <i class="fa-solid fa-bullseye text-indigo-500"></i>
+                            Class Vision & Roadmap
+                        </h3>
+                        <textarea id="classOutline" class="w-full p-6 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none h-40 text-gray-600 leading-relaxed font-medium" placeholder="Define the class's collective mission and major yearly milestones..."></textarea>
                     </section>
 
-                    <section>
-                        <div class="flex justify-between items-center mb-8">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">2</div>
-                                <h3 class="text-xl font-bold text-gray-800 tracking-tight">Event Timeline</h3>
-                            </div>
-                            <button type="button" id="addClassModule" class="bg-indigo-50 text-indigo-600 px-5 py-2 rounded-xl font-bold text-xs hover:bg-indigo-100 transition flex items-center gap-2">
-                                <i class="fa-solid fa-plus-circle"></i> Add Event/Term
+                    <section class="space-y-8">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                <i class="fa-solid fa-timeline text-indigo-500"></i>
+                                Event Timeline
+                            </h3>
+                            <button type="button" id="addClassSection" class="bg-indigo-50 text-indigo-600 px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-indigo-100 transition flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> Add Milestone Section
                             </button>
                         </div>
-                        <div id="classModulesContainer" class="space-y-6"></div>
+                        <div id="classSectionsContainer" class="space-y-10"></div>
                     </section>
                 </div>
 
-                <div id="classLockMessage" class="hidden mt-10 p-6 bg-orange-50 text-orange-800 rounded-2xl border border-orange-100 flex items-center gap-4">
-                    <i class="fa-solid fa-shield-halved text-2xl"></i>
-                    <p class="font-bold">Class roadmap is currently locked.</p>
+                <div id="classLockMessage" class="hidden mt-10 p-8 bg-orange-50 text-orange-900 rounded-[2rem] border border-orange-100 flex items-center gap-4">
+                    <i class="fa-solid fa-shield-halved text-2xl text-orange-500"></i>
+                    <p class="font-bold">Class roadmap is currently locked for review.</p>
                 </div>
             </div>
         </div>
@@ -149,26 +140,32 @@
         <!-- Materials View -->
         <div id="materialsView" class="hidden">
             <div id="curriculumList" class="bg-white rounded-3xl shadow-sm p-10 border border-gray-100">
-                <ui-spinner text="Fetching departmental archives..."></ui-spinner>
+                <ui-spinner text="Accessing departmental archives..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <!-- Professional Preview Modal -->
-    <div id="previewModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-[2000] flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl h-[90vh] overflow-hidden flex flex-col">
-            <div class="p-8 bg-gray-900 text-white flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <i class="fa-solid fa-file-invoice text-3xl text-blue-400"></i>
+    <div id="previewModal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden z-[2000] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] shadow-2xl w-full max-w-6xl h-[92vh] overflow-hidden flex flex-col border border-white/20">
+            <div class="p-10 bg-gray-900 text-white flex justify-between items-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                <div class="flex items-center gap-6 relative z-10">
+                    <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-xl shadow-blue-900/20">
+                        <i class="fa-solid fa-file-signature"></i>
+                    </div>
                     <div>
-                        <h3 class="text-2xl font-bold leading-none" id="previewTitle">Public Syllabus</h3>
-                        <p class="text-[10px] uppercase font-black tracking-[0.2em] text-gray-400 mt-2">Professional Preview Mode</p>
+                        <h3 class="text-3xl font-black tracking-tight" id="previewTitle">Academic Syllabus</h3>
+                        <div class="flex gap-4 mt-2">
+                            <span class="text-[10px] uppercase font-black tracking-widest text-blue-400 bg-blue-400/10 px-3 py-1 rounded-full border border-blue-400/20">Official Draft</span>
+                            <span class="text-[10px] uppercase font-black tracking-widest text-gray-500">MIFL University Standard</span>
+                        </div>
                     </div>
                 </div>
-                <button id="closePreviewBtn" class="w-12 h-12 rounded-full hover:bg-white/10 flex items-center justify-center text-3xl transition-all hover:rotate-90">&times;</button>
+                <button id="closePreviewBtn" class="w-14 h-14 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-4xl transition-all hover:rotate-90 relative z-10">&times;</button>
             </div>
-            <div id="previewContent" class="flex-1 overflow-y-auto p-12 bg-[#fafafa]">
-                <!-- Formatted Syllabus Rendered Here -->
+            <div id="previewContent" class="flex-1 overflow-y-auto p-16 bg-white custom-scrollbar">
+                <!-- Syllabus Rendered Here -->
             </div>
         </div>
     </div>
@@ -181,6 +178,9 @@
         let allCourses = [];
         let myClass = null;
         let currentCourse = null;
+        let currentDataState = {
+            sections: [] // [{ title, modules: [] }]
+        };
 
         // DOM Elements
         const tabs = {
@@ -194,19 +194,6 @@
             materials: document.getElementById('materialsView')
         };
 
-        const courseSelect = document.getElementById('courseSelect');
-        const courseContent = document.getElementById('courseContent');
-        const courseModulesContainer = document.getElementById('courseModulesContainer');
-        const saveCourseBtn = document.getElementById('saveCourseBtn');
-        const courseLockMessage = document.getElementById('courseLockMessage');
-
-        const classModulesContainer = document.getElementById('classModulesContainer');
-        const saveClassBtn = document.getElementById('saveClassBtn');
-        const classLockMessage = document.getElementById('classLockMessage');
-
-        const previewModal = document.getElementById('previewModal');
-        const previewContent = document.getElementById('previewContent');
-
         /**
          * TAB NAVIGATION
          */
@@ -214,10 +201,7 @@
             Object.keys(tabs).forEach(t => {
                 const isActive = t === target;
                 tabs[t].classList.toggle('tab-active', isActive);
-                tabs[t].classList.toggle('bg-white', isActive);
-                tabs[t].classList.toggle('shadow-sm', isActive);
-                tabs[t].classList.toggle('text-blue-600', isActive && t === 'course');
-                tabs[t].classList.toggle('text-indigo-600', isActive && t === 'class');
+                tabs[t].classList.toggle('text-white', isActive);
                 tabs[t].classList.toggle('text-gray-400', !isActive);
                 views[t].classList.toggle('hidden', !isActive);
             });
@@ -229,113 +213,162 @@
         tabs.materials.onclick = () => switchTab('materials');
 
         /**
-         * ADVANCED FORM BUILDER
+         * SECTION & MODULE BUILDERS
          */
-        function createModuleRow(container, data = { title: '', description: '', duration: '', learningObjectives: [], resources: [] }) {
-            const index = container.children.length + 1;
-            const div = document.createElement('div');
-            div.className = "module-row p-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-md relative group";
-            
-            const objectivesHtml = (data.learningObjectives || []).map(obj => `
-                <div class="flex items-center gap-2 mb-2">
-                    <input type="text" class="obj-input flex-1 p-2 bg-gray-50 border-none rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500" value="${obj}">
-                    <button type="button" class="remove-obj text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
-                </div>
-            `).join('');
-
-            const resourcesHtml = (data.resources || []).map(res => `
-                <div class="grid grid-cols-2 gap-2 mb-2 res-row">
-                    <input type="text" class="res-title p-2 bg-gray-50 border-none rounded-lg text-[10px] font-bold" placeholder="Resource Title" value="${res.title}">
-                    <div class="flex items-center gap-2">
-                        <input type="text" class="res-url flex-1 p-2 bg-gray-50 border-none rounded-lg text-[10px] font-medium" placeholder="URL" value="${res.url}">
-                        <button type="button" class="remove-res text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>
-                    </div>
-                </div>
-            `).join('');
-
-            div.innerHTML = `
-                <div class="flex flex-col lg:flex-row gap-8">
-                    <div class="lg:w-1/3 space-y-4">
-                        <div class="flex items-center gap-4 mb-2">
-                            <div class="module-step active font-black text-sm">${index}</div>
-                            <input type="text" class="module-title flex-1 p-2 bg-transparent border-b-2 border-gray-100 focus:border-blue-500 outline-none text-lg font-extrabold text-gray-900" placeholder="Module Title" value="${data.title}">
+        function renderCurriculum(container, sections, isLocked) {
+            container.innerHTML = '';
+            if (!sections || sections.length === 0) {
+                container.innerHTML = `<div class="text-center py-10 border-2 border-dashed border-gray-100 rounded-[2rem] text-gray-400 font-bold italic">No learning paths defined yet. Click "Add Learning Path" to begin.</div>`;
+                return;
+            }
+            sections.forEach((section, sIdx) => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = "section-card bg-gray-50/50 p-8 rounded-[2.5rem] border border-gray-100 space-y-8 relative";
+                sectionDiv.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-gray-100 pb-6">
+                        <div class="flex-1 max-w-md">
+                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Section Header</label>
+                            <input type="text" class="section-title w-full bg-transparent border-none text-2xl font-black text-gray-900 focus:ring-0 outline-none p-0" value="${section.title || 'Weekly Learning Path'}" ${isLocked ? 'readonly' : ''}>
                         </div>
-                        <input type="text" class="module-duration w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 focus:ring-1 focus:ring-blue-500" placeholder="Duration / Timeframe" value="${data.duration || ''}">
-                        
-                        <div class="pt-4">
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Key Outcomes</label>
-                            <div class="objectives-list space-y-1">${objectivesHtml}</div>
-                            <button type="button" class="add-obj mt-2 text-[10px] font-bold text-blue-600 hover:underline">+ Add Outcome</button>
+                        <div class="flex gap-2">
+                            <button type="button" class="add-module-btn bg-white text-blue-600 border border-blue-100 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-50 transition ${isLocked ? 'hidden' : ''}">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Module
+                            </button>
+                            <button type="button" class="remove-section-btn text-gray-300 hover:text-red-500 p-2 transition ${isLocked ? 'hidden' : ''}">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                     </div>
-                    
-                    <div class="lg:w-2/3 border-t lg:border-t-0 lg:border-l border-gray-100 lg:pl-8 pt-6 lg:pt-0">
-                        <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">In-depth Exploration</label>
-                        <textarea class="module-description w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none focus:ring-2 focus:ring-blue-500 h-32" placeholder="Detail the pedagogical approach, core topics, and expected engagement...">${data.description}</textarea>
-                        
-                        <div class="mt-6">
-                            <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Curated Resources</label>
-                            <div class="resources-list">${resourcesHtml}</div>
-                            <button type="button" class="add-res mt-2 text-[10px] font-bold text-blue-600 hover:underline">+ Link Resource</button>
-                        </div>
+                    <div class="relative pl-6">
+                        <div class="course-path-line"></div>
+                        <div class="modules-container space-y-6 relative z-10"></div>
                     </div>
-                </div>
-                
-                <button type="button" class="remove-module absolute top-6 right-6 text-gray-200 hover:text-red-500 transition-colors p-2 opacity-0 group-hover:opacity-100">
-                    <i class="fa-solid fa-circle-xmark text-2xl"></i>
-                </button>
-            `;
-            
-            // Sub-form interactions
-            div.querySelector('.add-obj').onclick = () => {
-                const list = div.querySelector('.objectives-list');
-                const row = document.createElement('div');
-                row.className = "flex items-center gap-2 mb-2";
-                row.innerHTML = `<input type="text" class="obj-input flex-1 p-2 bg-gray-50 border-none rounded-lg text-xs font-medium focus:ring-1 focus:ring-blue-500"><button type="button" class="remove-obj text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`;
-                row.querySelector('.remove-obj').onclick = () => row.remove();
-                list.appendChild(row);
-            };
+                `;
 
-            div.querySelector('.add-res').onclick = () => {
-                const list = div.querySelector('.resources-list');
-                const row = document.createElement('div');
-                row.className = "grid grid-cols-2 gap-2 mb-2 res-row";
-                row.innerHTML = `<input type="text" class="res-title p-2 bg-gray-50 border-none rounded-lg text-[10px] font-bold" placeholder="Resource Title"><div class="flex items-center gap-2"><input type="text" class="res-url flex-1 p-2 bg-gray-50 border-none rounded-lg text-[10px] font-medium" placeholder="URL"><button type="button" class="remove-res text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button></div>`;
-                row.querySelector('.remove-res').onclick = () => row.remove();
-                list.appendChild(row);
-            };
+                const modulesContainer = sectionDiv.querySelector('.modules-container');
+                (section.modules || []).forEach((module, mIdx) => {
+                    const mDiv = createModuleElement(module, sIdx, mIdx, isLocked, container === document.getElementById('classSectionsContainer'));
+                    modulesContainer.appendChild(mDiv);
+                });
 
-            div.querySelectorAll('.remove-obj').forEach(b => b.onclick = (e) => e.target.closest('div').remove());
-            div.querySelectorAll('.remove-res').forEach(b => b.onclick = (e) => e.target.closest('.res-row').remove());
+                // Section Actions
+                sectionDiv.querySelector('.add-module-btn').onclick = () => {
+                    const newModule = { title: '', description: '', duration: '', learningObjectives: [], resources: [] };
+                    section.modules.push(newModule);
+                    modulesContainer.appendChild(createModuleElement(newModule, sIdx, section.modules.length - 1, isLocked, container === document.getElementById('classSectionsContainer')));
+                };
 
-            div.querySelector('.remove-module').onclick = () => {
-                if (confirm('Permanently remove this module from the path?')) {
-                    div.remove();
-                    reindexSteps(container);
-                }
-            };
-            container.appendChild(div);
-        }
+                sectionDiv.querySelector('.remove-section-btn').onclick = () => {
+                    if (confirm('Delete this entire section and all its modules?')) {
+                        sections.splice(sIdx, 1);
+                        renderCurriculum(container, sections, isLocked);
+                    }
+                };
 
-        function reindexSteps(container) {
-            Array.from(container.children).forEach((child, i) => {
-                const step = child.querySelector('.module-step');
-                if (step) step.textContent = i + 1;
+                sectionDiv.querySelector('.section-title').oninput = (e) => section.title = e.target.value;
+
+                container.appendChild(sectionDiv);
             });
         }
 
-        document.getElementById('addCourseModule').onclick = () => {
-            createModuleRow(courseModulesContainer);
-            courseModulesContainer.lastElementChild.scrollIntoView({ behavior: 'smooth' });
-        };
-        document.getElementById('addClassModule').onclick = () => createModuleRow(classModulesContainer);
+        function createModuleElement(data, sIdx, mIdx, isLocked, isClassMode) {
+            const div = document.createElement('div');
+            div.className = "module-row bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative group transition-all hover:border-blue-200";
+            
+            const accentColor = isClassMode ? 'indigo' : 'blue';
+
+            div.innerHTML = `
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <div class="lg:w-1/3 space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="module-step active font-black text-sm">${mIdx + 1}</div>
+                            <input type="text" class="m-title flex-1 bg-transparent border-none text-lg font-bold text-gray-900 focus:ring-0" placeholder="Module Title" value="${data.title}" ${isLocked ? 'readonly' : ''}>
+                        </div>
+                        <input type="text" class="m-duration w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 focus:ring-1" placeholder="Duration (e.g. Week 1)" value="${data.duration || ''}" ${isLocked ? 'readonly' : ''}>
+                        
+                        <div class="pt-2">
+                            <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Learning Outcomes</label>
+                            <div class="objectives-list space-y-1"></div>
+                            <button type="button" class="add-obj mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${isLocked ? 'hidden' : ''}">+ Add Outcome</button>
+                        </div>
+                    </div>
+                    
+                    <div class="lg:w-2/3 border-t lg:border-t-0 lg:border-l border-gray-50 lg:pl-6 pt-4 lg:pt-0">
+                        <textarea class="m-desc w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none h-28" placeholder="Pedagogical details..." ${isLocked ? 'readonly' : ''}>${data.description}</textarea>
+                        
+                        <div class="mt-4">
+                            <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Digital Resources</label>
+                            <div class="resources-list space-y-1"></div>
+                            <button type="button" class="add-res mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${isLocked ? 'hidden' : ''}">+ Link File/URL</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="remove-module absolute -right-3 -top-3 bg-white text-red-500 rounded-full shadow-md w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition ${isLocked ? 'hidden' : ''}">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            `;
+
+            // Render Sub-items
+            const objList = div.querySelector('.objectives-list');
+            const resList = div.querySelector('.resources-list');
+
+            const addObj = (val = '') => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2";
+                row.innerHTML = `<input type="text" class="obj-input flex-1 p-1.5 bg-transparent border-b border-gray-100 text-xs font-medium focus:border-${accentColor}-500 outline-none" value="${val}" ${isLocked ? 'readonly' : ''}>
+                                ${isLocked ? '' : `<button type="button" class="remove-obj text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
+                if (!isLocked) row.querySelector('.remove-obj').onclick = () => row.remove();
+                objList.appendChild(row);
+            };
+
+            const addRes = (res = { title: '', url: '' }) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 res-item";
+                row.innerHTML = `<input type="text" class="res-t p-1 bg-gray-100 border-none rounded-md text-[10px] font-bold w-1/3" placeholder="Title" value="${res.title}" ${isLocked ? 'readonly' : ''}>
+                                 <input type="text" class="res-u p-1 bg-gray-100 border-none rounded-md text-[10px] flex-1" placeholder="URL" value="${res.url}" ${isLocked ? 'readonly' : ''}>
+                                 ${isLocked ? '' : `<button type="button" class="remove-res text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
+                if (!isLocked) row.querySelector('.remove-res').onclick = () => row.remove();
+                resList.appendChild(row);
+            };
+
+            (data.learningObjectives || []).forEach(val => addObj(val));
+            (data.resources || []).forEach(res => addRes(res));
+
+            div.querySelector('.add-obj').onclick = () => addObj();
+            div.querySelector('.add-res').onclick = () => addRes();
+            div.querySelector('.remove-module').onclick = () => { div.remove(); };
+
+            // Sync with state on change
+            div.oninput = () => {
+                data.title = div.querySelector('.m-title').value;
+                data.duration = div.querySelector('.m-duration').value;
+                data.description = div.querySelector('.m-desc').value;
+                data.learningObjectives = Array.from(div.querySelectorAll('.obj-input')).map(i => i.value).filter(v => v);
+                data.resources = Array.from(div.querySelectorAll('.res-item')).map(r => ({
+                    title: r.querySelector('.res-t').value,
+                    url: r.querySelector('.res-u').value
+                })).filter(r => r.title && r.url);
+            };
+
+            return div;
+        }
 
         /**
-         * COURSE LOGIC
+         * ACTIONS
          */
-        courseSelect.onchange = async () => {
-            const id = courseSelect.value;
-            if (!id) { courseContent.classList.add('hidden'); saveCourseBtn.classList.add('hidden'); return; }
+        document.getElementById('addCourseSection').onclick = () => {
+            currentCourse.curriculumSections.push({ title: 'New Learning Path', modules: [], order: currentCourse.curriculumSections.length });
+            renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections, false);
+        };
+
+        document.getElementById('addClassSection').onclick = () => {
+            myClass.classCurriculumSections.push({ title: 'New Milestone Section', modules: [], order: myClass.classCurriculumSections.length });
+            renderCurriculum(document.getElementById('classSectionsContainer'), myClass.classCurriculumSections, false);
+        };
+
+        document.getElementById('courseSelect').onchange = async (e) => {
+            const id = e.target.value;
+            if (!id) { document.getElementById('courseContent').classList.add('hidden'); document.getElementById('saveCourseBtn').classList.add('hidden'); return; }
             
             try {
                 const res = await fetch(`/api/teacher/courses`);
@@ -344,58 +377,38 @@
                 
                 if (currentCourse) {
                     document.getElementById('courseOutline').value = currentCourse.outline || '';
-                    courseModulesContainer.innerHTML = '';
-                    if (currentCourse.curriculum?.length) {
-                        currentCourse.curriculum.sort((a, b) => a.order - b.order).forEach(m => createModuleRow(courseModulesContainer, m));
-                    } else {
-                        createModuleRow(courseModulesContainer);
-                    }
-
                     const isLocked = currentCourse.curriculumLocked;
-                    courseLockMessage.classList.toggle('hidden', !isLocked);
-                    saveCourseBtn.classList.toggle('hidden', isLocked);
-                    document.getElementById('addCourseModule').classList.toggle('hidden', isLocked);
+                    renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections || [], isLocked);
                     
-                    const inputs = courseContent.querySelectorAll('input, textarea, select, button');
-                    inputs.forEach(i => { if (!i.classList.contains('remove-module')) i.disabled = isLocked; });
-                    if (isLocked) courseContent.querySelectorAll('.remove-module, .add-obj, .add-res').forEach(b => b.classList.add('hidden'));
-
-                    courseContent.classList.remove('hidden');
-                    if (!isLocked) saveCourseBtn.classList.remove('hidden');
+                    document.getElementById('courseContent').classList.remove('hidden');
+                    document.getElementById('saveCourseBtn').classList.toggle('hidden', isLocked);
+                    document.getElementById('courseLockMessage').classList.toggle('hidden', !isLocked);
+                    document.getElementById('addCourseSection').classList.toggle('hidden', isLocked);
+                    document.getElementById('courseOutline').disabled = isLocked;
                 }
-            } catch (err) { showToast('Transmission error', 'error'); }
+            } catch (err) { showToast('Sync failed', 'error'); }
         };
 
-        saveCourseBtn.onclick = async () => {
-            const modules = Array.from(courseModulesContainer.querySelectorAll('.module-row')).map((row, index) => ({
-                title: row.querySelector('.module-title').value,
-                description: row.querySelector('.module-description').value,
-                duration: row.querySelector('.module-duration').value,
-                learningObjectives: Array.from(row.querySelectorAll('.obj-input')).map(i => i.value).filter(v => v),
-                resources: Array.from(row.querySelectorAll('.res-row')).map(r => ({
-                    title: r.querySelector('.res-title').value,
-                    url: r.querySelector('.res-url').value
-                })).filter(r => r.title && r.url),
-                order: index
-            }));
-
-            const data = {
-                outline: document.getElementById('courseOutline').value,
-                curriculum: modules
-            };
-
-            saveCourseBtn.disabled = true;
+        document.getElementById('saveCourseBtn').onclick = async () => {
+            const submitBtn = document.getElementById('saveCourseBtn');
+            submitBtn.disabled = true;
             try {
                 const res = await fetch(`/api/teacher/courses/${currentCourse._id}/curriculum`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        outline: document.getElementById('courseOutline').value,
+                        curriculumSections: currentCourse.curriculumSections
+                    })
                 });
-                if (res.ok) showToast('Syllabus successfully published!');
-                else showToast('Deployment failed', 'error');
-            } catch (err) { showToast('Server error', 'error'); }
-            finally { saveCourseBtn.disabled = false; }
+                if (res.ok) showToast('Syllabus successfully deployed!');
+                else showToast('Deployment error', 'error');
+            } catch (err) { showToast('Network failure', 'error'); }
+            finally { submitBtn.disabled = false; }
         };
+
+        // Class and Materials logic kept consistent with previous unified tabbed structure but refined visuals
+        // ... (loadClassData, saveClassBtn, fetchMaterials - similar to Course but with indigo accent)
 
         /**
          * PREVIEW LOGIC
@@ -403,78 +416,90 @@
         document.getElementById('previewBtn').onclick = () => {
             if (!currentCourse && !myClass) { showToast('Select an entity first', 'info'); return; }
             
-            const isCourse = views.course.classList.contains('hidden') === false;
-            const entity = isCourse ? currentCourse : myClass;
-            const title = isCourse ? currentCourse.title : myClass.name;
+            const isCourse = !views.course.classList.contains('hidden');
+            const data = isCourse ? currentCourse : myClass;
+            const title = isCourse ? data.title : data.name;
+            const sections = isCourse ? data.curriculumSections : data.classCurriculumSections;
             const outline = isCourse ? document.getElementById('courseOutline').value : document.getElementById('classOutline').value;
-            const container = isCourse ? courseModulesContainer : classModulesContainer;
-            
+
             document.getElementById('previewTitle').textContent = `Syllabus: ${title}`;
             
             let html = `
-                <div class="max-w-4xl mx-auto space-y-16 py-10">
-                    <header class="text-center">
-                        <h1 class="text-5xl font-black text-gray-900 tracking-tighter mb-6">${title}</h1>
-                        <div class="w-24 h-1.5 bg-blue-600 mx-auto rounded-full"></div>
+                <div class="max-w-4xl mx-auto space-y-20 pb-20">
+                    <header class="text-center space-y-6">
+                        <h1 class="text-6xl font-black text-gray-900 tracking-tighter">${title}</h1>
+                        <div class="flex justify-center items-center gap-6">
+                            <div class="h-px bg-gray-200 flex-1"></div>
+                            <div class="w-3 h-3 rounded-full bg-blue-600 shadow-lg shadow-blue-200"></div>
+                            <div class="h-px bg-gray-200 flex-1"></div>
+                        </div>
+                        <p class="text-gray-400 font-bold uppercase tracking-[0.4em] text-xs">University Academic Standard</p>
                     </header>
 
-                    <section class="bg-white p-12 rounded-[3rem] shadow-sm border border-gray-100">
-                        <h2 class="text-xs font-black text-blue-600 uppercase tracking-[0.3em] mb-8">Course Overview</h2>
-                        <p class="text-xl text-gray-600 leading-relaxed font-medium serif italic">"${outline || 'No outline provided.'}"</p>
+                    <section class="bg-gray-50/50 p-16 rounded-[4rem] border border-gray-100 relative">
+                        <div class="absolute top-0 left-0 p-10 opacity-10"><i class="fa-solid fa-quote-left text-6xl"></i></div>
+                        <h2 class="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em] mb-10 text-center">Architectural Overview</h2>
+                        <p class="text-2xl text-gray-700 leading-relaxed font-serif italic text-center">"${outline || 'The architect has not provided a summary for this roadmap.'}"</p>
                     </section>
 
-                    <section class="space-y-12">
-                        <h2 class="text-xs font-black text-blue-600 uppercase tracking-[0.3em]">Learning Roadmap</h2>
-                        <div class="space-y-8">
+                    <div class="space-y-24">
             `;
 
-            Array.from(container.querySelectorAll('.module-row')).forEach((row, i) => {
-                const mTitle = row.querySelector('.module-title').value;
-                const mDur = row.querySelector('.module-duration').value;
-                const mDesc = row.querySelector('.module-description').value;
-                const mObjs = Array.from(row.querySelectorAll('.obj-input')).map(i => i.value).filter(v => v);
-                const mRes = Array.from(row.querySelectorAll('.res-row')).map(r => ({
-                    title: r.querySelector('.res-title').value,
-                    url: r.querySelector('.res-url').value
-                })).filter(r => r.title && r.url);
-
+            (sections || []).forEach((section, sIdx) => {
                 html += `
-                    <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col md:flex-row gap-10">
-                        <div class="md:w-1/4">
-                            <span class="text-4xl font-black text-gray-100 block mb-2">0${i+1}</span>
-                            <span class="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">${mDur || 'No duration'}</span>
+                    <section class="space-y-12">
+                        <div class="flex items-center gap-6">
+                            <span class="text-5xl font-black text-gray-100">0${sIdx+1}</span>
+                            <h2 class="text-3xl font-black text-gray-900 tracking-tight border-b-4 border-blue-600/10 pb-2">${section.title}</h2>
                         </div>
-                        <div class="md:w-3/4 space-y-6">
-                            <h3 class="text-2xl font-extrabold text-gray-900">${mTitle || 'Untitled Module'}</h3>
-                            <p class="text-gray-500 leading-relaxed font-medium">${mDesc || 'No description provided.'}</p>
-                            
-                            ${mObjs.length ? `
-                                <div class="flex flex-wrap gap-2 pt-2">
-                                    ${mObjs.map(o => `<span class="objective-tag">${o}</span>`).join('')}
-                                </div>
-                            ` : ''}
-
-                            ${mRes.length ? `
-                                <div class="pt-6 border-t border-gray-50 flex flex-col gap-3">
-                                    <span class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Digital Resources</span>
-                                    ${mRes.map(r => `<a href="${r.url}" target="_blank" class="text-sm font-bold text-blue-600 hover:text-blue-800 flex items-center gap-2"><i class="fa-solid fa-link text-xs opacity-50"></i> ${r.title}</a>`).join('')}
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
+                        <div class="space-y-8 pl-12 border-l-2 border-gray-50 ml-6">
                 `;
+
+                (section.modules || []).forEach((m, mIdx) => {
+                    html += `
+                        <div class="bg-white p-10 rounded-[3rem] shadow-sm border border-gray-100 flex flex-col md:flex-row gap-12 transition-transform hover:scale-[1.01]">
+                            <div class="md:w-1/4">
+                                <span class="px-5 py-2 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100">${m.duration || 'Session'}</span>
+                            </div>
+                            <div class="md:w-3/4 space-y-6">
+                                <h3 class="text-2xl font-black text-gray-900 leading-tight">${m.title || 'Untitled Module'}</h3>
+                                <p class="text-gray-600 leading-relaxed font-medium text-lg">${m.description || 'Details pending...'}</p>
+                                
+                                ${m.learningObjectives?.length ? `
+                                    <div class="flex flex-wrap gap-2 pt-4">
+                                        ${m.learningObjectives.map(o => `<span class="objective-tag">${o}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+
+                                ${m.resources?.length ? `
+                                    <div class="pt-8 mt-4 border-t border-gray-50 flex flex-col gap-4">
+                                        <span class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Pedagogical Resources</span>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            ${m.resources.map(r => `
+                                                <a href="${r.url}" target="_blank" class="p-4 bg-gray-50 rounded-2xl flex items-center gap-4 group hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                                                    <i class="fa-solid fa-link text-blue-500 group-hover:text-white"></i>
+                                                    <span class="text-sm font-bold">${r.title}</span>
+                                                </a>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `</div></section>`;
             });
 
-            html += `</div></section></div>`;
+            html += `</div></div>`;
             previewContent.innerHTML = html;
             previewModal.classList.remove('hidden');
         };
 
         document.getElementById('closePreviewBtn').onclick = () => previewModal.classList.add('hidden');
 
-        /**
-         * CLASS LOGIC (Keeping existing but refining UI)
-         */
+        // Existing initialization and class/material logic refined...
         async function loadClassData() {
             try {
                 const res = await fetch('/api/teacher/classes');
@@ -484,47 +509,38 @@
                     tabs.class.classList.remove('hidden');
                     document.getElementById('classNameDisplay').value = `${myClass.name} (${myClass.section})`;
                     document.getElementById('classOutline').value = myClass.classOutline || '';
-                    classModulesContainer.innerHTML = '';
-                    if (myClass.classCurriculum?.length) {
-                        myClass.classCurriculum.sort((a, b) => a.order - b.order).forEach(m => createModuleRow(classModulesContainer, m));
-                    } else { createModuleRow(classModulesContainer); }
+                    const isLocked = myClass.classCurriculumLocked;
+                    renderCurriculum(document.getElementById('classSectionsContainer'), myClass.classCurriculumSections || [], isLocked);
+                    document.getElementById('saveClassBtn').classList.toggle('hidden', isLocked);
+                    document.getElementById('classLockMessage').classList.toggle('hidden', !isLocked);
+                    document.getElementById('addClassSection').classList.toggle('hidden', isLocked);
+                    document.getElementById('classOutline').disabled = isLocked;
                 }
             } catch (err) {}
         }
 
-        saveClassBtn.onclick = async () => {
-            const modules = Array.from(classModulesContainer.querySelectorAll('.module-row')).map((row, index) => ({
-                title: row.querySelector('.module-title').value,
-                description: row.querySelector('.module-description').value,
-                duration: row.querySelector('.module-duration').value,
-                learningObjectives: Array.from(row.querySelectorAll('.obj-input')).map(i => i.value).filter(v => v),
-                resources: Array.from(row.querySelectorAll('.res-row')).map(r => ({
-                    title: r.querySelector('.res-title').value,
-                    url: r.querySelector('.res-url').value
-                })).filter(r => r.title && r.url),
-                order: index
-            }));
-
-            saveClassBtn.disabled = true;
+        document.getElementById('saveClassBtn').onclick = async () => {
+            const btn = document.getElementById('saveClassBtn');
+            btn.disabled = true;
             try {
                 const res = await fetch(`/api/teacher/classes/${myClass._id}/curriculum`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ classOutline: document.getElementById('classOutline').value, classCurriculum: modules })
+                    body: JSON.stringify({
+                        classOutline: document.getElementById('classOutline').value,
+                        classCurriculumSections: myClass.classCurriculumSections
+                    })
                 });
-                if (res.ok) showToast('Class roadmap updated!');
-            } catch (err) { showToast('Update failed', 'error'); }
-            finally { saveClassBtn.disabled = false; }
+                if (res.ok) showToast('Class Roadmap synchronized!');
+            } catch (err) { showToast('Sync failed', 'error'); }
+            finally { btn.disabled = false; }
         };
 
-        /**
-         * INITIALIZATION
-         */
         async function init() {
             try {
-                const response = await fetch('/api/auth/me');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
-                const { user } = await response.json();
+                const res = await fetch('/api/auth/me');
+                if (!res.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await res.json();
                 currentUser = user;
                 customElements.whenDefined('ui-navbar').then(() => document.querySelector('ui-navbar').renderLinks(user));
                 
@@ -532,13 +548,12 @@
                 if (courseRes.ok) {
                     const { courses } = await courseRes.json();
                     allCourses = courses;
-                    courseSelect.innerHTML = '<option value="">Select a course to manage...</option>' + 
+                    document.getElementById('courseSelect').innerHTML = '<option value="">Choose a course to architect...</option>' + 
                         courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
                 }
                 await loadClassData();
             } catch (err) { window.location.href = '/api/auth/login'; }
         }
-
         init();
     </script>
 </body>

@@ -15,6 +15,13 @@ export interface ICurriculumModule {
     order: number;
 }
 
+export interface ICurriculumSection {
+    _id?: Types.ObjectId;
+    title: string;
+    modules: ICurriculumModule[];
+    order: number;
+}
+
 export interface ICourse extends Document {
     title: string;
     code: string; // e.g., 'MATH101'
@@ -24,7 +31,7 @@ export interface ICourse extends Document {
     teacher: Types.ObjectId; // Ref to User (Teacher)
     syllabus?: string; // URL or text
     outline?: string; // Structured course outline
-    curriculum: ICurriculumModule[]; // Array of curriculum modules
+    curriculumSections: ICurriculumSection[]; // Updated: Array of curriculum sections
     curriculumLocked: boolean; // Admin lock status
     enrolledStudents: Types.ObjectId[]; // Ref to User (Student)
     batches: ICourseBatch[];
