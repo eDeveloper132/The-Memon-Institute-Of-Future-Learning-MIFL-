@@ -10,6 +10,8 @@ export interface ICurriculumModule {
     title: string;
     description: string;
     duration?: string;
+    learningObjectives?: string[];
+    resources?: { title: string; url: string }[];
     order: number;
 }
 

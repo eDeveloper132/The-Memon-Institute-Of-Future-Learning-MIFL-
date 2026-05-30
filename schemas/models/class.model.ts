@@ -9,6 +9,11 @@ const curriculumModuleSchema = new Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     duration: String,
+    learningObjectives: [String],
+    resources: [{
+        title: { type: String, required: true },
+        url: { type: String, required: true }
+    }],
     order: { type: Number, required: true, default: 0 }
 });
 
