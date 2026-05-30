@@ -21,6 +21,7 @@ const curriculumModuleSchema = new Schema({
 const curriculumSectionSchema = new Schema({
     title: { type: String, required: true },
     modules: [curriculumModuleSchema],
+    isOptional: { type: Boolean, default: false },
     order: { type: Number, required: true, default: 0 }
 });
 

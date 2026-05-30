@@ -43,8 +43,12 @@
 
         <!-- Course View -->
         <div id="courseView" class="space-y-10">
-            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div class="flex flex-wrap gap-6 items-end mb-10 border-b border-gray-50 pb-10">
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
+                    <i class="fa-solid fa-graduation-cap text-9xl"></i>
+                </div>
+
+                <div class="flex flex-wrap gap-6 items-end mb-10 border-b border-gray-50 pb-10 relative z-10">
                     <div class="flex-1 min-w-[300px]">
                         <label class="block text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mb-3">Academic Selection</label>
                         <select id="courseSelect" class="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-700 cursor-pointer transition-all">
@@ -164,7 +168,7 @@
                 </div>
                 <button id="closePreviewBtn" class="w-14 h-14 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-4xl transition-all hover:rotate-90 relative z-10">&times;</button>
             </div>
-            <div id="previewContent" class="flex-1 overflow-y-auto p-16 bg-white custom-scrollbar">
+            <div id="previewContent" class="flex-1 overflow-y-auto p-16 bg-white custom-scrollbar text-gray-800">
                 <!-- Syllabus Rendered Here -->
             </div>
         </div>
@@ -178,9 +182,6 @@
         let allCourses = [];
         let myClass = null;
         let currentCourse = null;
-        let currentDataState = {
-            sections: [] // [{ title, modules: [] }]
-        };
 
         // DOM Elements
         const tabs = {
@@ -230,7 +231,16 @@
                             <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Section Header</label>
                             <input type="text" class="section-title w-full bg-transparent border-none text-2xl font-black text-gray-900 focus:ring-0 outline-none p-0" value="${section.title || 'Weekly Learning Path'}" ${isLocked ? 'readonly' : ''}>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex items-center gap-6">
+                            <!-- Optional Toggle -->
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Optional Path</span>
+                                <div class="relative inline-flex items-center">
+                                    <input type="checkbox" class="section-optional sr-only peer" ${section.isOptional ? 'checked' : ''} ${isLocked ? 'disabled' : ''}>
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
+                            
                             <button type="button" class="add-module-btn bg-white text-blue-600 border border-blue-100 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-50 transition ${isLocked ? 'hidden' : ''}">
                                 <i class="fa-solid fa-plus mr-1"></i> Add Module
                             </button>
@@ -254,6 +264,7 @@
                 // Section Actions
                 sectionDiv.querySelector('.add-module-btn').onclick = () => {
                     const newModule = { title: '', description: '', duration: '', learningObjectives: [], resources: [] };
+                    if (!section.modules) section.modules = [];
                     section.modules.push(newModule);
                     modulesContainer.appendChild(createModuleElement(newModule, sIdx, section.modules.length - 1, isLocked, container === document.getElementById('classSectionsContainer')));
                 };
@@ -266,6 +277,7 @@
                 };
 
                 sectionDiv.querySelector('.section-title').oninput = (e) => section.title = e.target.value;
+                sectionDiv.querySelector('.section-optional').onchange = (e) => section.isOptional = e.target.checked;
 
                 container.appendChild(sectionDiv);
             });
@@ -282,7 +294,7 @@
                     <div class="lg:w-1/3 space-y-4">
                         <div class="flex items-center gap-4">
                             <div class="module-step active font-black text-sm">${mIdx + 1}</div>
-                            <input type="text" class="m-title flex-1 bg-transparent border-none text-lg font-bold text-gray-900 focus:ring-0" placeholder="Module Title" value="${data.title}" ${isLocked ? 'readonly' : ''}>
+                            <input type="text" class="m-title flex-1 bg-transparent border-none text-lg font-bold text-gray-900 focus:ring-0" placeholder="Module Title" value="${data.title || ''}" ${isLocked ? 'readonly' : ''}>
                         </div>
                         <input type="text" class="m-duration w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 focus:ring-1" placeholder="Duration (e.g. Week 1)" value="${data.duration || ''}" ${isLocked ? 'readonly' : ''}>
                         
@@ -294,7 +306,7 @@
                     </div>
                     
                     <div class="lg:w-2/3 border-t lg:border-t-0 lg:border-l border-gray-50 lg:pl-6 pt-4 lg:pt-0">
-                        <textarea class="m-desc w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none h-28" placeholder="Pedagogical details..." ${isLocked ? 'readonly' : ''}>${data.description}</textarea>
+                        <textarea class="m-desc w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none h-28" placeholder="Pedagogical details..." ${isLocked ? 'readonly' : ''}>${data.description || ''}</textarea>
                         
                         <div class="mt-4">
                             <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Digital Resources</label>
@@ -308,7 +320,6 @@
                 </button>
             `;
 
-            // Render Sub-items
             const objList = div.querySelector('.objectives-list');
             const resList = div.querySelector('.resources-list');
 
@@ -338,31 +349,71 @@
             div.querySelector('.add-res').onclick = () => addRes();
             div.querySelector('.remove-module').onclick = () => { div.remove(); };
 
-            // Sync with state on change
-            div.oninput = () => {
-                data.title = div.querySelector('.m-title').value;
-                data.duration = div.querySelector('.m-duration').value;
-                data.description = div.querySelector('.m-desc').value;
-                data.learningObjectives = Array.from(div.querySelectorAll('.obj-input')).map(i => i.value).filter(v => v);
-                data.resources = Array.from(div.querySelectorAll('.res-item')).map(r => ({
-                    title: r.querySelector('.res-t').value,
-                    url: r.querySelector('.res-u').value
-                })).filter(r => r.title && r.url);
-            };
-
             return div;
+        }
+
+        /**
+         * ROBUST DATA SCRAPER
+         */
+        function scrapeCurriculum(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+
+            return Array.from(container.querySelectorAll('.section-card')).map((sec, sIdx) => {
+                const modules = Array.from(sec.querySelectorAll('.module-row')).map((mod, mIdx) => {
+                    const title = mod.querySelector('.m-title').value.trim();
+                    const duration = mod.querySelector('.m-duration').value.trim();
+                    const description = mod.querySelector('.m-desc').value.trim();
+                    const objectives = Array.from(mod.querySelectorAll('.obj-input')).map(i => i.value.trim()).filter(v => v);
+                    const resources = Array.from(mod.querySelectorAll('.res-item')).map(r => ({
+                        title: r.querySelector('.res-t').value.trim(),
+                        url: r.querySelector('.res-u').value.trim()
+                    })).filter(r => r.title && r.url);
+
+                    if (!title && !description && !duration && objectives.length === 0 && resources.length === 0) {
+                        return null;
+                    }
+
+                    return { title, duration, description, learningObjectives: objectives, resources, order: mIdx };
+                }).filter(m => m !== null);
+
+                return {
+                    title: sec.querySelector('.section-title').value.trim(),
+                    isOptional: sec.querySelector('.section-optional').checked,
+                    modules: modules,
+                    order: sIdx
+                };
+            });
+        }
+
+        function validateCurriculum(sections) {
+            for (const sec of sections) {
+                if (!sec.title) {
+                    showToast('All sections must have a header title', 'error');
+                    return false;
+                }
+                for (const mod of sec.modules) {
+                    if (!mod.title) {
+                        showToast(`A module in "${sec.title}" is missing its title`, 'error');
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
         /**
          * ACTIONS
          */
         document.getElementById('addCourseSection').onclick = () => {
-            currentCourse.curriculumSections.push({ title: 'New Learning Path', modules: [], order: currentCourse.curriculumSections.length });
+            if (!currentCourse.curriculumSections) currentCourse.curriculumSections = [];
+            currentCourse.curriculumSections.push({ title: 'New Learning Path', modules: [], isOptional: false, order: currentCourse.curriculumSections.length });
             renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections, false);
         };
 
         document.getElementById('addClassSection').onclick = () => {
-            myClass.classCurriculumSections.push({ title: 'New Milestone Section', modules: [], order: myClass.classCurriculumSections.length });
+            if (!myClass.classCurriculumSections) myClass.classCurriculumSections = [];
+            myClass.classCurriculumSections.push({ title: 'New Milestone Section', modules: [], isOptional: false, order: myClass.classCurriculumSections.length });
             renderCurriculum(document.getElementById('classSectionsContainer'), myClass.classCurriculumSections, false);
         };
 
@@ -390,33 +441,8 @@
         };
 
         document.getElementById('saveCourseBtn').onclick = async () => {
-            const sections = Array.from(document.getElementById('courseSectionsContainer').querySelectorAll('.section-card')).map((sec, sIdx) => {
-                const modules = Array.from(sec.querySelectorAll('.module-row')).map((mod, mIdx) => ({
-                    title: mod.querySelector('.m-title').value.trim(),
-                    duration: mod.querySelector('.m-duration').value.trim(),
-                    description: mod.querySelector('.m-desc').value.trim(),
-                    learningObjectives: Array.from(mod.querySelectorAll('.obj-input')).map(i => i.value.trim()).filter(v => v),
-                    resources: Array.from(mod.querySelectorAll('.res-item')).map(r => ({
-                        title: r.querySelector('.res-t').value.trim(),
-                        url: r.querySelector('.res-u').value.trim()
-                    })).filter(r => r.title && r.url),
-                    order: mIdx
-                }));
-
-                return {
-                    title: sec.querySelector('.section-title').value.trim(),
-                    modules: modules,
-                    order: sIdx
-                };
-            });
-
-            // Validation
-            for (const sec of sections) {
-                if (!sec.title) return showToast('All sections must have a title', 'error');
-                for (const mod of sec.modules) {
-                    if (!mod.title) return showToast(`Module in "${sec.title}" is missing a title`, 'error');
-                }
-            }
+            const sections = scrapeCurriculum('courseSectionsContainer');
+            if (!validateCurriculum(sections)) return;
 
             const data = {
                 outline: document.getElementById('courseOutline').value.trim(),
@@ -432,13 +458,41 @@
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
-                    showToast('Syllabus successfully deployed!');
-                    // Refresh local state
-                    const updated = await res.json();
-                    currentCourse = updated.course;
+                    showToast('Course Syllabus published!');
+                    const data = await res.json();
+                    currentCourse = data.course;
                 } else {
                     const err = await res.json();
-                    showToast(err.message || 'Deployment error', 'error');
+                    showToast(err.message || 'Update failed', 'error');
+                }
+            } catch (err) { showToast('Network failure', 'error'); }
+            finally { submitBtn.disabled = false; }
+        };
+
+        document.getElementById('saveClassBtn').onclick = async () => {
+            const sections = scrapeCurriculum('classSectionsContainer');
+            if (!validateCurriculum(sections)) return;
+
+            const data = {
+                classOutline: document.getElementById('classOutline').value.trim(),
+                classCurriculumSections: sections
+            };
+
+            const submitBtn = document.getElementById('saveClassBtn');
+            submitBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/teacher/classes/${myClass._id}/curriculum`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Class Roadmap updated!');
+                    const data = await res.json();
+                    myClass = data.class;
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Update failed', 'error');
                 }
             } catch (err) { showToast('Network failure', 'error'); }
             finally { submitBtn.disabled = false; }
@@ -467,7 +521,6 @@
                         return;
                     }
 
-                    // Group by Course
                     const grouped = materials.reduce((acc, m) => {
                         const cTitle = m.course?.title || 'General Resources';
                         if (!acc[cTitle]) acc[cTitle] = [];
@@ -482,7 +535,7 @@
                                 ${course}
                             </h4>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                ${items.map(m => `
+                                ${(items as any).map(m => `
                                     <div class="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 hover:border-blue-200 transition-all group shadow-sm hover:shadow-md">
                                         <div class="flex items-center gap-4 mb-4">
                                             <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm text-blue-600">
@@ -558,7 +611,10 @@
                     <section class="space-y-12">
                         <div class="flex items-center gap-6">
                             <span class="text-5xl font-black text-gray-100">0${sIdx+1}</span>
-                            <h2 class="text-3xl font-black text-gray-900 tracking-tight border-b-4 border-blue-600/10 pb-2">${section.title}</h2>
+                            <div class="flex items-center gap-3">
+                                <h2 class="text-3xl font-black text-gray-900 tracking-tight border-b-4 border-blue-600/10 pb-2">${section.title}</h2>
+                                ${section.isOptional ? '<span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-200">Optional Path</span>' : ''}
+                            </div>
                         </div>
                         <div class="space-y-8 pl-12 border-l-2 border-gray-50 ml-6">
                 `;
@@ -607,7 +663,6 @@
 
         document.getElementById('closePreviewBtn').onclick = () => previewModal.classList.add('hidden');
 
-        // Existing initialization and class/material logic refined...
         async function loadClassData() {
             try {
                 const res = await fetch('/api/teacher/classes');
@@ -626,23 +681,6 @@
                 }
             } catch (err) {}
         }
-
-        document.getElementById('saveClassBtn').onclick = async () => {
-            const btn = document.getElementById('saveClassBtn');
-            btn.disabled = true;
-            try {
-                const res = await fetch(`/api/teacher/classes/${myClass._id}/curriculum`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        classOutline: document.getElementById('classOutline').value,
-                        classCurriculumSections: myClass.classCurriculumSections
-                    })
-                });
-                if (res.ok) showToast('Class Roadmap synchronized!');
-            } catch (err) { showToast('Sync failed', 'error'); }
-            finally { btn.disabled = false; }
-        };
 
         async function init() {
             try {

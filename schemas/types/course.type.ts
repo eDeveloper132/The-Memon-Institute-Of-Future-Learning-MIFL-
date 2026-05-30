@@ -19,6 +19,7 @@ export interface ICurriculumSection {
     _id?: Types.ObjectId;
     title: string;
     modules: ICurriculumModule[];
+    isOptional?: boolean; // NEW: Mark section as optional
     order: number;
 }
 
