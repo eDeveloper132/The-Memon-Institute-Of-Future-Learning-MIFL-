@@ -58,6 +58,16 @@ export const getTeacherCourses = async (req: any, res: Response) => {
     }
 };
 
+export const getTeacherClasses = async (req: any, res: Response) => {
+    try {
+        const teacherId = req.user.id;
+        const classes = await Class.find({ classTeacher: teacherId }).select('name section gradeLevel students');
+        res.status(200).json({ classes });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getAttendanceData = async (req: any, res: Response) => {
     try {
         const { classId, courseId, batchId, date } = req.query;

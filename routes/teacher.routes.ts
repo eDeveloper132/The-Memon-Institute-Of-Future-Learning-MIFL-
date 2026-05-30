@@ -29,6 +29,7 @@ router.use(authorize('teacher', 'admin'));
  */
 router.get('/stats', getDashboardStats);
 router.get('/courses', getTeacherCourses);
+router.get('/classes', getTeacherClasses);
 
 /**
  * Attendance

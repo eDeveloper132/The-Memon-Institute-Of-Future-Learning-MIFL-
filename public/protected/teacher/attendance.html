@@ -137,45 +137,60 @@
         async function fetchClasses() {
             try {
                 // Fetch classes where current user is class teacher
-                const res = await fetch('/api/admin/classes'); // Note: Admin endpoint used as proxy, but ideally should be teacher specific
+                const res = await fetch('/api/teacher/classes');
+                if (!res.ok) throw new Error('Failed to fetch classes');
+                
                 const data = await res.json();
-                const myClasses = data.classes.filter(c => String(c.classTeacher?._id || c.classTeacher) === String(currentUser._id));
+                const myClasses = data.classes || [];
                 
                 classSelect.innerHTML = '<option value="">Select Class</option>' + 
                     myClasses.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
             } catch (err) {
                 console.error('Failed to fetch classes:', err);
+                showToast('Error loading classes', 'error');
             }
         }
 
         async function fetchTeacherCourses() {
             try {
                 const res = await fetch('/api/teacher/courses');
+                if (!res.ok) throw new Error('Failed to fetch courses');
+                
                 const data = await res.json();
-                allCourses = data.courses;
+                allCourses = data.courses || [];
 
                 courseSelect.innerHTML = '<option value="">Select Course</option>' + 
                     allCourses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
             } catch (err) {
                 console.error('Failed to fetch courses:', err);
+                showToast('Error loading courses', 'error');
             }
         }
 
-        courseSelect.onchange = () => {
+        courseSelect.addEventListener('change', () => {
             const courseId = courseSelect.value;
+            console.log('[Attendance] Course selected:', courseId);
+            
             if (!courseId) {
                 batchSelect.innerHTML = '<option value="">Select Batch</option>';
                 batchSelect.disabled = true;
                 return;
             }
 
-            const course = allCourses.find(c => c._id === courseId);
-            if (course && course.batches) {
+            const course = allCourses.find(c => String(c._id) === String(courseId));
+            console.log('[Attendance] Found course object:', course);
+
+            if (course && Array.isArray(course.batches) && course.batches.length > 0) {
+                console.log('[Attendance] Populating batches:', course.batches);
                 batchSelect.innerHTML = '<option value="">Select Batch</option>' + 
                     course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
                 batchSelect.disabled = false;
+            } else {
+                console.warn('[Attendance] No batches found for course or batches array is empty.');
+                batchSelect.innerHTML = '<option value="">No Batches Found</option>';
+                batchSelect.disabled = true;
             }
-        };
+        });
 
         async function loadStudents() {
             const classId = classSelect.value;
