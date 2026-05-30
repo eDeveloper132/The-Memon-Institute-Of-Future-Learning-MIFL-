@@ -12,6 +12,8 @@ import {
     gradeSubmission,
     uploadMaterial,
     getMaterials,
+    updateCourseCurriculum,
+    updateClassCurriculum,
     createQuiz,
     getQuizzes,
     createExam,

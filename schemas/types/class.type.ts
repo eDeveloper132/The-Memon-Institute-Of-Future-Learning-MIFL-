@@ -1,5 +1,5 @@
 import type { Document, Types } from 'mongoose';
-import { ICurriculumModule } from './course.type.js';
+import type { ICurriculumModule } from './course.type.js';
 
 export interface IClassBatch {
          _id?: Types.ObjectId;
