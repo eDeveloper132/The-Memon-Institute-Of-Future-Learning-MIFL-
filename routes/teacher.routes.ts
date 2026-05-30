@@ -28,6 +28,7 @@ router.use(authorize('teacher', 'admin'));
  * Teacher Dashboard
  */
 router.get('/stats', getDashboardStats);
+router.get('/courses', getTeacherCourses);
 
 /**
  * Attendance

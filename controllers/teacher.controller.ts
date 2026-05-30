@@ -48,19 +48,41 @@ export const getDashboardStats = async (req: any, res: Response) => {
 /**
  * Attendance Logic
  */
+export const getTeacherCourses = async (req: any, res: Response) => {
+    try {
+        const teacherId = req.user.id;
+        const courses = await Course.find({ teacher: teacherId }).select('title batches');
+        res.status(200).json({ courses });
+    } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getAttendanceData = async (req: any, res: Response) => {
     try {
-        const { classId, date } = req.query;
-        if (!classId) return res.status(400).json({ message: 'Class ID is required' });
+        const { classId, courseId, batchId, date } = req.query;
+        if (!classId && !courseId) return res.status(400).json({ message: 'Class or Course ID is required' });
 
-        const selectedClass = await Class.findById(classId).populate('students', 'name email');
-        if (!selectedClass) return res.status(404).json({ message: 'Class not found' });
-
+        let students: any[] = [];
         const queryDate = date ? new Date(date as string) : new Date();
         queryDate.setHours(0, 0, 0, 0);
 
+        if (classId) {
+            const selectedClass = await Class.findById(classId).populate('students', 'name email');
+            if (!selectedClass) return res.status(404).json({ message: 'Class not found' });
+            students = selectedClass.students;
+        } else if (courseId && batchId) {
+            const selectedCourse = await Course.findById(courseId);
+            if (!selectedCourse) return res.status(404).json({ message: 'Course not found' });
+            
+            const batch = selectedCourse.batches.find(b => String(b._id) === String(batchId));
+            if (!batch) return res.status(404).json({ message: 'Batch not found' });
+
+            students = await User.find({ _id: { $in: batch.students } }).select('name email');
+        }
+
         const records = await Attendance.find({
-            class: classId,
+            ...(classId ? { class: classId } : { course: courseId }),
             date: {
                 $gte: queryDate,
                 $lt: new Date(queryDate.getTime() + 24 * 60 * 60 * 1000)
@@ -68,7 +90,7 @@ export const getAttendanceData = async (req: any, res: Response) => {
         });
 
         res.status(200).json({
-            students: selectedClass.students,
+            students,
             records
         });
     } catch (error: any) {
@@ -78,7 +100,7 @@ export const getAttendanceData = async (req: any, res: Response) => {
 
 export const markAttendance = async (req: any, res: Response) => {
     try {
-        const { classId, attendanceData, date } = req.body; // attendanceData: [{studentId, status}]
+        const { classId, courseId, attendanceData, date } = req.body; 
         const recordedBy = req.user.id;
 
         const dateObj = date ? new Date(date) : new Date();
@@ -86,7 +108,11 @@ export const markAttendance = async (req: any, res: Response) => {
 
         const operations = attendanceData.map((item: any) => ({
             updateOne: {
-                filter: { student: item.studentId, class: classId, date: dateObj },
+                filter: { 
+                    student: item.studentId, 
+                    ...(classId ? { class: classId } : { course: courseId }), 
+                    date: dateObj 
+                },
                 update: { status: item.status, recordedBy },
                 upsert: true
             }
@@ -94,11 +120,12 @@ export const markAttendance = async (req: any, res: Response) => {
 
         await Attendance.bulkWrite(operations);
 
-        // Notify class about attendance update
-        req.io.to(`class:${classId}`).emit('notification', {
+        // Notify relevant room
+        const room = classId ? `class:${classId}` : `course:${courseId}`;
+        req.io.to(room).emit('notification', {
             type: 'ATTENDANCE_MARKED',
             message: `Attendance for ${dateObj.toLocaleDateString()} has been recorded.`,
-            classId
+            id: classId || courseId
         });
 
         res.status(200).json({ message: 'Attendance recorded successfully' });

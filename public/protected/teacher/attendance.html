@@ -13,17 +13,43 @@
     <ui-navbar title="Attendance Management"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
-        <div class="mb-8 flex justify-between items-center">
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
                 <h2 class="text-3xl font-bold text-gray-900">Class Attendance</h2>
                 <p class="text-gray-500 mt-2">Mark and manage student attendance for your classes.</p>
             </div>
-            <div class="flex space-x-4">
-<select id="classSelect" class="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" title="Select a class">
-    <option value="">Select Class</option>
-    <!-- Classes will be loaded here -->
-</select>
-<input type="date" id="attendanceDate" class="bg-white border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Select a date">
+            
+            <div class="flex flex-col gap-4 w-full md:w-auto">
+                <!-- Mode Toggle -->
+                <div class="flex bg-white p-1 rounded-xl shadow-sm border border-gray-200 self-end">
+                    <button id="modeClassBtn" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-blue-600 text-white shadow-md">
+                        Standard Class
+                    </button>
+                    <button id="modeBatchBtn" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-gray-500 hover:bg-gray-50">
+                        Course Batch
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap justify-end gap-3">
+                    <!-- Standard Class Select -->
+                    <div id="classSelectContainer">
+                        <select id="classSelect" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-all cursor-pointer min-w-[180px]">
+                            <option value="">Select Class</option>
+                        </select>
+                    </div>
+
+                    <!-- Course Batch Selects (Hidden by default) -->
+                    <div id="batchSelectContainer" class="hidden flex gap-3">
+                        <select id="courseSelect" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-all cursor-pointer min-w-[180px]">
+                            <option value="">Select Course</option>
+                        </select>
+                        <select id="batchSelect" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-all cursor-pointer min-w-[150px]" disabled>
+                            <option value="">Select Batch</option>
+                        </select>
+                    </div>
+
+                    <input type="date" id="attendanceDate" class="bg-white border border-gray-300 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium shadow-sm transition-all cursor-pointer">
+                </div>
             </div>
         </div>
 
@@ -54,44 +80,127 @@
     <script type="module">
         import { showToast } from '/components/ui-components.js?v=1.6';
 
+        // DOM Elements
+        const modeClassBtn = document.getElementById('modeClassBtn');
+        const modeBatchBtn = document.getElementById('modeBatchBtn');
+        const classSelectContainer = document.getElementById('classSelectContainer');
+        const batchSelectContainer = document.getElementById('batchSelectContainer');
         const classSelect = document.getElementById('classSelect');
+        const courseSelect = document.getElementById('courseSelect');
+        const batchSelect = document.getElementById('batchSelect');
         const attendanceDate = document.getElementById('attendanceDate');
         const studentTableBody = document.getElementById('studentTableBody');
         const saveAttendanceBtn = document.getElementById('saveAttendanceBtn');
 
+        // State
+        let activeMode = 'class'; // 'class' or 'batch'
+        let allCourses = [];
+        let currentUser = null;
+
         // Set default date to today
         attendanceDate.value = new Date().toISOString().split('T')[0];
 
+        /**
+         * MODE SWITCHING
+         */
+        function setMode(mode) {
+            activeMode = mode;
+            
+            // UI Toggle
+            modeClassBtn.classList.toggle('bg-blue-600', mode === 'class');
+            modeClassBtn.classList.toggle('text-white', mode === 'class');
+            modeClassBtn.classList.toggle('shadow-md', mode === 'class');
+            modeClassBtn.classList.toggle('text-gray-500', mode !== 'class');
+            
+            modeBatchBtn.classList.toggle('bg-blue-600', mode === 'batch');
+            modeBatchBtn.classList.toggle('text-white', mode === 'batch');
+            modeBatchBtn.classList.toggle('shadow-md', mode === 'batch');
+            modeBatchBtn.classList.toggle('text-gray-500', mode !== 'batch');
+
+            classSelectContainer.classList.toggle('hidden', mode !== 'class');
+            batchSelectContainer.classList.toggle('hidden', mode !== 'batch');
+
+            // Reset Table
+            studentTableBody.innerHTML = `<tr><td colspan="3" class="px-6 py-10 text-center text-gray-400 italic">Please select a ${mode === 'class' ? 'class' : 'batch'} to load students.</td></tr>`;
+            saveAttendanceBtn.classList.add('hidden');
+        }
+
+        modeClassBtn.onclick = () => setMode('class');
+        modeBatchBtn.onclick = () => {
+            setMode('batch');
+            if (allCourses.length === 0) fetchTeacherCourses();
+        };
+
+        /**
+         * DATA FETCHING
+         */
         async function fetchClasses() {
             try {
-                const response = await fetch('/api/teacher/stats'); // We can use stats to get class count, but we need actual classes.
-                // For now, let's assume we have a dedicated endpoint or we fetch from teacher stats if expanded.
-                // Given the current controller, we might need a getClasses endpoint.
-                // Let's use the attendance endpoint which might return classes if no classId is provided, or a separate call.
-                
-                // Let's assume we have /api/teacher/classes (I should have added this to the controller)
-                // For this demo, I'll add placeholder logic or fetch from a likely endpoint.
-                const res = await fetch('/api/teacher/results'); // Results usually returns courses/classes
+                // Fetch classes where current user is class teacher
+                const res = await fetch('/api/admin/classes'); // Note: Admin endpoint used as proxy, but ideally should be teacher specific
                 const data = await res.json();
-                // This is a placeholder since I haven't implemented getClasses yet.
+                const myClasses = data.classes.filter(c => String(c.classTeacher?._id || c.classTeacher) === String(currentUser._id));
+                
+                classSelect.innerHTML = '<option value="">Select Class</option>' + 
+                    myClasses.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
             } catch (err) {
                 console.error('Failed to fetch classes:', err);
             }
         }
 
+        async function fetchTeacherCourses() {
+            try {
+                const res = await fetch('/api/teacher/courses');
+                const data = await res.json();
+                allCourses = data.courses;
+
+                courseSelect.innerHTML = '<option value="">Select Course</option>' + 
+                    allCourses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+            } catch (err) {
+                console.error('Failed to fetch courses:', err);
+            }
+        }
+
+        courseSelect.onchange = () => {
+            const courseId = courseSelect.value;
+            if (!courseId) {
+                batchSelect.innerHTML = '<option value="">Select Batch</option>';
+                batchSelect.disabled = true;
+                return;
+            }
+
+            const course = allCourses.find(c => c._id === courseId);
+            if (course && course.batches) {
+                batchSelect.innerHTML = '<option value="">Select Batch</option>' + 
+                    course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
+                batchSelect.disabled = false;
+            }
+        };
+
         async function loadStudents() {
             const classId = classSelect.value;
+            const courseId = courseSelect.value;
+            const batchId = batchSelect.value;
             const date = attendanceDate.value;
-            if (!classId) return;
 
-            studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">Loading students...</td></tr>';
+            if (activeMode === 'class' && !classId) return;
+            if (activeMode === 'batch' && (!courseId || !batchId)) return;
+
+            studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-20 text-center"><div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mx-auto"></div></td></tr>';
 
             try {
-                const response = await fetch(`/api/teacher/attendance?classId=${classId}&date=${date}`);
+                let query = `date=${date}`;
+                if (activeMode === 'class') query += `&classId=${classId}`;
+                else query += `&courseId=${courseId}&batchId=${batchId}`;
+
+                const response = await fetch(`/api/teacher/attendance?${query}`);
                 if (response.ok) {
                     const { students, records } = await response.json();
                     renderStudents(students, records);
                     saveAttendanceBtn.classList.remove('hidden');
+                } else {
+                    const err = await response.json();
+                    showToast(err.message || 'Failed to load students', 'error');
                 }
             } catch (err) {
                 showToast('Failed to load students', 'error');
@@ -99,25 +208,31 @@
         }
 
         function renderStudents(students, records) {
-            if (!students.length) {
-                studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">No students found in this class.</td></tr>';
+            if (!students || !students.length) {
+                studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">No students found for this selection.</td></tr>';
+                saveAttendanceBtn.classList.add('hidden');
                 return;
             }
 
             studentTableBody.innerHTML = students.map(student => {
-                const record = records.find(r => r.student === student._id);
+                const record = records.find(r => String(r.student._id || r.student) === String(student._id));
                 const status = record ? record.status : 'present';
 
                 return `
-                    <tr data-student-id="${student._id}">
-                        <td class="px-6 py-4 text-sm text-gray-600">${student._id.slice(-6)}</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">${student.name}</td>
+                    <tr data-student-id="${student._id}" class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-tighter">
+                            ${student._id.slice(-8)}
+                        </td>
                         <td class="px-6 py-4">
-                            <select class="status-select bg-gray-50 border border-gray-200 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="font-bold text-gray-900">${student.name}</div>
+                            <div class="text-[10px] text-gray-400">${student.email}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <select class="status-select bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                                 <option value="present" ${status === 'present' ? 'selected' : ''}>Present</option>
-                                <option value="absent" ${status === 'absent' ? 'selected' : ''}>Absent</option>
-                                <option value="late" ${status === 'late' ? 'selected' : ''}>Late</option>
-                                <option value="excused" ${status === 'excused' ? 'selected' : ''}>Excused</option>
+                                <option value="absent" ${status === 'absent' ? 'selected' : ''} class="text-red-600">Absent</option>
+                                <option value="late" ${status === 'late' ? 'selected' : ''} class="text-orange-600">Late</option>
+                                <option value="excused" ${status === 'excused' ? 'selected' : ''} class="text-blue-600">Excused</option>
                             </select>
                         </td>
                     </tr>
@@ -127,44 +242,62 @@
 
         async function saveAttendance() {
             const classId = classSelect.value;
+            const courseId = courseSelect.value;
             const date = attendanceDate.value;
-            const rows = studentTableBody.querySelectorAll('tr');
+            const rows = studentTableBody.querySelectorAll('tr[data-student-id]');
+            
             const attendanceData = Array.from(rows).map(row => ({
                 studentId: row.dataset.studentId,
                 status: row.querySelector('.status-select').value
             }));
 
+            saveAttendanceBtn.disabled = true;
+            saveAttendanceBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Saving...';
+
             try {
                 const response = await fetch('/api/teacher/attendance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ classId, attendanceData, date })
+                    body: JSON.stringify({ 
+                        ...(activeMode === 'class' ? { classId } : { courseId }), 
+                        attendanceData, 
+                        date 
+                    })
                 });
 
                 if (response.ok) {
-                    showToast('Attendance saved successfully');
+                    showToast('Attendance recorded successfully');
                 } else {
-                    showToast('Failed to save attendance', 'error');
+                    const err = await response.json();
+                    showToast(err.message || 'Failed to save', 'error');
                 }
             } catch (err) {
                 showToast('An error occurred', 'error');
+            } finally {
+                saveAttendanceBtn.disabled = false;
+                saveAttendanceBtn.innerHTML = 'Save Attendance';
             }
         }
 
+        /**
+         * EVENT LISTENERS
+         */
         classSelect.addEventListener('change', loadStudents);
+        batchSelect.addEventListener('change', loadStudents);
         attendanceDate.addEventListener('change', loadStudents);
         saveAttendanceBtn.addEventListener('click', saveAttendance);
 
-        async function fetchProfile() {
+        /**
+         * INITIALIZATION
+         */
+        async function init() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
+                currentUser = user;
+
                 if (window.initSocket) window.initSocket(user);
-                if (user.role !== 'teacher' && user.role !== 'admin') {
-                    window.location.href = '/';
-                    return;
-                }
                 
                 customElements.whenDefined('ui-navbar').then(() => {
                     const navbar = document.querySelector('ui-navbar');
@@ -174,23 +307,13 @@
                 });
 
                 await fetchClasses();
-                
-                // For demo purposes, we'll manually add some class options if API isn't ready
-                // classSelect.innerHTML += '<option value="some-id">Demo Class 10-A</option>';
             } catch (err) {
                 console.error('Failed to fetch profile:', err);
                 window.location.href = '/api/auth/login';
             }
         }
 
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
-            }
-        });
-
-        fetchProfile();
+        init();
     </script>
 </body>
 </html>
