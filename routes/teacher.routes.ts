@@ -7,6 +7,8 @@ import {
     markAttendance, 
     createAssignment,
     getAssignments,
+    updateAssignment,
+    deleteAssignment,
     gradeSubmission,
     uploadMaterial,
     getMaterials,
@@ -44,6 +46,8 @@ router.post('/attendance', markAttendance);
  */
 router.get('/assignments', getAssignments);
 router.post('/assignments', createAssignment);
+router.patch('/assignments/:id', updateAssignment);
+router.delete('/assignments/:id', deleteAssignment);
 router.patch('/assignments/grade/:submissionId', gradeSubmission);
 
 /**

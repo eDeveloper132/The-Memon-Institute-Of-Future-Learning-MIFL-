@@ -18,7 +18,7 @@
                 <h2 class="text-3xl font-bold text-gray-900">Assignments</h2>
                 <p class="text-gray-500 mt-2">Create and track student assignments and submissions.</p>
             </div>
-            <button id="openAssignmentModal" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center">
+            <button id="openAssignmentModal" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg active:scale-95">
                 <i class="fa-solid fa-plus mr-2"></i> New Assignment
             </button>
         </div>
@@ -110,6 +110,26 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-6 bg-red-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold">Delete Assignment</h3>
+                <button id="closeDeleteModal" class="text-2xl hover:opacity-70 transition">&times;</button>
+            </div>
+            <div class="p-8 text-center">
+                <div class="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <p class="text-gray-600 font-medium">Are you sure you want to delete this assignment? All student submissions will also be removed.</p>
+                <div class="flex gap-4 mt-8">
+                    <button type="button" id="cancelDeleteBtn" class="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 transition">Cancel</button>
+                    <button id="confirmDeleteBtn" class="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition shadow-md">Yes, Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { showToast } from '/components/ui-components.js?v=1.6';
 
@@ -133,13 +153,23 @@
         // State
         let activeTargetMode = 'class'; // 'class' or 'batch'
         let allCourses = [];
+        let currentAssignments = [];
+        let isEditMode = false;
+        let editingAssignmentId = null;
         let currentUser = null;
 
         // Modal Controls
         if (openBtn) openBtn.onclick = () => {
+            isEditMode = false;
+            editingAssignmentId = null;
+            modal.querySelector('h3').textContent = 'Post New Assignment';
+            document.getElementById('submitBtn').textContent = 'Post Assignment';
+            addForm.reset();
+            setTargetMode('class');
             modal.classList.remove('hidden');
             fetchTargetingData();
         };
+
         if (closeBtn) closeBtn.onclick = () => {
             modal.classList.add('hidden');
             addForm.reset();
@@ -153,7 +183,6 @@
         function setTargetMode(mode) {
             activeTargetMode = mode;
             
-            // Toggle Buttons
             targetClassBtn.classList.toggle('bg-white', mode === 'class');
             targetClassBtn.classList.toggle('text-blue-600', mode === 'class');
             targetClassBtn.classList.toggle('shadow-sm', mode === 'class');
@@ -164,11 +193,9 @@
             targetBatchBtn.classList.toggle('shadow-sm', mode === 'batch');
             targetBatchBtn.classList.toggle('text-gray-500', mode !== 'batch');
 
-            // Toggle Input Groups
             targetClassGroup.classList.toggle('hidden', mode !== 'class');
             targetBatchGroup.classList.toggle('hidden', mode !== 'batch');
 
-            // Reset selection requirements
             classCourseSelect.required = (mode === 'class');
             targetClassSelect.required = (mode === 'class');
             targetCourseSelect.required = (mode === 'batch');
@@ -229,6 +256,7 @@
                 const res = await fetch('/api/teacher/assignments');
                 if (res.ok) {
                     const { assignments } = await res.json();
+                    currentAssignments = assignments;
                     renderAssignments(assignments);
                 }
             } catch (err) {
@@ -265,15 +293,93 @@
                         <div class="flex justify-between items-center pt-4 border-t border-gray-50 mt-auto">
                             <div class="flex flex-col">
                                 <span class="text-[9px] text-gray-400 font-black uppercase tracking-tighter">Targeted To</span>
-                                <span class="text-xs font-bold text-gray-700 truncate max-w-[150px]">${targetDisplay}</span>
+                                <span class="text-xs font-bold text-gray-700 truncate max-w-[120px]">${targetDisplay}</span>
                             </div>
-                            <button class="bg-gray-900 text-white px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm">
-                                Submissions
-                            </button>
+                            <div class="flex gap-1.5">
+                                <button data-action="edit" data-id="${a._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition" title="Edit Assignment">
+                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
+                                </button>
+                                <button data-action="delete" data-id="${a._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 transition" title="Delete Assignment">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                                <button class="bg-gray-900 text-white px-3 py-2 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm ml-1">
+                                    Submissions
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
+        }
+
+        assignmentGrid.onclick = (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            const action = btn.dataset.action;
+            const id = btn.dataset.id;
+            if (action === 'edit') openEditModal(id);
+            if (action === 'delete') openDeleteModal(id);
+        };
+
+        /**
+         * DELETE LOGIC
+         */
+        const deleteModal = document.getElementById('deleteModal');
+        let assignmentToDeleteId = null;
+
+        function openDeleteModal(id) {
+            assignmentToDeleteId = id;
+            deleteModal.classList.remove('hidden');
+        }
+
+        document.getElementById('closeDeleteModal').onclick = () => deleteModal.classList.add('hidden');
+        document.getElementById('cancelDeleteBtn').onclick = () => deleteModal.classList.add('hidden');
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            if (!assignmentToDeleteId) return;
+            try {
+                const res = await fetch(`/api/teacher/assignments/${assignmentToDeleteId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Assignment deleted');
+                    deleteModal.classList.add('hidden');
+                    fetchAssignments();
+                } else {
+                    showToast('Delete failed', 'error');
+                }
+            } catch (err) { showToast('Server error', 'error'); }
+        };
+
+        /**
+         * EDIT LOGIC
+         */
+        async function openEditModal(id) {
+            isEditMode = true;
+            editingAssignmentId = id;
+            
+            const a = currentAssignments.find(item => item._id === id);
+            if (!a) return;
+
+            await fetchTargetingData();
+
+            addForm.title.value = a.title;
+            addForm.description.value = a.description;
+            addForm.dueDate.value = new Date(a.dueDate).toISOString().split('T')[0];
+            addForm.maxPoints.value = a.maxPoints;
+
+            if (a.class) {
+                setTargetMode('class');
+                targetClassSelect.value = a.class._id || a.class;
+                classCourseSelect.value = a.course._id || a.course;
+            } else if (a.batch) {
+                setTargetMode('batch');
+                targetCourseSelect.value = a.course._id || a.course;
+                const event = new Event('change');
+                targetCourseSelect.dispatchEvent(event);
+                targetBatchSelect.value = a.batch;
+            }
+
+            modal.querySelector('h3').textContent = 'Update Assignment';
+            document.getElementById('submitBtn').textContent = 'Update Assignment';
+            modal.classList.remove('hidden');
         }
 
         if (addForm) {
@@ -293,27 +399,31 @@
 
                 const submitBtn = document.getElementById('submitBtn');
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Posting...';
+                const originalText = submitBtn.textContent;
+                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> ${isEditMode ? 'Updating...' : 'Posting...'}`;
 
                 try {
-                    const res = await fetch('/api/teacher/assignments', {
-                        method: 'POST',
+                    const url = isEditMode ? `/api/teacher/assignments/${editingAssignmentId}` : '/api/teacher/assignments';
+                    const method = isEditMode ? 'PATCH' : 'POST';
+
+                    const res = await fetch(url, {
+                        method: method,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
                     if (res.ok) {
-                        showToast('Assignment posted successfully');
+                        showToast(isEditMode ? 'Assignment updated' : 'Assignment posted');
                         closeBtn.click();
                         fetchAssignments();
                     } else {
                         const err = await res.json();
-                        showToast(err.message || 'Error posting assignment', 'error');
+                        showToast(err.message || 'Action failed', 'error');
                     }
                 } catch (err) { 
                     showToast('Connection error', 'error'); 
                 } finally {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'Post Assignment';
+                    submitBtn.textContent = originalText;
                 }
             };
         }
@@ -323,6 +433,7 @@
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
+                currentUser = user;
                 if (window.initSocket) window.initSocket(user);
                 if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
                 

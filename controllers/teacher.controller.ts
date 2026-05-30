@@ -181,6 +181,54 @@ export const createAssignment = async (req: any, res: Response) => {
     }
 };
 
+export const updateAssignment = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { title, description, course, class: classId, batch, dueDate, maxPoints } = req.body;
+        
+        const assignment = await Assignment.findById(id);
+        if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+        if (String(assignment.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        const updated = await Assignment.findByIdAndUpdate(id, {
+            title,
+            description,
+            course,
+            class: classId || undefined,
+            batch: batch || undefined,
+            dueDate,
+            maxPoints
+        }, { new: true });
+
+        res.status(200).json({ message: 'Assignment updated successfully', assignment: updated });
+    } catch (error) {
+        console.error('[Teacher Controller] updateAssignment error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteAssignment = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const assignment = await Assignment.findById(id);
+        if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+        if (String(assignment.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        await Assignment.findByIdAndDelete(id);
+        // Also delete related submissions
+        await Submission.deleteMany({ assignment: id });
+
+        res.status(200).json({ message: 'Assignment deleted successfully' });
+    } catch (error) {
+        console.error('[Teacher Controller] deleteAssignment error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getAssignments = async (req: any, res: Response) => {
     try {
         const assignments = await Assignment.find({ teacher: req.user.id })
