@@ -28,8 +28,16 @@
                 <p class="text-gray-500 mt-2 text-lg">Architect professional academic roadmaps and class-wide milestones.</p>
             </div>
             <div class="flex gap-3">
+                <div id="adminControls" class="hidden flex gap-3">
+                    <button id="lockToggleBtn" class="px-6 py-3 rounded-2xl font-bold transition border flex items-center shadow-sm active:scale-95">
+                        <i id="lockIcon" class="fa-solid fa-lock mr-2"></i> <span id="lockText">Lock Curriculum</span>
+                    </button>
+                </div>
                 <button id="previewBtn" class="bg-white text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition border border-gray-200 flex items-center shadow-sm active:scale-95">
                     <i class="fa-solid fa-eye mr-2 text-blue-500"></i> Preview Syllabus
+                </button>
+                <button id="tablePreviewBtn" class="bg-white text-gray-700 px-6 py-3 rounded-2xl font-bold hover:bg-gray-50 transition border border-gray-200 flex items-center shadow-sm active:scale-95">
+                    <i class="fa-solid fa-table mr-2 text-indigo-500"></i> Table Roadmap
                 </button>
             </div>
         </div>
@@ -218,6 +226,8 @@
          */
         function renderCurriculum(container, sections, isLocked) {
             container.innerHTML = '';
+            const canEdit = currentUser?.role === 'admin' || !isLocked;
+
             if (!sections || sections.length === 0) {
                 container.innerHTML = `<div class="text-center py-10 border-2 border-dashed border-gray-100 rounded-[2rem] text-gray-400 font-bold italic">No learning paths defined yet. Click "Add Learning Path" to begin.</div>`;
                 return;
@@ -229,22 +239,32 @@
                     <div class="flex justify-between items-center border-b border-gray-100 pb-6">
                         <div class="flex-1 max-w-md">
                             <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Section Header</label>
-                            <input type="text" class="section-title w-full bg-transparent border-none text-2xl font-black text-gray-900 focus:ring-0 outline-none p-0" value="${section.title || 'Weekly Learning Path'}" ${isLocked ? 'readonly' : ''}>
+                            <input type="text" class="section-title w-full bg-transparent border-none text-2xl font-black text-gray-900 focus:ring-0 outline-none p-0" value="${section.title || 'Weekly Learning Path'}" ${!canEdit ? 'readonly' : ''}>
                         </div>
-                        <div class="flex items-center gap-6">
+                        <div class="flex items-center gap-4">
+                            <!-- Move Controls -->
+                            <div class="flex gap-1 mr-4 ${!canEdit ? 'hidden' : ''}">
+                                <button type="button" class="move-sec-up p-2 bg-white text-gray-400 hover:text-blue-600 rounded-lg border border-gray-100 transition shadow-sm active:scale-90" title="Move Up">
+                                    <i class="fa-solid fa-chevron-up"></i>
+                                </button>
+                                <button type="button" class="move-sec-down p-2 bg-white text-gray-400 hover:text-blue-600 rounded-lg border border-gray-100 transition shadow-sm active:scale-90" title="Move Down">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                            </div>
+
                             <!-- Optional Toggle -->
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Optional Path</span>
                                 <div class="relative inline-flex items-center">
-                                    <input type="checkbox" class="section-optional sr-only peer" ${section.isOptional ? 'checked' : ''} ${isLocked ? 'disabled' : ''}>
+                                    <input type="checkbox" class="section-optional sr-only peer" ${section.isOptional ? 'checked' : ''} ${!canEdit ? 'disabled' : ''}>
                                     <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                                 </div>
                             </label>
                             
-                            <button type="button" class="add-module-btn bg-white text-blue-600 border border-blue-100 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-50 transition ${isLocked ? 'hidden' : ''}">
+                            <button type="button" class="add-module-btn bg-white text-blue-600 border border-blue-100 px-4 py-2 rounded-xl font-bold text-xs hover:bg-blue-50 transition ${!canEdit ? 'hidden' : ''}">
                                 <i class="fa-solid fa-plus mr-1"></i> Add Module
                             </button>
-                            <button type="button" class="remove-section-btn text-gray-300 hover:text-red-500 p-2 transition ${isLocked ? 'hidden' : ''}">
+                            <button type="button" class="remove-section-btn text-gray-300 hover:text-red-500 p-2 transition ${!canEdit ? 'hidden' : ''}">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -262,6 +282,9 @@
                 });
 
                 // Section Actions
+                sectionDiv.querySelector('.move-sec-up').onclick = () => moveItem(sections, sIdx, -1, container);
+                sectionDiv.querySelector('.move-sec-down').onclick = () => moveItem(sections, sIdx, 1, container);
+
                 sectionDiv.querySelector('.add-module-btn').onclick = () => {
                     const newModule = { title: '', description: '', duration: '', learningObjectives: [], resources: [] };
                     if (!section.modules) section.modules = [];
@@ -283,6 +306,25 @@
             });
         }
 
+        function moveItem(arr, index, direction, container) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= arr.length) return;
+            
+            // Sync current DOM state to array before moving to preserve text edits
+            const isCourse = container.id === 'courseSectionsContainer';
+            const syncedData = scrapeCurriculum(container.id);
+            const isLocked = isCourse ? currentCourse.curriculumLocked : myClass.classCurriculumLocked;
+
+            const temp = syncedData[index];
+            syncedData[index] = syncedData[newIndex];
+            syncedData[newIndex] = temp;
+
+            if (isCourse) currentCourse.curriculumSections = syncedData;
+            else myClass.classCurriculumSections = syncedData;
+
+            renderCurriculum(container, syncedData, isLocked);
+        }
+
         function escapeHTML(str) {
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -293,6 +335,7 @@
             div.className = "module-row bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative group transition-all hover:border-blue-200";
 
             const accentColor = isClassMode ? 'indigo' : 'blue';
+            const canEdit = currentUser?.role === 'admin' || !isLocked;
 
             div.innerHTML = `
                 <div class="flex flex-col lg:flex-row gap-6">
@@ -301,36 +344,45 @@
                             <div class="module-step active font-black text-sm mt-1">${mIdx + 1}</div>
                             <div class="flex-1">
                                 <label class="block text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Module Title *</label>
-                                <input type="text" class="m-title w-full bg-transparent border-b border-gray-200 text-lg font-bold text-gray-900 focus:border-blue-500 focus:ring-0 px-0 py-1 transition-colors" placeholder="e.g. Introduction to Variables" value="${escapeHTML(data.title)}" ${isLocked ? 'readonly' : ''}>
+                                <input type="text" class="m-title w-full bg-transparent border-b border-gray-200 text-lg font-bold text-gray-900 focus:border-blue-500 focus:ring-0 px-0 py-1 transition-colors" placeholder="e.g. Introduction to Variables" value="${escapeHTML(data.title)}" ${!canEdit ? 'readonly' : ''}>
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Duration / Timeline</label>
-                            <input type="text" class="m-duration w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="e.g. Week 1 or 2 Hours" value="${escapeHTML(data.duration)}" ${isLocked ? 'readonly' : ''}>
+                            <input type="text" class="m-duration w-full p-2 bg-gray-50 border-none rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-600 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="e.g. Week 1 or 2 Hours" value="${escapeHTML(data.duration)}" ${!canEdit ? 'readonly' : ''}>
                         </div>
 
                         <div class="pt-2">
                             <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Learning Outcomes</label>
                             <div class="objectives-list space-y-1"></div>
-                            <button type="button" class="add-obj mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${isLocked ? 'hidden' : ''}">+ Add Outcome</button>
+                            <button type="button" class="add-obj mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${!canEdit ? 'hidden' : ''}">+ Add Outcome</button>
                         </div>
                     </div>
 
                     <div class="lg:w-2/3 border-t lg:border-t-0 lg:border-l border-gray-50 lg:pl-6 pt-4 lg:pt-0">
                         <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Pedagogical Details</label>
-                        <textarea class="m-desc w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none h-28 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Describe the activities, topics, and goals..." ${isLocked ? 'readonly' : ''}>${escapeHTML(data.description)}</textarea>
+                        <textarea class="m-desc w-full p-4 bg-gray-50 border-none rounded-2xl text-sm font-medium text-gray-600 leading-relaxed outline-none h-28 focus:ring-1 focus:ring-blue-500 transition-all" placeholder="Describe the activities, topics, and goals..." ${!canEdit ? 'readonly' : ''}>${escapeHTML(data.description)}</textarea>
 
                         <div class="mt-4">
                             <label class="block text-[8px] font-black text-gray-300 uppercase tracking-widest mb-2">Digital Resources</label>
                             <div class="resources-list space-y-1"></div>
-                            <button type="button" class="add-res mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${isLocked ? 'hidden' : ''}">+ Link File/URL</button>
+                            <button type="button" class="add-res mt-2 text-[9px] font-bold text-${accentColor}-600 hover:underline ${!canEdit ? 'hidden' : ''}">+ Link File/URL</button>
                         </div>
                     </div>
                 </div>
-                <button type="button" class="remove-module absolute -right-3 -top-3 bg-white text-red-500 rounded-full shadow-md w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition ${isLocked ? 'hidden' : ''}">
-                    <i class="fa-solid fa-times"></i>
-                </button>
+                
+                <div class="absolute -right-3 -top-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition ${!canEdit ? 'hidden' : ''}">
+                    <button type="button" class="move-mod-up bg-white text-gray-400 hover:text-blue-500 rounded-full shadow-md w-8 h-8 flex items-center justify-center border border-gray-100 active:scale-90" title="Move Up">
+                        <i class="fa-solid fa-chevron-up"></i>
+                    </button>
+                    <button type="button" class="move-mod-down bg-white text-gray-400 hover:text-blue-500 rounded-full shadow-md w-8 h-8 flex items-center justify-center border border-gray-100 active:scale-90" title="Move Down">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <button type="button" class="remove-module bg-white text-red-500 rounded-full shadow-md w-8 h-8 flex items-center justify-center border border-gray-100 hover:bg-red-50" title="Delete Module">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
             `;
 
             const objList = div.querySelector('.objectives-list');
@@ -339,19 +391,19 @@
             const addObj = (val = '') => {
                 const row = document.createElement('div');
                 row.className = "flex items-center gap-2";
-                row.innerHTML = `<input type="text" class="obj-input flex-1 p-1.5 bg-transparent border-b border-gray-100 text-xs font-medium focus:border-${accentColor}-500 outline-none" value="${escapeHTML(val)}" ${isLocked ? 'readonly' : ''}>
-                                ${isLocked ? '' : `<button type="button" class="remove-obj text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
-                if (!isLocked) row.querySelector('.remove-obj').onclick = () => row.remove();
+                row.innerHTML = `<input type="text" class="obj-input flex-1 p-1.5 bg-transparent border-b border-gray-100 text-xs font-medium focus:border-${accentColor}-500 outline-none" value="${escapeHTML(val)}" ${!canEdit ? 'readonly' : ''}>
+                                ${!canEdit ? '' : `<button type="button" class="remove-obj text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
+                if (canEdit) row.querySelector('.remove-obj').onclick = () => row.remove();
                 objList.appendChild(row);
             };
 
             const addRes = (res = { title: '', url: '' }) => {
                 const row = document.createElement('div');
                 row.className = "flex items-center gap-2 res-item";
-                row.innerHTML = `<input type="text" class="res-t p-1 bg-gray-100 border-none rounded-md text-[10px] font-bold w-1/3" placeholder="Title" value="${escapeHTML(res.title)}" ${isLocked ? 'readonly' : ''}>
-                                 <input type="text" class="res-u p-1 bg-gray-100 border-none rounded-md text-[10px] flex-1" placeholder="URL" value="${escapeHTML(res.url)}" ${isLocked ? 'readonly' : ''}>
-                                 ${isLocked ? '' : `<button type="button" class="remove-res text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
-                if (!isLocked) row.querySelector('.remove-res').onclick = () => row.remove();
+                row.innerHTML = `<input type="text" class="res-t p-1 bg-gray-100 border-none rounded-md text-[10px] font-bold w-1/3" placeholder="Title" value="${escapeHTML(res.title)}" ${!canEdit ? 'readonly' : ''}>
+                                 <input type="text" class="res-u p-1 bg-gray-100 border-none rounded-md text-[10px] flex-1" placeholder="URL" value="${escapeHTML(res.url)}" ${!canEdit ? 'readonly' : ''}>
+                                 ${!canEdit ? '' : `<button type="button" class="remove-res text-gray-300 hover:text-red-500"><i class="fa-solid fa-times"></i></button>`}`;
+                if (canEdit) row.querySelector('.remove-res').onclick = () => row.remove();
                 resList.appendChild(row);
             };
 
@@ -362,7 +414,32 @@
             div.querySelector('.add-res').onclick = () => addRes();
             div.querySelector('.remove-module').onclick = () => { div.remove(); };
 
+            div.querySelector('.move-mod-up').onclick = () => {
+                const container = div.closest('.modules-container');
+                const rows = Array.from(container.querySelectorAll('.module-row'));
+                const index = rows.indexOf(div);
+                if (index > 0) {
+                    container.insertBefore(div, rows[index - 1]);
+                    updateModuleSteps(container);
+                }
+            };
+            div.querySelector('.move-mod-down').onclick = () => {
+                const container = div.closest('.modules-container');
+                const rows = Array.from(container.querySelectorAll('.module-row'));
+                const index = rows.indexOf(div);
+                if (index < rows.length - 1) {
+                    container.insertBefore(rows[index + 1], div);
+                    updateModuleSteps(container);
+                }
+            };
+
             return div;
+        }
+
+        function updateModuleSteps(container) {
+            container.querySelectorAll('.module-row').forEach((row, idx) => {
+                row.querySelector('.module-step').textContent = idx + 1;
+            });
         }
 
         /**
@@ -442,18 +519,74 @@
                 currentCourse = courses.find(c => c._id === id);
                 
                 if (currentCourse) {
-                    document.getElementById('courseOutline').value = currentCourse.outline || '';
                     const isLocked = currentCourse.curriculumLocked;
+                    const canEdit = currentUser?.role === 'admin' || !isLocked;
+
+                    document.getElementById('courseOutline').value = currentCourse.outline || '';
                     renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections || [], isLocked);
                     
                     document.getElementById('courseContent').classList.remove('hidden');
-                    document.getElementById('saveCourseBtn').classList.toggle('hidden', isLocked);
+                    document.getElementById('saveCourseBtn').classList.toggle('hidden', !canEdit);
                     document.getElementById('courseLockMessage').classList.toggle('hidden', !isLocked);
-                    document.getElementById('addCourseSection').classList.toggle('hidden', isLocked);
-                    document.getElementById('courseOutline').disabled = isLocked;
+                    document.getElementById('addCourseSection').classList.toggle('hidden', !canEdit);
+                    document.getElementById('courseOutline').disabled = !canEdit;
+
+                    if (currentUser?.role === 'admin') updateAdminLockUI('course', id, isLocked);
                 }
             } catch (err) { showToast('Sync failed', 'error'); }
         };
+
+        async function toggleLock(type, id, currentStatus) {
+            const newStatus = !currentStatus;
+            try {
+                const res = await fetch('/api/admin/curriculum/lock', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, id, isLocked: newStatus })
+                });
+                if (res.ok) {
+                    showToast(`Curriculum ${newStatus ? 'Locked' : 'Unlocked'}`);
+                    // Refresh view
+                    if (type === 'course') {
+                        const courseRes = await fetch('/api/teacher/courses');
+                        const { courses } = await courseRes.json();
+                        currentCourse = courses.find(c => c._id === id);
+                        
+                        const isLocked = currentCourse.curriculumLocked;
+                        const canEdit = currentUser?.role === 'admin' || !isLocked;
+                        
+                        renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections || [], isLocked);
+                        document.getElementById('saveCourseBtn').classList.toggle('hidden', !canEdit);
+                        document.getElementById('courseLockMessage').classList.toggle('hidden', !isLocked);
+                        document.getElementById('addCourseSection').classList.toggle('hidden', !canEdit);
+                        document.getElementById('courseOutline').disabled = !canEdit;
+                        
+                        updateAdminLockUI('course', id, isLocked);
+                    } else {
+                        await loadClassData();
+                    }
+                }
+            } catch (err) { showToast('Lock action failed', 'error'); }
+        }
+
+        function updateAdminLockUI(type, id, isLocked) {
+            const btn = document.getElementById('lockToggleBtn');
+            const icon = document.getElementById('lockIcon');
+            const text = document.getElementById('lockText');
+
+            btn.classList.toggle('bg-orange-600', isLocked);
+            btn.classList.toggle('text-white', isLocked);
+            btn.classList.toggle('border-orange-600', isLocked);
+            btn.classList.toggle('bg-white', !isLocked);
+            btn.classList.toggle('text-orange-600', !isLocked);
+            btn.classList.toggle('border-orange-200', !isLocked);
+
+            icon.className = `fa-solid fa-${isLocked ? 'lock' : 'lock-open'} mr-2`;
+            text.textContent = isLocked ? 'Unlock Curriculum' : 'Lock Curriculum';
+            
+            btn.onclick = () => toggleLock(type, id, isLocked);
+            document.getElementById('adminControls').classList.remove('hidden');
+        }
 
         document.getElementById('saveCourseBtn').onclick = async () => {
             let sections = scrapeCurriculum('courseSectionsContainer');
@@ -603,24 +736,7 @@
         /**
          * PREVIEW LOGIC
          */
-        document.getElementById('previewBtn').onclick = () => {
-            if (!currentCourse && !myClass) {
-                alert("Please select a course or class from the selection menu before attempting to preview the syllabus.");
-                return;
-            }
-            
-            const isCourse = !views.course.classList.contains('hidden');
-            const data = isCourse ? currentCourse : myClass;
-            const title = isCourse ? data.title : data.name;
-
-            if (!confirm(`Preview the academic syllabus for "${title}"?`)) return;
-
-            const containerId = isCourse ? 'courseSectionsContainer' : 'classSectionsContainer';
-            const sections = scrapeCurriculum(containerId);
-            const outline = isCourse ? document.getElementById('courseOutline').value : document.getElementById('classOutline').value;
-
-            document.getElementById('previewTitle').textContent = `Syllabus: ${title}`;
-            
+        function generateSyllabusHTML(title, outline, sections) {
             let html = `
                 <div class="max-w-4xl mx-auto space-y-20 pb-20">
                     <header class="text-center space-y-6">
@@ -697,9 +813,128 @@
             });
 
             html += `</div></div>`;
-            previewContent.innerHTML = html;
-            previewModal.classList.remove('hidden');
-        };
+            return html;
+        }
+
+        function generateTableHTML(title, outline, sections) {
+            let html = `
+                <div class="space-y-12 pb-20">
+                    <header class="text-center space-y-4">
+                        <h1 class="text-5xl font-black text-gray-900 tracking-tight">${title}</h1>
+                        <p class="text-gray-400 font-bold uppercase tracking-[0.3em] text-[10px]">Academic Data Roadmap</p>
+                    </header>
+
+                    <div class="bg-gray-50 p-10 rounded-[3rem] border border-gray-100">
+                        <h3 class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Course Outline</h3>
+                        <p class="text-gray-700 font-medium leading-relaxed italic">"${outline || 'No summary provided.'}"</p>
+                    </div>
+
+                    <div class="overflow-hidden rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 bg-white">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-900 text-white">
+                                    <th class="p-6 font-black uppercase text-[10px] tracking-widest border-r border-gray-800 w-48">Learning Path</th>
+                                    <th class="p-6 font-black uppercase text-[10px] tracking-widest border-r border-gray-800 w-64">Milestone / Module</th>
+                                    <th class="p-6 font-black uppercase text-[10px] tracking-widest border-r border-gray-800 w-32">Timing</th>
+                                    <th class="p-6 font-black uppercase text-[10px] tracking-widest">Pedagogy & Outcomes</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+            `;
+
+            if (!sections || sections.length === 0) {
+                html += `<tr><td colspan="4" class="p-20 text-center text-gray-400 font-bold italic">No data archived for this roadmap.</td></tr>`;
+            } else {
+                sections.forEach(section => {
+                    if (!section.modules || section.modules.length === 0) {
+                        html += `
+                            <tr class="bg-gray-50/30">
+                                <td class="p-6 font-black text-gray-900 border-r border-gray-100">${section.title}</td>
+                                <td colspan="3" class="p-6 text-gray-400 italic font-medium">No milestones defined for this path.</td>
+                            </tr>
+                        `;
+                    } else {
+                        section.modules.forEach((m, mIdx) => {
+                            html += `
+                                <tr class="hover:bg-blue-50/30 transition-colors group">
+                                    ${mIdx === 0 ? `
+                                        <td rowspan="${section.modules.length}" class="p-6 font-black text-gray-900 border-r border-gray-100 align-top bg-gray-50/50">
+                                            <div class="sticky top-6">
+                                                ${section.title}
+                                                ${section.isOptional ? '<br><span class="inline-block mt-2 px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase tracking-tighter">Optional</span>' : ''}
+                                            </div>
+                                        </td>
+                                    ` : ''}
+                                    <td class="p-6 border-r border-gray-100 align-top">
+                                        <div class="flex items-start gap-3">
+                                            <span class="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] font-black text-gray-400 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">${mIdx + 1}</span>
+                                            <span class="font-bold text-gray-800 leading-tight pt-0.5">${m.title || 'Untitled Milestone'}</span>
+                                        </div>
+                                    </td>
+                                    <td class="p-6 border-r border-gray-100 align-top">
+                                        <span class="px-3 py-1 bg-gray-100 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-tighter whitespace-nowrap">${m.duration || '-'}</span>
+                                    </td>
+                                    <td class="p-6 space-y-4">
+                                        <p class="text-xs text-gray-600 leading-relaxed font-medium line-clamp-3 hover:line-clamp-none transition-all cursor-default">${m.description || 'Details pending...'}</p>
+                                        
+                                        ${m.learningObjectives?.length ? `
+                                            <div class="flex flex-wrap gap-1.5 pt-2">
+                                                ${m.learningObjectives.map(o => `<span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-bold border border-blue-100/50"># ${o}</span>`).join('')}
+                                            </div>
+                                        ` : ''}
+
+                                        ${m.resources?.length ? `
+                                            <div class="flex flex-wrap gap-3 pt-2">
+                                                ${m.resources.map(r => `
+                                                    <a href="${r.url}" target="_blank" class="text-[9px] font-black text-gray-400 hover:text-blue-600 flex items-center gap-1.5 transition-colors">
+                                                        <i class="fa-solid fa-link"></i> ${r.title}
+                                                    </a>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+                });
+            }
+
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            return html;
+        }
+
+        function openPreview(mode) {
+            if (!currentCourse && !myClass) {
+                alert("Please select a course or class from the selection menu before attempting to preview the syllabus.");
+                return;
+            }
+            
+            const isCourse = !views.course.classList.contains('hidden');
+            const data = isCourse ? currentCourse : myClass;
+            const title = isCourse ? data.title : data.name;
+
+            const containerId = isCourse ? 'courseSectionsContainer' : 'classSectionsContainer';
+            const sections = scrapeCurriculum(containerId);
+            const outline = isCourse ? document.getElementById('courseOutline').value : document.getElementById('classOutline').value;
+
+            document.getElementById('previewTitle').textContent = mode === 'table' ? `Data Roadmap: ${title}` : `Syllabus: ${title}`;
+            
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = mode === 'table' 
+                ? generateTableHTML(title, outline, sections)
+                : generateSyllabusHTML(title, outline, sections);
+
+            document.getElementById('previewModal').classList.remove('hidden');
+        }
+
+        document.getElementById('previewBtn').onclick = () => openPreview('syllabus');
+        document.getElementById('tablePreviewBtn').onclick = () => openPreview('table');
 
         document.getElementById('closePreviewBtn').onclick = () => previewModal.classList.add('hidden');
 
@@ -712,12 +947,20 @@
                     tabs.class.classList.remove('hidden');
                     document.getElementById('classNameDisplay').value = `${myClass.name} (${myClass.section})`;
                     document.getElementById('classOutline').value = myClass.classOutline || '';
+                    
                     const isLocked = myClass.classCurriculumLocked;
+                    const canEdit = currentUser?.role === 'admin' || !isLocked;
+
                     renderCurriculum(document.getElementById('classSectionsContainer'), myClass.classCurriculumSections || [], isLocked);
-                    document.getElementById('saveClassBtn').classList.toggle('hidden', isLocked);
+                    
+                    document.getElementById('saveClassBtn').classList.toggle('hidden', !canEdit);
                     document.getElementById('classLockMessage').classList.toggle('hidden', !isLocked);
-                    document.getElementById('addClassSection').classList.toggle('hidden', isLocked);
-                    document.getElementById('classOutline').disabled = isLocked;
+                    document.getElementById('addClassSection').classList.toggle('hidden', !canEdit);
+                    document.getElementById('classOutline').disabled = !canEdit;
+
+                    if (currentUser?.role === 'admin' && !views.class.classList.contains('hidden')) {
+                        updateAdminLockUI('class', myClass._id, isLocked);
+                    }
                 }
             } catch (err) {}
         }
@@ -738,6 +981,10 @@
                         courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
                 }
                 await loadClassData();
+
+                // Re-check lock UI when switching tabs if admin
+                tabs.course.onclick = () => { switchTab('course'); if (currentUser?.role === 'admin' && currentCourse) updateAdminLockUI('course', currentCourse._id, currentCourse.curriculumLocked); };
+                tabs.class.onclick = () => { switchTab('class'); if (currentUser?.role === 'admin' && myClass) updateAdminLockUI('class', myClass._id, myClass.classCurriculumLocked); };
             } catch (err) { window.location.href = '/api/auth/login'; }
         }
         init();
