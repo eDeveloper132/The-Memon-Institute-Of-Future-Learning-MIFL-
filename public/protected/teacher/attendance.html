@@ -165,11 +165,15 @@
                     window.location.href = '/';
                     return;
                 }
-                document.getElementById('userName').textContent = user.name;
-                const navbar = customElements.get('ui-navbar');
-                if (navbar && navbar.renderLinks) {
-                    navbar.renderLinks(user.role);
-                }
+                
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
+
+                await fetchClasses();
                 
                 // For demo purposes, we'll manually add some class options if API isn't ready
                 // classSelect.innerHTML += '<option value="some-id">Demo Class 10-A</option>';

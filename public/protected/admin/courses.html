@@ -172,7 +172,6 @@
                 const { user } = await res.json();
                 if (user.role !== 'admin') { window.location.href = '/'; return; }
 
-                document.getElementById('userName').textContent = user.name;
                 customElements.whenDefined('ui-navbar').then(() => {
                     const nav = document.querySelector('ui-navbar');
                     if (nav && nav.renderLinks) {

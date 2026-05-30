@@ -81,6 +81,7 @@
                 });
 
                 await fetchReviews();
+            } catch (err) {
                 window.location.href = '/api/auth/login';
             }
         }
