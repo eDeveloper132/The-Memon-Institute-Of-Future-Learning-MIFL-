@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { 
     getDashboardStats, 
+    getTeacherCourses,
+    getTeacherClasses,
     getAttendanceData, 
     markAttendance, 
     createAssignment,

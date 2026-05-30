@@ -6,7 +6,8 @@ const assignmentSchema = new Schema<IAssignment>(
         title: { type: String, required: true, trim: true },
         description: { type: String, required: true },
         course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
-        class: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
+        class: { type: Schema.Types.ObjectId, ref: 'Class' }, // Made optional
+        batch: { type: Schema.Types.ObjectId }, // NEW: Ref to batch internal to course
         teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         dueDate: { type: Date, required: true },
         maxPoints: { type: Number, required: true, default: 100 },

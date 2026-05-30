@@ -4,7 +4,8 @@ export interface IAssignment extends Document {
     title: string;
     description: string;
     course: Types.ObjectId; // Ref to Course
-    class: Types.ObjectId; // Ref to Class
+    class?: Types.ObjectId; // Ref to Class (Optional if batch is targeted)
+    batch?: Types.ObjectId; // NEW: Ref to Batch within Course (Optional)
     teacher: Types.ObjectId; // Ref to User
     dueDate: Date;
     maxPoints: number;

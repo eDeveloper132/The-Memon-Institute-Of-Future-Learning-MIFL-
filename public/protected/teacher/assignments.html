@@ -32,34 +32,80 @@
 
     <!-- Add Assignment Modal -->
     <div id="addAssignmentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden my-auto">
             <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
                 <h3 class="text-xl font-bold">Post New Assignment</h3>
-                <button id="closeAssignmentModal" class="text-2xl">&times;</button>
+                <button id="closeAssignmentModal" class="text-2xl hover:opacity-70 transition">&times;</button>
             </div>
-            <form id="addAssignmentForm" class="p-6 space-y-4">
+            <form id="addAssignmentForm" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Title</label>
-<input type="text" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the title of the assignment" title="Enter the title of the assignment">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Assignment Title</label>
+                    <input type="text" name="title" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="e.g., Midterm Project">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-1">Description</label>
-<textarea name="description" title="Enter the description of the assignment" required class="w-full px-4 py-2 border rounded-lg outline-none h-24"></textarea>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Description</label>
+                    <textarea name="description" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none h-24 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Enter instructions..."></textarea>
                 </div>
+
+                <div class="space-y-4 pt-2 border-t border-gray-100">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Target Audience</label>
+                        <div class="flex bg-gray-100 p-1 rounded-xl">
+                            <button type="button" id="targetClassBtn" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-white text-blue-600 shadow-sm">
+                                Standard Class
+                            </button>
+                            <button type="button" id="targetBatchBtn" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all text-gray-500 hover:text-gray-700">
+                                Course Batch
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Target Selection -->
+                    <div id="targetClassGroup" class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Course</label>
+                            <select id="classCourseSelect" name="course_class" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
+                                <option value="">Choose a course...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Class</label>
+                            <select id="targetClassSelect" name="class" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
+                                <option value="">Choose a class...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="targetBatchGroup" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Course</label>
+                            <select id="targetCourseSelect" name="course_batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
+                                <option value="">Choose a course...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Batch</label>
+                            <select id="targetBatchSelect" name="batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm" disabled>
+                                <option value="">Choose a batch...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-4">
-<div>
-    <label class="block text-sm font-bold text-gray-700 mb-1" for="title">Title</label>
-    <input type="text" id="title" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the title of the assignment">
-</div>
-<div>
-    <label class="block text-sm font-bold text-gray-700 mb-1" for="class">Class ID</label>
-    <input type="text" id="class" name="class" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter the class ID">
-</div>
-<div>
-    <label class="block text-sm font-bold text-gray-700 mb-1">Due Date</label>
-    <input type="date" name="dueDate" required class="w-full px-4 py-2 border rounded-lg outline-none" placeholder="Enter the due date">
-</div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition mt-4">Post Assignment</button>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date</label>
+                        <input type="date" name="dueDate" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Max Points</label>
+                        <input type="number" name="maxPoints" value="100" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold hover:bg-blue-700 transition shadow-md active:scale-[0.98] tracking-wide mt-2">
+                    Post Assignment
+                </button>
             </form>
         </div>
     </div>
@@ -67,16 +113,117 @@
     <script type="module">
         import { showToast } from '/components/ui-components.js?v=1.6';
 
+        // DOM Elements
         const addForm = document.getElementById('addAssignmentForm');
         const modal = document.getElementById('addAssignmentModal');
         const openBtn = document.getElementById('openAssignmentModal');
         const closeBtn = document.getElementById('closeAssignmentModal');
         const assignmentGrid = document.getElementById('assignmentGrid');
 
-        if (openBtn) openBtn.onclick = () => modal.classList.remove('hidden');
-        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
-        window.onclick = (e) => { if (e.target === modal) modal.classList.add('hidden'); };
+        // Targeting UI Elements
+        const targetClassBtn = document.getElementById('targetClassBtn');
+        const targetBatchBtn = document.getElementById('targetBatchBtn');
+        const targetClassGroup = document.getElementById('targetClassGroup');
+        const targetBatchGroup = document.getElementById('targetBatchGroup');
+        const classCourseSelect = document.getElementById('classCourseSelect');
+        const targetClassSelect = document.getElementById('targetClassSelect');
+        const targetCourseSelect = document.getElementById('targetCourseSelect');
+        const targetBatchSelect = document.getElementById('targetBatchSelect');
 
+        // State
+        let activeTargetMode = 'class'; // 'class' or 'batch'
+        let allCourses = [];
+        let currentUser = null;
+
+        // Modal Controls
+        if (openBtn) openBtn.onclick = () => {
+            modal.classList.remove('hidden');
+            fetchTargetingData();
+        };
+        if (closeBtn) closeBtn.onclick = () => {
+            modal.classList.add('hidden');
+            addForm.reset();
+            setTargetMode('class');
+        };
+        window.onclick = (e) => { if (e.target === modal) closeBtn.click(); };
+
+        /**
+         * TARGETING LOGIC
+         */
+        function setTargetMode(mode) {
+            activeTargetMode = mode;
+            
+            // Toggle Buttons
+            targetClassBtn.classList.toggle('bg-white', mode === 'class');
+            targetClassBtn.classList.toggle('text-blue-600', mode === 'class');
+            targetClassBtn.classList.toggle('shadow-sm', mode === 'class');
+            targetClassBtn.classList.toggle('text-gray-500', mode !== 'class');
+
+            targetBatchBtn.classList.toggle('bg-white', mode === 'batch');
+            targetBatchBtn.classList.toggle('text-blue-600', mode === 'batch');
+            targetBatchBtn.classList.toggle('shadow-sm', mode === 'batch');
+            targetBatchBtn.classList.toggle('text-gray-500', mode !== 'batch');
+
+            // Toggle Input Groups
+            targetClassGroup.classList.toggle('hidden', mode !== 'class');
+            targetBatchGroup.classList.toggle('hidden', mode !== 'batch');
+
+            // Reset selection requirements
+            classCourseSelect.required = (mode === 'class');
+            targetClassSelect.required = (mode === 'class');
+            targetCourseSelect.required = (mode === 'batch');
+            targetBatchSelect.required = (mode === 'batch');
+        }
+
+        targetClassBtn.onclick = () => setTargetMode('class');
+        targetBatchBtn.onclick = () => setTargetMode('batch');
+
+        async function fetchTargetingData() {
+            try {
+                const [classRes, courseRes] = await Promise.all([
+                    fetch('/api/teacher/classes'),
+                    fetch('/api/teacher/courses')
+                ]);
+
+                if (classRes.ok) {
+                    const { classes } = await classRes.json();
+                    targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
+                        classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
+                }
+
+                if (courseRes.ok) {
+                    const { courses } = await courseRes.json();
+                    allCourses = courses;
+                    const courseOptions = '<option value="">Choose a course...</option>' + 
+                        courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                    
+                    classCourseSelect.innerHTML = courseOptions;
+                    targetCourseSelect.innerHTML = courseOptions;
+                }
+            } catch (err) {
+                console.error('Failed to load targeting data:', err);
+            }
+        }
+
+        targetCourseSelect.onchange = () => {
+            const courseId = targetCourseSelect.value;
+            if (!courseId) {
+                targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>';
+                targetBatchSelect.disabled = true;
+                return;
+            }
+
+            const course = allCourses.find(c => c._id === courseId);
+            if (course && course.batches) {
+                targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>' + 
+                    course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
+                targetBatchSelect.disabled = false;
+            }
+        };
+
+        /**
+         * ASSIGNMENT CRUD
+         */
         async function fetchAssignments() {
             try {
                 const res = await fetch('/api/teacher/assignments');
@@ -95,26 +242,59 @@
                 return;
             }
 
-            assignmentGrid.innerHTML = assignments.map(a => `
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-md transition">
-                    <div class="flex justify-between items-start mb-4">
-                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] font-bold uppercase truncate max-w-[120px]">${a.course?.title || 'General'}</span>
-                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+            assignmentGrid.innerHTML = assignments.map(a => {
+                let targetDisplay = 'General';
+                if (a.class) targetDisplay = a.class.name;
+                else if (a.batch && a.course) {
+                    const batch = a.course.batches?.find(b => b._id === a.batch);
+                    targetDisplay = `${a.course.title} - ${batch?.name || 'Specific Batch'}`;
+                }
+
+                return `
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
+                                ${a.course?.title || 'General'}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                Due: ${new Date(a.dueDate).toLocaleDateString()}
+                            </span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">${a.title}</h3>
+                        <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-3 leading-relaxed">${a.description}</p>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-50 mt-auto">
+                            <div class="flex flex-col">
+                                <span class="text-[9px] text-gray-400 font-black uppercase tracking-tighter">Targeted To</span>
+                                <span class="text-xs font-bold text-gray-700 truncate max-w-[150px]">${targetDisplay}</span>
+                            </div>
+                            <button class="bg-gray-900 text-white px-4 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm">
+                                Submissions
+                            </button>
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">${a.title}</h3>
-                    <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-3">${a.description}</p>
-                    <div class="flex justify-between items-center pt-4 border-t border-gray-50">
-                        <span class="text-xs font-bold text-gray-400">${a.class?.name || 'Class'}</span>
-                        <button class="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider">Submissions</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         if (addForm) {
             addForm.onsubmit = async (e) => {
                 e.preventDefault();
-                const data = Object.fromEntries(new FormData(addForm));
+                const formData = new FormData(addForm);
+                
+                const data = {
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    dueDate: formData.get('dueDate'),
+                    maxPoints: formData.get('maxPoints'),
+                    course: activeTargetMode === 'class' ? formData.get('course_class') : formData.get('course_batch'),
+                    class: activeTargetMode === 'class' ? formData.get('class') : undefined,
+                    batch: activeTargetMode === 'batch' ? formData.get('batch') : undefined
+                };
+
+                const submitBtn = document.getElementById('submitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Posting...';
+
                 try {
                     const res = await fetch('/api/teacher/assignments', {
                         method: 'POST',
@@ -123,13 +303,18 @@
                     });
                     if (res.ok) {
                         showToast('Assignment posted successfully');
-                        modal.classList.add('hidden');
-                        addForm.reset();
+                        closeBtn.click();
                         fetchAssignments();
                     } else {
-                        showToast('Error posting assignment', 'error');
+                        const err = await res.json();
+                        showToast(err.message || 'Error posting assignment', 'error');
                     }
-                } catch (err) { showToast('Connection error', 'error'); }
+                } catch (err) { 
+                    showToast('Connection error', 'error'); 
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Post Assignment';
+                }
             };
         }
 

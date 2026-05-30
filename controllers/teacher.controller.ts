@@ -149,20 +149,34 @@ export const markAttendance = async (req: any, res: Response) => {
  */
 export const createAssignment = async (req: any, res: Response) => {
     try {
+        const { title, description, course, class: classId, batch, dueDate, maxPoints } = req.body;
+        
         const assignment = await Assignment.create({
-            ...req.body,
-            teacher: req.user.id
+            title,
+            description,
+            course,
+            class: classId || undefined,
+            batch: batch || undefined,
+            teacher: req.user.id,
+            dueDate,
+            maxPoints
         });
 
-        // Notify class about new assignment
-        req.io.to(`class:${req.body.class}`).emit('notification', {
+        // Notify relevant room
+        // If batch is targeted, we still notify the course room but include batch metadata
+        // Students in the course room will filter based on their own batch enrollment
+        const room = classId ? `class:${classId}` : `course:${course}`;
+        
+        req.io.to(room).emit('notification', {
             type: 'NEW_ASSIGNMENT',
             message: `A new assignment "${assignment.title}" has been posted.`,
-            assignmentId: assignment._id
+            assignmentId: assignment._id,
+            batchId: batch || null
         });
 
         res.status(201).json({ message: 'Assignment created successfully', assignment });
     } catch (error) {
+        console.error('[Teacher Controller] createAssignment error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -170,7 +184,7 @@ export const createAssignment = async (req: any, res: Response) => {
 export const getAssignments = async (req: any, res: Response) => {
     try {
         const assignments = await Assignment.find({ teacher: req.user.id })
-            .populate('course', 'title')
+            .populate('course', 'title batches')
             .populate('class', 'name');
         res.status(200).json({ assignments });
     } catch (error: any) {
