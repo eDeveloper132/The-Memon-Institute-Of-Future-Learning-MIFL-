@@ -14,6 +14,65 @@ import chalk from 'chalk';
 /**
  * Teacher Dashboard Stats
  */
+/**
+ * Curriculum Management
+ */
+export const updateCourseCurriculum = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { outline, curriculum } = req.body;
+
+        const course = await Course.findById(id);
+        if (!course) return res.status(404).json({ message: 'Course not found' });
+
+        // Authorization check
+        if (String(course.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        // Lock check
+        if (course.curriculumLocked && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Curriculum is locked for modification' });
+        }
+
+        course.outline = outline;
+        course.curriculum = curriculum;
+        await course.save();
+
+        res.status(200).json({ message: 'Curriculum updated successfully', course });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateClassCurriculum = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { classOutline, classCurriculum } = req.body;
+
+        const selectedClass = await Class.findById(id);
+        if (!selectedClass) return res.status(404).json({ message: 'Class not found' });
+
+        // Authorization check
+        if (String(selectedClass.classTeacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        // Lock check
+        if (selectedClass.classCurriculumLocked && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Class curriculum is locked for modification' });
+        }
+
+        selectedClass.classOutline = classOutline;
+        selectedClass.classCurriculum = classCurriculum;
+        await selectedClass.save();
+
+        res.status(200).json({ message: 'Class curriculum updated successfully', class: selectedClass });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 export const getDashboardStats = async (req: any, res: Response) => {
     try {
         const teacherId = req.user.id;

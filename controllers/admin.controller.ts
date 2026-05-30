@@ -510,6 +510,27 @@ export const linkParentToStudents = async (req: Request, res: Response) => {
 };
 
 /**
+ * Curriculum & Oversight
+ */
+export const toggleCurriculumLock = async (req: Request, res: Response) => {
+    try {
+        const { type, id, isLocked } = req.body;
+
+        if (type === 'course') {
+            await Course.findByIdAndUpdate(id, { curriculumLocked: isLocked });
+        } else if (type === 'class') {
+            await Class.findByIdAndUpdate(id, { classCurriculumLocked: isLocked });
+        } else {
+            return res.status(400).json({ message: 'Invalid entity type' });
+        }
+
+        res.status(200).json({ message: `Curriculum ${isLocked ? 'locked' : 'unlocked'} successfully` });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
  * ADMIN - STATS
  */
 export const getAdminStats = async (req: Request, res: Response) => {

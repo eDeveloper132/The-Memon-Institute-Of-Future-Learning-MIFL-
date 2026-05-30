@@ -5,6 +5,13 @@ import type { IClass } from '../types/class.type.js';
          students: [{ type: Schema.Types.ObjectId, ref: 'User' }]
      });
     
+const curriculumModuleSchema = new Schema({
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    duration: String,
+    order: { type: Number, required: true, default: 0 }
+});
+
 const classSchema = new Schema<IClass>(
     {
         name: { type: String, required: true, trim: true },
@@ -15,6 +22,9 @@ const classSchema = new Schema<IClass>(
         classTeacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         students: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         batches: [batchSchema], // NEW: Embedded batches
+        classOutline: String,
+        classCurriculum: [curriculumModuleSchema],
+        classCurriculumLocked: { type: Boolean, default: false },
         academicYear: { type: String, required: true },
     },
     { timestamps: true }

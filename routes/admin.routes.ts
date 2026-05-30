@@ -4,7 +4,8 @@ import {
     crudClasses, crudCourses, crudNotices, crudDepartments,
     getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
     generateFeeVoucher, updateClassBatches, updateCourseBatches,
-    linkParentToStudents
+    linkParentToStudents,
+    toggleCurriculumLock
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -47,6 +48,11 @@ router.patch('/classbatches/:id', updateClassBatches);
 router.patch('/coursebatches/:id', updateCourseBatches);
 
 router.post('/parents/link', linkParentToStudents);
+
+/**
+ * Curriculum & Oversight
+ */
+router.patch('/curriculum/lock', toggleCurriculumLock);
 
 /**
  * Department Management

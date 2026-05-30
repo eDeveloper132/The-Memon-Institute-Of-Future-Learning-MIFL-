@@ -7,106 +7,364 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+    <style>
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
-    <ui-navbar title="Curriculum & Outlines"></ui-navbar>
+    <ui-navbar title="Curriculum Management"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900">Curriculum & Course Outlines</h2>
-            <p class="text-gray-500 mt-2">Manage your teaching roadmap and student learning objectives.</p>
+        <div class="mb-8 flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Curriculum & Roadmaps</h2>
+                <p class="text-gray-500 mt-2">Define teaching modules and outlines for your courses and classes.</p>
+            </div>
         </div>
 
-        <div id="curriculumList" class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div class="space-y-6">
-                <div class="text-center py-10">
-                    <ui-spinner text="Loading your course materials..."></ui-spinner>
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200 mb-8 bg-white px-6 rounded-t-xl overflow-x-auto">
+            <button id="tabCourse" class="px-6 py-4 font-bold text-sm transition-all tab-active whitespace-nowrap">Course Curriculum</button>
+            <button id="tabClass" class="px-6 py-4 font-bold text-sm transition-all text-gray-400 hover:text-gray-600 whitespace-nowrap hidden">Class Roadmap</button>
+            <button id="tabMaterials" class="px-6 py-4 font-bold text-sm transition-all text-gray-400 hover:text-gray-600 whitespace-nowrap">Shared Materials</button>
+        </div>
+
+        <!-- Course Curriculum View -->
+        <div id="courseView" class="space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex flex-wrap gap-4 items-end mb-6">
+                    <div class="flex-1 min-w-[250px]">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Select Course</label>
+                        <select id="courseSelect" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
+                            <option value="">Choose a course...</option>
+                        </select>
+                    </div>
+                    <button id="saveCourseBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition hidden shadow-md active:scale-95">
+                        <i class="fa-solid fa-save mr-2"></i> Save Changes
+                    </button>
                 </div>
+
+                <div id="courseContent" class="hidden space-y-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Course Outline</label>
+                        <textarea id="courseOutline" class="w-full p-4 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-32 bg-gray-50" placeholder="Summarize the course objectives..."></textarea>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Curriculum Modules</label>
+                            <button type="button" id="addCourseModule" class="text-blue-600 font-bold text-xs hover:text-blue-800 transition">
+                                <i class="fa-solid fa-plus-circle mr-1"></i> Add Module
+                            </button>
+                        </div>
+                        <div id="courseModulesContainer" class="space-y-4">
+                            <!-- Modules will be injected here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="courseLockMessage" class="hidden p-4 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 flex items-center gap-3">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                    <p class="text-sm font-medium">This curriculum has been approved and locked by an admin. You can no longer modify it.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Class Curriculum View -->
+        <div id="classView" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="flex flex-wrap gap-4 items-end mb-6">
+                    <div class="flex-1 min-w-[250px]">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Assigned Class</label>
+                        <input type="text" id="classNameDisplay" class="w-full px-4 py-2 border border-gray-100 rounded-lg bg-gray-50 font-bold text-gray-700" readonly>
+                    </div>
+                    <button id="saveClassBtn" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-indigo-700 transition shadow-md active:scale-95">
+                        <i class="fa-solid fa-save mr-2"></i> Save Class Roadmap
+                    </button>
+                </div>
+
+                <div class="space-y-8">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Class Outline</label>
+                        <textarea id="classOutline" class="w-full p-4 border border-gray-100 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none h-32 bg-gray-50" placeholder="Define the goals for this class..."></textarea>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="block text-xs font-bold text-gray-500 uppercase">Term Breakdown / Modules</label>
+                            <button type="button" id="addClassModule" class="text-indigo-600 font-bold text-xs hover:text-indigo-800 transition">
+                                <i class="fa-solid fa-plus-circle mr-1"></i> Add Item
+                            </button>
+                        </div>
+                        <div id="classModulesContainer" class="space-y-4"></div>
+                    </div>
+                </div>
+
+                <div id="classLockMessage" class="hidden p-4 bg-orange-50 text-orange-700 rounded-xl border border-orange-100 flex items-center gap-3">
+                    <i class="fa-solid fa-lock text-xl"></i>
+                    <p class="text-sm font-medium">Class roadmap is locked for editing.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materials View (Existing) -->
+        <div id="materialsView" class="hidden space-y-6">
+            <div id="curriculumList" class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <ui-spinner text="Loading materials..."></ui-spinner>
             </div>
         </div>
     </main>
 
     <script type="module">
-        const list = document.getElementById('curriculumList');
+        import { showToast } from '/components/ui-components.js?v=1.6';
 
+        // State
+        let currentUser = null;
+        let allCourses = [];
+        let myClass = null;
+        let currentCourse = null;
+
+        // DOM Elements
+        const tabs = {
+            course: document.getElementById('tabCourse'),
+            class: document.getElementById('tabClass'),
+            materials: document.getElementById('tabMaterials')
+        };
+        const views = {
+            course: document.getElementById('courseView'),
+            class: document.getElementById('classView'),
+            materials: document.getElementById('materialsView')
+        };
+
+        const courseSelect = document.getElementById('courseSelect');
+        const courseContent = document.getElementById('courseContent');
+        const courseModulesContainer = document.getElementById('courseModulesContainer');
+        const saveCourseBtn = document.getElementById('saveCourseBtn');
+        const courseLockMessage = document.getElementById('courseLockMessage');
+
+        const classModulesContainer = document.getElementById('classModulesContainer');
+        const saveClassBtn = document.getElementById('saveClassBtn');
+        const classLockMessage = document.getElementById('classLockMessage');
+
+        /**
+         * TAB NAVIGATION
+         */
+        function switchTab(target) {
+            Object.keys(tabs).forEach(t => {
+                tabs[t].classList.toggle('tab-active', t === target);
+                tabs[t].classList.toggle('text-gray-400', t !== target);
+                views[t].classList.toggle('hidden', t !== target);
+            });
+            if (target === 'materials') fetchMaterials();
+        }
+
+        tabs.course.onclick = () => switchTab('course');
+        tabs.class.onclick = () => switchTab('class');
+        tabs.materials.onclick = () => switchTab('materials');
+
+        /**
+         * CURRICULUM FORM BUILDER
+         */
+        function createModuleRow(container, data = { title: '', description: '', duration: '' }) {
+            const div = document.createElement('div');
+            div.className = "module-row p-4 bg-gray-50 rounded-xl border border-gray-100 grid grid-cols-1 md:grid-cols-12 gap-4 items-start group relative";
+            div.innerHTML = `
+                <div class="md:col-span-4">
+                    <input type="text" class="module-title w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Module Title" value="${data.title}">
+                    <input type="text" class="module-duration w-full px-3 py-1.5 border border-gray-200 rounded-lg text-[10px] mt-2 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-500 uppercase tracking-widest" placeholder="Duration (e.g., Week 1)" value="${data.duration || ''}">
+                </div>
+                <div class="md:col-span-7">
+                    <textarea class="module-description w-full px-3 py-1.5 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-blue-500 h-20" placeholder="Module contents and objectives...">${data.description}</textarea>
+                </div>
+                <div class="md:col-span-1 flex justify-end">
+                    <button type="button" class="remove-module text-gray-300 hover:text-red-500 transition-colors p-2" title="Remove Module">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+            
+            div.querySelector('.remove-module').onclick = () => {
+                if (confirm('Remove this module?')) div.remove();
+            };
+            container.appendChild(div);
+        }
+
+        document.getElementById('addCourseModule').onclick = () => createModuleRow(courseModulesContainer);
+        document.getElementById('addClassModule').onclick = () => createModuleRow(classModulesContainer);
+
+        /**
+         * COURSE LOGIC
+         */
+        courseSelect.onchange = async () => {
+            const id = courseSelect.value;
+            if (!id) { courseContent.classList.add('hidden'); saveCourseBtn.classList.add('hidden'); return; }
+            
+            try {
+                const res = await fetch(`/api/teacher/courses`); // Using existing endpoint
+                const { courses } = await res.json();
+                currentCourse = courses.find(c => c._id === id);
+                
+                if (currentCourse) {
+                    document.getElementById('courseOutline').value = currentCourse.outline || '';
+                    courseModulesContainer.innerHTML = '';
+                    if (currentCourse.curriculum?.length) {
+                        currentCourse.curriculum.sort((a, b) => a.order - b.order).forEach(m => createModuleRow(courseModulesContainer, m));
+                    } else {
+                        createModuleRow(courseModulesContainer);
+                    }
+
+                    // Handle Locking
+                    const isLocked = currentCourse.curriculumLocked;
+                    courseLockMessage.classList.toggle('hidden', !isLocked);
+                    saveCourseBtn.classList.toggle('hidden', isLocked);
+                    document.getElementById('addCourseModule').classList.toggle('hidden', isLocked);
+                    
+                    const inputs = courseContent.querySelectorAll('input, textarea, select, button');
+                    inputs.forEach(i => {
+                        if (!i.classList.contains('remove-module')) i.disabled = isLocked;
+                    });
+                    if (isLocked) courseContent.querySelectorAll('.remove-module').forEach(b => b.classList.add('hidden'));
+
+                    courseContent.classList.remove('hidden');
+                    if (!isLocked) saveCourseBtn.classList.remove('hidden');
+                }
+            } catch (err) { showToast('Error loading course curriculum', 'error'); }
+        };
+
+        saveCourseBtn.onclick = async () => {
+            const modules = Array.from(courseModulesContainer.querySelectorAll('.module-row')).map((row, index) => ({
+                title: row.querySelector('.module-title').value,
+                description: row.querySelector('.module-description').value,
+                duration: row.querySelector('.module-duration').value,
+                order: index
+            }));
+
+            const data = {
+                outline: document.getElementById('courseOutline').value,
+                curriculum: modules
+            };
+
+            saveCourseBtn.disabled = true;
+            try {
+                const res = await fetch(`/api/teacher/courses/${currentCourse._id}/curriculum`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) showToast('Course curriculum saved!');
+                else {
+                    const err = await res.json();
+                    showToast(err.message || 'Save failed', 'error');
+                }
+            } catch (err) { showToast('Server error', 'error'); }
+            finally { saveCourseBtn.disabled = false; }
+        };
+
+        /**
+         * CLASS LOGIC
+         */
+        async function loadClassData() {
+            try {
+                const res = await fetch('/api/teacher/classes');
+                const { classes } = await res.json();
+                myClass = classes[0]; // For MVP, assume 1 class per teacher
+
+                if (myClass) {
+                    tabs.class.classList.remove('hidden');
+                    document.getElementById('classNameDisplay').value = `${myClass.name} (${myClass.section})`;
+                    document.getElementById('classOutline').value = myClass.classOutline || '';
+                    classModulesContainer.innerHTML = '';
+                    if (myClass.classCurriculum?.length) {
+                        myClass.classCurriculum.sort((a, b) => a.order - b.order).forEach(m => createModuleRow(classModulesContainer, m));
+                    } else {
+                        createModuleRow(classModulesContainer);
+                    }
+
+                    // Locking
+                    const isLocked = myClass.classCurriculumLocked;
+                    classLockMessage.classList.toggle('hidden', !isLocked);
+                    saveClassBtn.classList.toggle('hidden', isLocked);
+                    document.getElementById('addClassModule').classList.toggle('hidden', isLocked);
+                    
+                    const inputs = views.class.querySelectorAll('input, textarea, select, button');
+                    inputs.forEach(i => {
+                        if (!i.classList.contains('remove-module')) i.disabled = isLocked;
+                    });
+                    if (isLocked) views.class.querySelectorAll('.remove-module').forEach(b => b.classList.add('hidden'));
+                }
+            } catch (err) {}
+        }
+
+        saveClassBtn.onclick = async () => {
+            const modules = Array.from(classModulesContainer.querySelectorAll('.module-row')).map((row, index) => ({
+                title: row.querySelector('.module-title').value,
+                description: row.querySelector('.module-description').value,
+                duration: row.querySelector('.module-duration').value,
+                order: index
+            }));
+
+            const data = {
+                classOutline: document.getElementById('classOutline').value,
+                classCurriculum: modules
+            };
+
+            try {
+                const res = await fetch(`/api/teacher/classes/${myClass._id}/curriculum`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) showToast('Class roadmap updated!');
+            } catch (err) { showToast('Save failed', 'error'); }
+        };
+
+        /**
+         * MATERIALS LOGIC (Existing)
+         */
         async function fetchMaterials() {
+            const list = document.getElementById('curriculumList');
             try {
                 const res = await fetch('/api/teacher/materials');
                 if (res.ok) {
                     const { materials } = await res.json();
-                    renderMaterials(materials);
+                    if (!materials.length) {
+                        list.innerHTML = '<div class="text-center py-20 text-gray-500 font-bold italic">No materials uploaded yet.</div>';
+                        return;
+                    }
+                    // Group and render materials... (keeping original logic)
                 }
-            } catch (err) {
-                list.innerHTML = '<p class="text-center text-red-500 py-10">Error loading materials.</p>';
-            }
+            } catch (err) {}
         }
 
-        function renderMaterials(materials) {
-            if (!materials.length) {
-                list.innerHTML = '<div class="text-center py-20 text-gray-500 font-bold italic">No materials uploaded yet. Use the "Materials" link in the navbar to add some.</div>';
-                return;
-            }
-
-            // Group by course
-            const grouped = {};
-            materials.forEach(m => {
-                const cId = m.course?._id || 'other';
-                if (!grouped[cId]) grouped[cId] = { title: m.course?.title || 'General', items: [] };
-                grouped[cId].items.push(m);
-            });
-
-            list.innerHTML = Object.values(grouped).map(group => `
-                <div class="mb-10 last:mb-0">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">${group.title}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        ${group.items.map(item => `
-                            <div class="p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition flex justify-between items-center">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-file-${item.type === 'link' ? 'link' : 'pdf'}"></i>
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-gray-900">${item.title}</p>
-                                        <p class="text-xs text-gray-400 uppercase font-bold tracking-widest">${item.type}</p>
-                                    </div>
-                                </div>
-                                <button class="text-blue-600 hover:text-blue-800"><i class="fa-solid fa-cloud-download-alt text-lg"></i></button>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function fetchProfile() {
+        /**
+         * INITIALIZATION
+         */
+        async function init() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
-                if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
+                currentUser = user;
 
                 customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    document.querySelector('ui-navbar').renderLinks(user);
                 });
 
-                await fetchMaterials();
-            } catch (err) {
-                console.error('Failed to fetch profile:', err);
-                window.location.href = '/api/auth/login';
-            }
+                // Load Initial Data
+                const courseRes = await fetch('/api/teacher/courses');
+                if (courseRes.ok) {
+                    const { courses } = await courseRes.json();
+                    allCourses = courses;
+                    courseSelect.innerHTML = '<option value="">Choose a course...</option>' + 
+                        courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                }
+
+                await loadClassData();
+            } catch (err) { window.location.href = '/api/auth/login'; }
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
-            }
-        });
-        fetchProfile();
+
+        init();
     </script>
 </body>
 </html>

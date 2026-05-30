@@ -405,6 +405,9 @@
                         <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">
                             Batches
                         </button>
+                        <button class="l-btn w-10 h-10 ${c.classCurriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.classCurriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
+                            <i class="fa-solid fa-${c.classCurriculumLocked ? 'lock' : 'lock-open'}"></i>
+                        </button>
                         <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 transition">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -414,6 +417,8 @@
                     viewStudents(c._id, c.name);
                 card.querySelector('.b-btn').onclick = () =>
                     manageBatches(c._id, c.name);
+                card.querySelector('.l-btn').onclick = () =>
+                    toggleCurriculumLock('class', c._id, !c.classCurriculumLocked);
                 card.querySelector('.d-btn').onclick = () =>
                     deleteClass(c._id);
 
@@ -634,6 +639,20 @@
             await saveBatches(currentBatches);
             e.target.reset();
         };
+
+        async function toggleCurriculumLock(type, id, isLocked) {
+            try {
+                const res = await fetch('/api/admin/curriculum/lock', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, id, isLocked })
+                });
+                if (res.ok) {
+                    showToast(`Curriculum ${isLocked ? 'Locked' : 'Unlocked'}`);
+                    fetchClasses();
+                }
+            } catch (err) { showToast('Action failed', 'error'); }
+        }
 
         async function deleteClass(id) {
             if (confirm('Delete class?')) {

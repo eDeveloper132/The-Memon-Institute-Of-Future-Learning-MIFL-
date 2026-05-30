@@ -280,6 +280,9 @@
                     <div class="flex border-t border-gray-50 pt-4 gap-2">
                         <button class="v-btn flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">View</button>
                         <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">Batches</button>
+                        <button class="l-btn w-10 h-10 ${c.curriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.curriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
+                            <i class="fa-solid fa-${c.curriculumLocked ? 'lock' : 'lock-open'}"></i>
+                        </button>
                         <button class="e-btn w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
                         <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
@@ -287,6 +290,7 @@
                 card.querySelector('.v-btn').onclick = () => viewStudents(c._id, c.title);
                 card.querySelector('.b-btn').onclick = () => manageBatches(c._id, c.title);
                 card.querySelector('.e-btn').onclick = () => openModal(true, c);
+                card.querySelector('.l-btn').onclick = () => toggleCurriculumLock('course', c._id, !c.curriculumLocked);
                 card.querySelector('.d-btn').onclick = () => {
                     courseToDeleteId = c._id;
                     document.getElementById('deleteCourseTitle').textContent = c.title;
@@ -410,6 +414,20 @@
             const res = await fetch(`/api/admin/courses/${courseToDeleteId}`, { method: 'DELETE' });
             if (res.ok) { showToast('Deleted'); modalElements.delete.classList.add('hidden'); fetchCourses(); }
         };
+
+        async function toggleCurriculumLock(type, id, isLocked) {
+            try {
+                const res = await fetch('/api/admin/curriculum/lock', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, id, isLocked })
+                });
+                if (res.ok) {
+                    showToast(`Curriculum ${isLocked ? 'Locked' : 'Unlocked'}`);
+                    fetchCourses();
+                }
+            } catch (err) { showToast('Action failed', 'error'); }
+        }
 
         async function viewStudents(cid, name) {
             modalElements.view.classList.remove('hidden');

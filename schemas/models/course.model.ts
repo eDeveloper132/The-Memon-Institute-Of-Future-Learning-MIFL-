@@ -6,6 +6,13 @@ const batchSchema = new Schema({
     students: [{ type: Schema.Types.ObjectId, ref: 'User' }]
 });
 
+const curriculumModuleSchema = new Schema({
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    duration: String,
+    order: { type: Number, required: true, default: 0 }
+});
+
 const courseSchema = new Schema<ICourse>(
     {
         title: { type: String, required: true, trim: true },
@@ -17,6 +24,9 @@ const courseSchema = new Schema<ICourse>(
         enrolledStudents: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         batches: [batchSchema],
         syllabus: String,
+        outline: String,
+        curriculum: [curriculumModuleSchema],
+        curriculumLocked: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

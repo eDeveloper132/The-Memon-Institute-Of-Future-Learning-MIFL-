@@ -51,10 +51,12 @@ router.delete('/assignments/:id', deleteAssignment);
 router.patch('/assignments/grade/:submissionId', gradeSubmission);
 
 /**
- * Materials
+ * Materials & Curriculum
  */
 router.get('/materials', getMaterials);
 router.post('/materials', uploadMaterial);
+router.patch('/courses/:id/curriculum', updateCourseCurriculum);
+router.patch('/classes/:id/curriculum', updateClassCurriculum);
 
 /**
  * Quizzes
