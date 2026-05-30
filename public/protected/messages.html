@@ -7,6 +7,63 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+    <style>
+        :root {
+            --wa-bg: #e5ddd5;
+            --wa-header: #ededed;
+            --wa-sent: #dcf8c6;
+            --wa-received: #ffffff;
+            --wa-sidebar: #ffffff;
+            --wa-sidebar-hover: #f5f5f5;
+        }
+
+        .whatsapp-bg {
+            background-color: var(--wa-bg);
+            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+            background-blend-mode: overlay;
+        }
+
+        /* Message Bubble Tails */
+        .bubble-sent {
+            position: relative;
+            background-color: var(--wa-sent) !important;
+            border-bottom-right-radius: 4px !important;
+        }
+        .bubble-sent::after {
+            content: "";
+            position: absolute;
+            right: -8px;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-left: 10px solid var(--wa-sent);
+            border-bottom: 10px solid transparent;
+        }
+
+        .bubble-received {
+            position: relative;
+            background-color: var(--wa-received) !important;
+            border-bottom-left-radius: 4px !important;
+        }
+        .bubble-received::after {
+            content: "";
+            position: absolute;
+            left: -8px;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-right: 10px solid var(--wa-received);
+            border-bottom: 10px solid transparent;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ced0d1; border-radius: 10px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+
+        /* Animation */
+        .view-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
@@ -47,50 +104,62 @@
             </div>
 
             <!-- Chat Window -->
-            <div id="chatPanel" class="flex-1 hidden md:flex flex-col bg-gray-50 bg-opacity-50 relative">
+            <div id="chatPanel" class="flex-1 hidden md:flex flex-col whatsapp-bg relative">
                 <!-- Empty State -->
-                <div id="emptyChatState" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-20">
-                    <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-300 text-4xl mb-4">
-                        <i class="fa-solid fa-comments"></i>
+                <div id="emptyChatState" class="absolute inset-0 flex flex-col items-center justify-center bg-[#f8f9fa] z-20">
+                    <div class="max-w-md text-center p-8">
+                        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 text-5xl mx-auto mb-6 shadow-inner">
+                            <i class="fa-solid fa-laptop-code"></i>
+                        </div>
+                        <h3 class="text-2xl font-light text-gray-700">MIFL Web Communication</h3>
+                        <p class="text-gray-500 text-sm mt-3 leading-relaxed">
+                            Send and receive messages with your teachers and colleagues. 
+                            Select a chat to start or create a new group.
+                        </p>
+                        <div class="mt-8 flex items-center justify-center gap-2 text-gray-400 text-xs font-medium">
+                            <i class="fa-solid fa-lock text-[10px]"></i>
+                            <span>End-to-end encrypted</span>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-700">Select a Conversation</h3>
-                    <p class="text-gray-400 text-sm mt-2">Choose a contact or group from the sidebar to start chatting.</p>
                 </div>
 
                 <!-- Header -->
-                <div class="p-4 md:p-6 bg-white border-b border-gray-100 flex justify-between items-center z-10">
-                    <div class="flex items-center gap-3 md:gap-4">
+                <div class="p-2 md:p-3 bg-[#ededed] flex justify-between items-center z-10 border-b border-gray-200">
+                    <div class="flex items-center gap-3">
                         <button id="backToListBtn" class="md:hidden w-8 h-8 flex items-center justify-center text-gray-500 hover:text-blue-600 transition">
                             <i class="fa-solid fa-chevron-left text-lg"></i>
                         </button>
-                        <div id="activeChatAvatar" class="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold"></div>
+                        <div id="activeChatAvatar" class="w-10 h-10 rounded-full bg-gray-300 text-white flex items-center justify-center font-bold overflow-hidden"></div>
                         <div>
                             <h4 id="activeChatName" class="font-bold text-gray-900 leading-none text-sm md:text-base"></h4>
-                            <span id="activeChatRole" class="text-[9px] md:text-[10px] text-gray-500 font-bold uppercase tracking-widest"></span>
+                            <span id="activeChatRole" class="text-[10px] text-gray-500 font-medium"></span>
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button id="editGroupBtn" class="hidden w-9 h-9 md:w-10 md:h-10 items-center justify-center rounded-xl bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition active:scale-90">
-                            <i class="fa-solid fa-gear"></i>
+                        <button id="editGroupBtn" class="hidden w-9 h-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-200 transition">
+                            <i class="fa-solid fa-ellipsis-vertical text-xl"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Messages area -->
-                <div id="messageArea" class="flex-1 p-4 md:p-8 overflow-y-auto space-y-4 md:space-y-6">
+                <div id="messageArea" class="flex-1 p-4 md:p-10 overflow-y-auto space-y-2">
                     <!-- Messages injected here -->
                 </div>
 
                 <!-- Input -->
-                <div class="p-4 md:p-6 bg-white border-t border-gray-100">
-                    <form id="messageForm" class="flex gap-3 md:gap-4 items-center">
-                        <label class="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-100 cursor-pointer transition active:scale-95">
+                <div class="p-3 bg-[#f0f0f0] border-t border-gray-200">
+                    <form id="messageForm" class="flex gap-2 items-center max-w-4xl mx-auto">
+                        <button type="button" class="text-gray-500 hover:text-gray-700 p-2 text-xl transition">
+                            <i class="fa-regular fa-face-smile"></i>
+                        </button>
+                        <label class="text-gray-500 hover:text-gray-700 p-2 text-xl cursor-pointer transition">
                             <i class="fa-solid fa-paperclip"></i>
                             <input type="file" id="fileInput" class="hidden">
                         </label>
-                        <input type="text" id="messageInput" placeholder="Type your message..." class="flex-1 px-4 md:px-6 py-2 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-sm md:text-base" disabled>
-                        <button type="submit" id="sendBtn" class="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow-lg active:scale-95 disabled:opacity-50" disabled>
-                            <i class="fa-solid fa-paper-plane text-sm md:text-base"></i>
+                        <input type="text" id="messageInput" placeholder="Type a message" class="flex-1 px-4 py-2.5 bg-white border-none rounded-lg focus:ring-0 outline-none text-sm md:text-base placeholder-gray-400" disabled>
+                        <button type="submit" id="sendBtn" class="w-11 h-11 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition shadow flex items-center justify-center disabled:opacity-50" disabled>
+                            <i class="fa-solid fa-paper-plane text-lg"></i>
                         </button>
                     </form>
                 </div>
@@ -158,22 +227,47 @@
         const backToListBtn = document.getElementById('backToListBtn');
 
         // View Switching Logic
+        let currentMobileView = 'list'; // 'list' or 'chat'
+
         function toggleMobileView(view) {
             const isMobile = window.innerWidth < 768;
-            if (!isMobile) return;
+            currentMobileView = view;
 
+            if (!isMobile) {
+                // Desktop: Always show both, but allow chatPanel to be "empty"
+                sidebarPanel.classList.remove('hidden');
+                sidebarPanel.classList.add('md:w-80');
+                chatPanel.classList.remove('hidden');
+                chatPanel.classList.add('flex');
+                return;
+            }
+
+            // Mobile logic
             if (view === 'chat') {
                 sidebarPanel.classList.add('hidden');
                 chatPanel.classList.remove('hidden');
-                chatPanel.classList.add('flex');
+                chatPanel.classList.add('flex', 'w-full');
             } else {
                 sidebarPanel.classList.remove('hidden');
+                sidebarPanel.classList.add('w-full');
                 chatPanel.classList.add('hidden');
                 chatPanel.classList.remove('flex');
                 activeChat = null;
                 renderSidebar(searchInput.value);
             }
         }
+
+        window.addEventListener('resize', () => {
+            const isMobile = window.innerWidth < 768;
+            if (!isMobile) {
+                sidebarPanel.classList.remove('hidden', 'w-full');
+                sidebarPanel.classList.add('md:w-80');
+                chatPanel.classList.remove('hidden');
+                chatPanel.classList.add('flex');
+            } else {
+                toggleMobileView(currentMobileView);
+            }
+        });
 
         backToListBtn.addEventListener('click', () => toggleMobileView('list'));
 
@@ -358,14 +452,17 @@
                 html += filteredGroups.map(g => {
                     const unread = unreadCounts.groupUnread[g._id] || 0;
                     return `
-                    <div data-chat-type="group" data-chat-id="${g._id}" data-chat-name="${g.name}" data-chat-role="Group" class="chat-sidebar-item p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === g._id ? 'bg-blue-50 text-blue-700' : ''}">
-                        <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg relative">
+                    <div data-chat-type="group" data-chat-id="${g._id}" data-chat-name="${g.name}" data-chat-role="Group" class="chat-sidebar-item p-3 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === g._id ? 'bg-gray-100' : ''}">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg relative flex-shrink-0">
                             <i class="fa-solid fa-users"></i>
-                            ${unread ? `<div class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">${unread}</div>` : ''}
+                            ${unread ? `<div class="absolute bottom-0 right-0 bg-green-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">${unread}</div>` : ''}
                         </div>
-                        <div class="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 class="font-bold truncate text-sm">${g.name}</h4>
-                            <p class="text-[10px] text-gray-400 truncate">${g.members.length} members</p>
+                        <div class="flex-1 min-w-0 border-b border-gray-100 pb-2">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <h4 class="font-bold truncate text-sm text-gray-900">${g.name}</h4>
+                                <span class="text-[10px] text-gray-400">12:45 PM</span>
+                            </div>
+                            <p class="text-xs text-gray-500 truncate">Group: ${g.members.length} members</p>
                         </div>
                     </div>
                 `}).join('');
@@ -376,14 +473,17 @@
                 html += filteredContacts.map(c => {
                     const unread = unreadCounts.dmUnread[c._id] || 0;
                     return `
-                    <div data-chat-type="user" data-chat-id="${c._id}" data-chat-name="${c.name}" data-chat-role="${c.role}" class="chat-sidebar-item p-4 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === c._id ? 'bg-blue-50 text-blue-700' : ''}">
-                        <div class="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center font-bold uppercase text-sm relative">
+                    <div data-chat-type="user" data-chat-id="${c._id}" data-chat-name="${c.name}" data-chat-role="${c.role}" class="chat-sidebar-item p-3 mx-2 rounded-xl hover:bg-gray-50 flex gap-4 cursor-pointer transition ${activeChat?.id === c._id ? 'bg-gray-100' : ''}">
+                        <div class="w-12 h-12 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold uppercase text-base relative flex-shrink-0">
                             ${c.name[0]}
-                            ${unread ? `<div class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">${unread}</div>` : ''}
+                            ${unread ? `<div class="absolute bottom-0 right-0 bg-green-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">${unread}</div>` : ''}
                         </div>
-                        <div class="flex-1 min-w-0 flex flex-col justify-center">
-                            <h4 class="font-bold truncate text-sm">${c.name}</h4>
-                            <p class="text-[10px] text-gray-400 uppercase tracking-widest truncate">${c.role}</p>
+                        <div class="flex-1 min-w-0 border-b border-gray-100 pb-2">
+                            <div class="flex justify-between items-baseline mb-1">
+                                <h4 class="font-bold truncate text-sm text-gray-900">${c.name}</h4>
+                                <span class="text-[10px] text-gray-400">Active</span>
+                            </div>
+                            <p class="text-xs text-gray-500 uppercase tracking-tight truncate">${c.role}</p>
                         </div>
                     </div>
                 `}).join('');
@@ -443,6 +543,7 @@
             }
             renderSidebar(searchInput.value);
             
+            toggleMobileView('chat');
             await fetchMessages(type, id);
         };
 
@@ -489,29 +590,34 @@
                 const isSent = mSenderId === currentUserId;
                 const senderName = isSent ? 'You' : (m.sender.name || 'Unknown');
                 
-                // Determine read status for UI
                 let readStatusHtml = '';
                 if (isSent) {
                     const isRead = m.group ? (m.readBy && m.readBy.length > 0) : m.isRead;
-                    readStatusHtml = `<i class="fa-solid fa-check-double ml-1 ${isRead ? 'text-blue-300' : 'text-blue-500 opacity-50'}" data-msg-id="${m._id}"></i>`;
+                    readStatusHtml = `<i class="fa-solid fa-check-double ml-1 text-[10px] ${isRead ? 'text-[#34b7f1]' : 'text-gray-400'}" data-msg-id="${m._id}"></i>`;
                 }
                 
                 return `
-                    <div class="flex gap-4 max-w-[80%] message-bubble-container ${isSent ? 'ml-auto flex-row-reverse' : ''}">
-                        ${!isSent ? `<div class="w-8 h-8 rounded-lg bg-gray-200 text-gray-600 flex-shrink-0 flex items-center justify-center font-bold text-xs mt-auto uppercase" title="${senderName}">${senderName[0]}</div>` : ''}
-                        
-                        <div class="flex flex-col group ${isSent ? 'items-end' : 'items-start'}">
-                            ${activeChat.type === 'group' && !isSent ? `<span class="text-[10px] text-gray-400 font-bold ml-1 mb-1">${senderName}</span>` : ''}
-                            <div class="bg-${isSent ? 'blue-600 text-white' : 'white text-gray-700'} p-4 rounded-2xl ${isSent ? 'rounded-br-none shadow-lg' : 'rounded-bl-none shadow-sm border border-gray-100'} text-sm break-words relative">
-                                ${m.content}
-                                ${m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments, isSent) : ''}
-                                <p class="text-[9px] ${isSent ? 'text-blue-200' : 'text-gray-400'} mt-2 font-bold uppercase flex items-center justify-${isSent ? 'end' : 'start'}">
-                                    ${new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    ${readStatusHtml}
-                                </p>
+                    <div class="flex flex-col ${isSent ? 'items-end' : 'items-start'} mb-1 group">
+                        <div class="max-w-[85%] md:max-w-[70%] min-w-[60px] p-2 px-3 rounded-xl shadow-sm border-black/5 border text-sm relative 
+                            ${isSent ? 'bubble-sent' : 'bubble-received'}">
+                            
+                            ${activeChat.type === 'group' && !isSent ? `<span class="text-[11px] font-bold text-orange-600 block mb-0.5">${senderName}</span>` : ''}
+                            
+                            <div class="text-gray-800 leading-relaxed whitespace-pre-wrap">${m.content}</div>
+                            
+                            ${m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments, isSent) : ''}
+                            
+                            <div class="flex items-center justify-end mt-1 space-x-1">
+                                <span class="text-[10px] text-gray-400 font-medium">${new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                ${readStatusHtml}
                             </div>
+
+                            ${!isSent && currentUser.role === 'admin' ? `
+                                <button class="delete-msg-btn absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition" data-msg-id="${m._id}">
+                                    <i class="fa-solid fa-trash-can text-xs"></i>
+                                </button>
+                            ` : ''}
                         </div>
-                        ${!isSent && currentUser.role === 'admin' ? `<button class="delete-msg-btn opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition self-center" data-msg-id="${m._id}"><i class="fa-solid fa-trash-can text-xs"></i></button>` : ''}
                     </div>
                 `;
             }).join('');
@@ -540,9 +646,18 @@
         let typingTimeout;
         const typingIndicator = document.createElement('div');
         typingIndicator.id = 'typingIndicator';
-        typingIndicator.className = 'text-xs text-gray-400 italic mb-2 hidden px-2 transition-all duration-300 opacity-0';
-        typingIndicator.innerHTML = '<i class="fa-solid fa-pen mr-1"></i> <span id="typingText">Someone is typing...</span>';
-        messageArea.parentElement.insertBefore(typingIndicator, messageArea.nextElementSibling);
+        typingIndicator.className = 'absolute bottom-20 left-4 z-20 hidden transition-all duration-300 opacity-0 transform translate-y-2';
+        typingIndicator.innerHTML = `
+            <div class="bg-white border border-gray-100 shadow-md rounded-full px-4 py-1.5 flex items-center gap-2">
+                <div class="flex gap-1">
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 bg-gray-300 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                </div>
+                <span id="typingText" class="text-[11px] text-gray-500 font-medium">Someone is typing...</span>
+            </div>
+        `;
+        chatPanel.appendChild(typingIndicator);
 
         messageInput.addEventListener('input', () => {
             if (!activeChat || !socket) return;
@@ -732,31 +847,26 @@
             const isSent = mSenderId === currentUserId;
             const senderName = isSent ? 'You' : (m.sender.name || 'Unknown');
             
-            // Render attachments
-            const attachmentsHtml = m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments) : '';
-
             const div = document.createElement('div');
-            div.className = `flex gap-4 max-w-[80%] message-bubble-container ${isSent ? 'ml-auto flex-row-reverse' : ''}`;
+            div.className = `flex flex-col ${isSent ? 'items-end' : 'items-start'} mb-1 group`;
             
-            // Delete button for admins
-            const deleteBtnHtml = !isSent && currentUser.role === 'admin' ? `
-                <button class="delete-msg-btn opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition self-center" data-msg-id="${m._id}">
-                    <i class="fa-solid fa-trash-can text-xs"></i>
-                </button>
-            ` : '';
+            const attachmentsHtml = m.attachments && m.attachments.length > 0 ? renderAttachments(m.attachments, isSent) : '';
 
             div.innerHTML = `
-                ${!isSent ? `<div class="w-8 h-8 rounded-lg bg-gray-200 text-gray-600 flex-shrink-0 flex items-center justify-center font-bold text-xs mt-auto uppercase" title="${senderName}">${senderName[0]}</div>` : ''}
-                
-                <div class="flex flex-col group ${isSent ? 'items-end' : 'items-start'}">
-                    ${activeChat.type === 'group' && !isSent ? `<span class="text-[10px] text-gray-400 font-bold ml-1 mb-1">${senderName}</span>` : ''}
-                    <div class="bg-${isSent ? 'blue-600 text-white' : 'white text-gray-700'} p-4 rounded-2xl ${isSent ? 'rounded-br-none shadow-lg' : 'rounded-bl-none shadow-sm border border-gray-100'} text-sm break-words relative">
-                        ${m.content}
-                        ${attachmentsHtml}
-                        <p class="text-[9px] ${isSent ? 'text-blue-200' : 'text-gray-400'} mt-2 font-bold uppercase ${isSent ? 'text-right' : ''}">${new Date(m.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <div class="max-w-[85%] md:max-w-[70%] min-w-[60px] p-2 px-3 rounded-xl shadow-sm border-black/5 border text-sm relative 
+                    ${isSent ? 'bubble-sent' : 'bubble-received'}">
+                    
+                    ${activeChat.type === 'group' && !isSent ? `<span class="text-[11px] font-bold text-orange-600 block mb-0.5">${senderName}</span>` : ''}
+                    
+                    <div class="text-gray-800 leading-relaxed whitespace-pre-wrap">${m.content}</div>
+                    
+                    ${attachmentsHtml}
+                    
+                    <div class="flex items-center justify-end mt-1 space-x-1">
+                        <span class="text-[10px] text-gray-400 font-medium">${new Date(m.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        ${isSent ? `<i class="fa-solid fa-check ml-1 text-[10px] text-gray-400"></i>` : ''}
                     </div>
                 </div>
-                ${deleteBtnHtml}
             `;
             messageArea.appendChild(div);
             messageArea.scrollTop = messageArea.scrollHeight;
