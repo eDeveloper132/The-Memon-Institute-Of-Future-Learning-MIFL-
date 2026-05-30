@@ -390,25 +390,133 @@
         };
 
         document.getElementById('saveCourseBtn').onclick = async () => {
+            const sections = Array.from(document.getElementById('courseSectionsContainer').querySelectorAll('.section-card')).map((sec, sIdx) => {
+                const modules = Array.from(sec.querySelectorAll('.module-row')).map((mod, mIdx) => ({
+                    title: mod.querySelector('.m-title').value.trim(),
+                    duration: mod.querySelector('.m-duration').value.trim(),
+                    description: mod.querySelector('.m-desc').value.trim(),
+                    learningObjectives: Array.from(mod.querySelectorAll('.obj-input')).map(i => i.value.trim()).filter(v => v),
+                    resources: Array.from(mod.querySelectorAll('.res-item')).map(r => ({
+                        title: r.querySelector('.res-t').value.trim(),
+                        url: r.querySelector('.res-u').value.trim()
+                    })).filter(r => r.title && r.url),
+                    order: mIdx
+                }));
+
+                return {
+                    title: sec.querySelector('.section-title').value.trim(),
+                    modules: modules,
+                    order: sIdx
+                };
+            });
+
+            // Validation
+            for (const sec of sections) {
+                if (!sec.title) return showToast('All sections must have a title', 'error');
+                for (const mod of sec.modules) {
+                    if (!mod.title) return showToast(`Module in "${sec.title}" is missing a title`, 'error');
+                }
+            }
+
+            const data = {
+                outline: document.getElementById('courseOutline').value.trim(),
+                curriculumSections: sections
+            };
+
             const submitBtn = document.getElementById('saveCourseBtn');
             submitBtn.disabled = true;
             try {
                 const res = await fetch(`/api/teacher/courses/${currentCourse._id}/curriculum`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        outline: document.getElementById('courseOutline').value,
-                        curriculumSections: currentCourse.curriculumSections
-                    })
+                    body: JSON.stringify(data)
                 });
-                if (res.ok) showToast('Syllabus successfully deployed!');
-                else showToast('Deployment error', 'error');
+                if (res.ok) {
+                    showToast('Syllabus successfully deployed!');
+                    // Refresh local state
+                    const updated = await res.json();
+                    currentCourse = updated.course;
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Deployment error', 'error');
+                }
             } catch (err) { showToast('Network failure', 'error'); }
             finally { submitBtn.disabled = false; }
         };
 
-        // Class and Materials logic kept consistent with previous unified tabbed structure but refined visuals
-        // ... (loadClassData, saveClassBtn, fetchMaterials - similar to Course but with indigo accent)
+        /**
+         * MATERIALS LOGIC
+         */
+        async function fetchMaterials() {
+            const list = document.getElementById('curriculumList');
+            list.innerHTML = '<ui-spinner text="Cataloging departmental archives..."></ui-spinner>';
+            
+            try {
+                const res = await fetch('/api/teacher/materials');
+                if (res.ok) {
+                    const { materials } = await res.json();
+                    if (!materials || !materials.length) {
+                        list.innerHTML = `
+                            <div class="text-center py-20">
+                                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 text-4xl mx-auto mb-4">
+                                    <i class="fa-solid fa-folder-open"></i>
+                                </div>
+                                <p class="text-gray-400 font-bold italic text-lg">No global resources archived yet.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // Group by Course
+                    const grouped = materials.reduce((acc, m) => {
+                        const cTitle = m.course?.title || 'General Resources';
+                        if (!acc[cTitle]) acc[cTitle] = [];
+                        acc[cTitle].push(m);
+                        return acc;
+                    }, {});
+
+                    list.innerHTML = Object.entries(grouped).map(([course, items]) => `
+                        <div class="mb-10 last:mb-0">
+                            <h4 class="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                ${course}
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                ${items.map(m => `
+                                    <div class="p-6 bg-gray-50/50 rounded-3xl border border-gray-100 hover:border-blue-200 transition-all group shadow-sm hover:shadow-md">
+                                        <div class="flex items-center gap-4 mb-4">
+                                            <div class="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-2xl shadow-sm text-blue-600">
+                                                <i class="fa-solid ${getFileIcon(m.type)}"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <h5 class="font-bold text-gray-900 truncate">${m.title}</h5>
+                                                <span class="text-[10px] text-gray-400 font-black uppercase tracking-widest">${m.type}</span>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-gray-500 line-clamp-2 mb-6 font-medium leading-relaxed">${m.description || 'No description provided.'}</p>
+                                        <a href="${m.fileUrl || m.link}" target="_blank" class="w-full py-3 bg-white text-blue-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 border border-blue-50 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Access Resource
+                                        </a>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load departmental materials.</p>';
+            }
+        }
+
+        function getFileIcon(type) {
+            switch(type) {
+                case 'pdf': return 'fa-file-pdf';
+                case 'video': return 'fa-play-circle';
+                case 'doc': return 'fa-file-word';
+                case 'link': return 'fa-link';
+                default: return 'fa-file-alt';
+            }
+        }
 
         /**
          * PREVIEW LOGIC
