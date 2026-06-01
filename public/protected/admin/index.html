@@ -91,7 +91,7 @@
                     updateCard('totalStudents', stats.totalStudents);
                     updateCard('totalTeachers', stats.totalTeachers);
                     updateCard('totalClasses', stats.totalClasses);
-                    updateCard('pendingFees', `$${stats.pendingFeesAmount.toLocaleString()}`);
+                    updateCard('pendingFees', `PKR ${stats.pendingFeesAmount.toLocaleString()}`);
                 }
             } catch (err) {
                 console.error('Failed to fetch admin stats:', err);

@@ -27,7 +27,7 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <ui-card id="totalPendingCard" title="Total Outstanding" value="..." color="red"></ui-card>
-            <ui-card id="paidThisMonthCard" title="Collected (Month)" value="$0" color="green"></ui-card>
+            <ui-card id="paidThisMonthCard" title="Collected (Month)" value="PKR 0" color="green"></ui-card>
             <ui-card id="overdueCountCard" title="Overdue Accounts" value="0" color="orange"></ui-card>
         </div>
 
@@ -66,7 +66,7 @@
                 renderFees(pending);
                 
                 const total = pending.reduce((sum, f) => sum + f.amount, 0);
-                document.getElementById('totalPendingCard').setAttribute('value', `$${total.toLocaleString()}`);
+                document.getElementById('totalPendingCard').setAttribute('value', `PKR ${total.toLocaleString()}`);
                 document.getElementById('overdueCountCard').setAttribute('value', pending.length);
             } catch (err) {
                 tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-red-500">Failed to load fee records</td></tr>';
@@ -85,7 +85,7 @@
                         <div class="font-bold text-gray-900">${f.student?.name || 'Unknown'}</div>
                         <div class="text-xs text-gray-500">${f.student?.email || 'N/A'}</div>
                     </td>
-                    <td class="px-6 py-4 font-bold text-gray-900">$${f.amount.toLocaleString()}</td>
+                    <td class="px-6 py-4 font-bold text-gray-900">PKR ${f.amount.toLocaleString()}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">${new Date(f.dueDate).toLocaleDateString()}</td>
                     <td class="px-6 py-4">
                         <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700">

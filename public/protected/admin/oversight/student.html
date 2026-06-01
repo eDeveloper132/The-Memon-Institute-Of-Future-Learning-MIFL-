@@ -115,7 +115,7 @@
                     <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
                         <div>
                             <p class="font-bold text-gray-900">${new Date(a.date).toLocaleDateString()}</p>
-                            <p class="text-xs text-gray-500">${a.course ? a.course.title : 'General'}</p>
+                            <p class="text-xs text-gray-500">${(a.course && typeof a.course === 'object' && a.course.title) ? a.course.title : (a.class && typeof a.class === 'object' && a.class.name ? a.class.name : 'General')}</p>
                         </div>
                         <span class="px-2 py-1 rounded text-[10px] font-black uppercase ${a.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${a.status}</span>
                     </div>

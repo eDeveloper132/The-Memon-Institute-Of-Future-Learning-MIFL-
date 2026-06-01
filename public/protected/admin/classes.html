@@ -135,10 +135,10 @@
         <div
             class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div
-                class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20">
+                class="p-6 bg-blue-600 text-white flex justify-between items-center sticky top-0 z-20" id="modalHeader">
                 <div class="flex items-center">
                     <i class="fa-solid fa-chalkboard text-2xl mr-3"></i>
-                    <h3 class="text-xl font-bold">New Academic Class</h3>
+                    <h3 class="text-xl font-bold" id="modalTitle">New Academic Class</h3>
                 </div>
                 <button id="closeClassModal"
                         class="hover:bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center transition text-2xl">
@@ -147,6 +147,7 @@
             </div>
 
             <form id="addClassForm" class="p-6 space-y-4">
+                <input type="hidden" name="id">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
                         <label class="block text-sm font-bold text-gray-700 mb-1">
@@ -194,6 +195,19 @@
                             placeholder="e.g. 2026"
                             required
                             class="w-full px-4 py-2 border rounded-lg outline-none">
+                    </div>
+
+                    <div class="col-span-2">
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Enrollment Fee (PKR)
+                        </label>
+                        <input
+                            type="number"
+                            name="enrollmentFee"
+                            placeholder="e.g. 10000"
+                            value="0"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
 
@@ -246,6 +260,7 @@
 
         let allTeachers = [],
             allStudents = [],
+            allClasses = [],
             currentClassForBatches = null,
             currentBatches = [];
 
@@ -255,6 +270,8 @@
             batch: document.getElementById('manageBatchesModal'),
             assign: document.getElementById('quickAssignModal')
         };
+
+        const addClassForm = document.getElementById('addClassForm');
 
         async function init() {
             try {
@@ -288,7 +305,7 @@
         }
 
         document.getElementById('openClassModal').onclick =
-            () => modalElements.main.classList.remove('hidden');
+            () => openModal(false);
         document.getElementById('closeClassModal').onclick =
             () => modalElements.main.classList.add('hidden');
         document.getElementById('closeViewModal').onclick =
@@ -297,6 +314,45 @@
             () => modalElements.batch.classList.add('hidden');
         document.getElementById('closeQuickAssign').onclick =
             () => modalElements.assign.classList.add('hidden');
+
+        const openModal = (isEdit = false, cls = null) => {
+            const title = document.getElementById('modalTitle');
+            const header = document.getElementById('modalHeader');
+            const submitBtn = addClassForm.querySelector('button[type="submit"]');
+
+            addClassForm.reset();
+            addClassForm.elements.id.value = '';
+            document.getElementById('selectedTeacherId').value = '';
+            document.getElementById('selectedTeacherName').textContent = 'Select a teacher...';
+            document.getElementById('selectedTeacherName').className = 'text-gray-500 italic';
+
+            if (isEdit && cls) {
+                title.textContent = 'Edit Academic Class';
+                header.classList.replace('bg-blue-600', 'bg-indigo-600');
+                submitBtn.classList.replace('bg-blue-600', 'bg-indigo-600');
+                submitBtn.textContent = 'Update Class';
+
+                addClassForm.elements.id.value = cls._id;
+                addClassForm.elements.name.value = cls.name || '';
+                addClassForm.elements.gradeLevel.value = cls.gradeLevel || '';
+                addClassForm.elements.section.value = cls.section || '';
+                addClassForm.elements.academicYear.value = cls.academicYear || '';
+                addClassForm.elements.enrollmentFee.value = cls.enrollmentFee || 0;
+                
+                if (cls.classTeacher) {
+                    document.getElementById('selectedTeacherId').value = cls.classTeacher._id || cls.classTeacher;
+                    document.getElementById('selectedTeacherName').textContent = cls.classTeacher.name || 'Assigned Teacher';
+                    document.getElementById('selectedTeacherName').className = 'text-gray-900 font-bold';
+                }
+            } else {
+                title.textContent = 'New Academic Class';
+                header.classList.replace('bg-indigo-600', 'bg-blue-600');
+                submitBtn.classList.replace('bg-indigo-600', 'bg-blue-600');
+                submitBtn.textContent = 'Create Class';
+            }
+
+            modalElements.main.classList.remove('hidden');
+        };
 
         document.getElementById('teacherSelectorTrigger').onclick = (e) => {
             e.stopPropagation();
@@ -361,8 +417,9 @@
 
         async function fetchClasses() {
             const res = await fetch('/api/admin/classes');
-            const { classes } = await res.json();
-            renderClasses(classes);
+            const data = await res.json();
+            allClasses = data.classes || [];
+            renderClasses(allClasses);
         }
 
         function renderClasses(classes) {
@@ -389,7 +446,7 @@
                             ${c.academicYear}
                         </span>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">
+                    <h3 class="text-xl font-bold text-gray-900 mb-2 truncate" title="${c.name}">
                         ${c.name}
                     </h3>
                     <div class="flex justify-between items-end mb-6">
@@ -401,7 +458,7 @@
                         </p>
                         <div class="text-right">
                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Enrollment Fee</p>
-                            <button data-action="fee" data-id="${c._id}" data-fee="${c.enrollmentFee || 0}" class="text-lg font-black text-green-600 hover:scale-110 transition">$${c.enrollmentFee || 0}</button>
+                            <button data-action="fee" data-id="${c._id}" data-fee="${c.enrollmentFee || 0}" class="text-lg font-black text-green-600 hover:scale-110 transition">PKR ${c.enrollmentFee || 0}</button>
                         </div>
                     </div>
                     <div class="flex border-t border-gray-50 pt-4 gap-2">
@@ -413,6 +470,9 @@
                         </button>
                         <button data-action="lock" data-id="${c._id}" data-locked="${!c.classCurriculumLocked}" class="w-10 h-10 ${c.classCurriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.classCurriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
                             <i class="fa-solid fa-${c.classCurriculumLocked ? 'lock' : 'lock-open'}"></i>
+                        </button>
+                        <button data-action="edit" data-id="${c._id}" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition">
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button data-action="delete" data-id="${c._id}" class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 transition">
                             <i class="fa-solid fa-trash-can"></i>
@@ -429,11 +489,13 @@
             if (!btn) return;
 
             const { action, id, name, fee, locked } = btn.dataset;
+            const cls = allClasses.find(c => c._id === id);
 
             if (action === 'view') viewStudents(id, name);
             else if (action === 'batches') manageBatches(id, name);
             else if (action === 'lock') toggleCurriculumLock('class', id, locked === 'true');
             else if (action === 'fee') window.updateFee('class', id, Number(fee));
+            else if (action === 'edit') openModal(true, cls);
             else if (action === 'delete') deleteClass(id);
         });
 
@@ -666,7 +728,7 @@
         }
 
         window.updateFee = async (type, id, currentFee) => {
-            const newFee = prompt(`Update enrollment fee for this ${type}:`, currentFee);
+            const newFee = prompt(`Update enrollment fee (PKR) for this ${type}:`, currentFee);
             if (newFee === null || isNaN(newFee)) return;
 
             try {
@@ -677,7 +739,7 @@
                 });
 
                 if (res.ok) {
-                    showToast('Fee updated successfully');
+                    showToast('Fee updated to PKR ' + newFee);
                     fetchClasses();
                 } else {
                     showToast('Failed to update fee', 'error');
@@ -758,20 +820,23 @@
             }
         }
 
-        document.getElementById('addClassForm').onsubmit = async (e) => {
+        addClassForm.onsubmit = async (e) => {
             e.preventDefault();
-            const res = await fetch('/api/admin/classes', {
-                method: 'POST',
+            const data = Object.fromEntries(new FormData(addClassForm));
+            const id = data.id;
+            delete data.id;
+            const url = id ? `/api/admin/classes/${id}` : '/api/admin/classes';
+            const method = id ? 'PATCH' : 'POST';
+
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(
-                    Object.fromEntries(new FormData(e.target))
-                )
+                body: JSON.stringify(data)
             });
 
             if (res.ok) {
-                showToast('Created!');
+                showToast(id ? 'Updated!' : 'Created!');
                 modalElements.main.classList.add('hidden');
-                e.target.reset();
                 fetchClasses();
             } else {
                 showToast('Error - check fields', 'error');

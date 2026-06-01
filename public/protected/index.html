@@ -128,7 +128,7 @@
                         const stats = await res.json();
                         document.getElementById('adminTotalStudents').setAttribute('value', stats.totalStudents);
                         document.getElementById('adminTotalTeachers').setAttribute('value', stats.totalTeachers);
-                        document.getElementById('adminPendingFees').setAttribute('value', `$${stats.pendingFeesAmount.toLocaleString()}`);
+                        document.getElementById('adminPendingFees').setAttribute('value', `PKR ${stats.pendingFeesAmount.toLocaleString()}`);
                     }
                 } else if (role === 'teacher') {
                     const res = await fetch('/api/teacher/stats');

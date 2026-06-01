@@ -24,7 +24,7 @@
                 <i class="fa-solid fa-wallet absolute -right-10 -bottom-10 text-9xl opacity-10"></i>
                 <div class="relative z-10">
                     <p class="text-blue-100 font-bold uppercase tracking-widest text-xs mb-2">Total Outstanding Balance</p>
-                    <h3 id="totalBalance" class="text-5xl font-extrabold mb-8">$0.00</h3>
+                    <h3 id="totalBalance" class="text-5xl font-extrabold mb-8">PKR 0.00</h3>
                     <div class="flex gap-4">
                         <button class="bg-white text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg">Pay Now</button>
                     </div>
@@ -33,7 +33,7 @@
 
             <!-- Summary Stats -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <ui-card id="paidTotalCard" title="Paid (This Year)" value="$0" color="green"></ui-card>
+                <ui-card id="paidTotalCard" title="Paid (This Year)" value="PKR 0" color="green"></ui-card>
                 <ui-card id="pendingVouchersCard" title="Pending Vouchers" value="0" color="red"></ui-card>
             </div>
         </div>
@@ -99,7 +99,7 @@
                             <div class="text-xs text-gray-400">Due: ${new Date(f.dueDate).toLocaleDateString()}</div>
                         </td>
                         <td class="px-8 py-5 text-sm text-gray-600">${f.student?.name || 'Child'}</td>
-                        <td class="px-8 py-5 font-bold text-gray-900">$${f.amount.toLocaleString()}</td>
+                        <td class="px-8 py-5 font-bold text-gray-900">PKR ${f.amount.toLocaleString()}</td>
                         <td class="px-8 py-5">
                             <span class="px-2 py-1 rounded text-[10px] font-bold uppercase ${statusColor}">${f.status}</span>
                         </td>
@@ -110,8 +110,8 @@
                 `;
             }).join('');
 
-            document.getElementById('totalBalance').textContent = `$${balance.toLocaleString()}.00`;
-            document.getElementById('paidTotalCard').setAttribute('value', `$${paid.toLocaleString()}`);
+            document.getElementById('totalBalance').textContent = `PKR ${balance.toLocaleString()}.00`;
+            document.getElementById('paidTotalCard').setAttribute('value', `PKR ${paid.toLocaleString()}`);
             document.getElementById('pendingVouchersCard').setAttribute('value', pendingCount);
         }
 

@@ -652,7 +652,10 @@ export const getStudentOversightData = async (req: Request, res: Response) => {
         if (!student) return res.status(404).json({ message: 'Student not found' });
 
         const [attendance, fees, submissions, grades] = await Promise.all([
-            Attendance.find({ student: targetId }).sort({ date: -1 }),
+            Attendance.find({ student: targetId })
+                .populate('course', 'title')
+                .populate('class', 'name')
+                .sort({ date: -1 }),
             Fee.find({ student: targetId }).sort({ dueDate: -1 }),
             Submission.find({ student: targetId }).populate('assignment', 'title dueDate').sort({ submittedAt: -1 }),
             Grade.find({ student: targetId }).populate({
