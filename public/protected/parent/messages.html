@@ -129,7 +129,7 @@
             }
 
             chatSidebar.innerHTML = partners.map(p => `
-                <div onclick="selectPartner('${p._id}', '${p.name}')" class="p-6 hover:bg-gray-50 border-r-4 border-transparent flex gap-4 cursor-pointer transition ${activePartner?._id === p._id ? 'bg-blue-50 border-blue-600' : ''}">
+                <div data-id="${p._id}" data-name="${p.name}" class="chat-partner p-6 hover:bg-gray-50 border-r-4 border-transparent flex gap-4 cursor-pointer transition ${activePartner?._id === p._id ? 'bg-blue-50 border-blue-600' : ''}">
                     <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold uppercase">${p.name[0]}</div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-gray-900 truncate">${p.name}</h4>
@@ -138,6 +138,14 @@
                 </div>
             `).join('');
         }
+
+        chatSidebar.onclick = (e) => {
+            const partnerDiv = e.target.closest('.chat-partner');
+            if (partnerDiv) {
+                const { id, name } = partnerDiv.dataset;
+                window.selectPartner(id, name);
+            }
+        };
 
         window.selectPartner = async (id, name) => {
             activePartner = { _id: id, name };

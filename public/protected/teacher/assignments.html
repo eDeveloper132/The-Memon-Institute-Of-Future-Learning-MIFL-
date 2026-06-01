@@ -130,6 +130,54 @@
         </div>
     </div>
 
+    <!-- Submissions Modal -->
+    <div id="submissionsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div class="p-6 bg-gray-900 text-white flex justify-between items-center shrink-0">
+                <div>
+                    <h3 class="text-xl font-bold" id="submissionsModalTitle">Assignment Submissions</h3>
+                    <p class="text-xs text-gray-400 mt-1" id="submissionsModalSubtitle">Review and grade student work</p>
+                </div>
+                <button id="closeSubmissionsModal" class="text-2xl hover:opacity-70 transition">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div id="submissionsList" class="space-y-4">
+                    <ui-spinner text="Fetching submissions..."></ui-spinner>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grading Modal (Nested) -->
+    <div id="gradingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[70] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden my-auto">
+            <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
+                <h3 class="text-xl font-bold">Grade Submission</h3>
+                <button id="closeGradingModal" class="text-2xl hover:opacity-70 transition">&times;</button>
+            </div>
+            <form id="gradingForm" class="p-8 space-y-6">
+                <input type="hidden" id="gradingSubmissionId">
+                <div>
+                    <label class="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2">Student Score</label>
+                    <div class="flex items-center gap-4">
+                        <input type="number" id="gradingScore" required class="flex-1 px-4 py-3 rounded-2xl border border-gray-200 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition text-2xl font-black" placeholder="0">
+                        <span class="text-2xl font-black text-gray-400">/ <span id="gradingMaxPoints">100</span></span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2">Feedback / Comments</label>
+                    <textarea id="gradingFeedback" rows="4" class="w-full px-4 py-3 rounded-2xl border border-gray-200 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition resize-none" placeholder="Provide constructive feedback..."></textarea>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-100 active:scale-95">
+                        Submit Grade
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
         import { showToast } from '/components/ui-components.js?v=1.6';
 
@@ -302,7 +350,7 @@
                                 <button data-action="delete" data-id="${a._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 transition" title="Delete Assignment">
                                     <i class="fa-solid fa-trash-can text-xs"></i>
                                 </button>
-                                <button class="bg-gray-900 text-white px-3 py-2 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm ml-1">
+                                <button data-action="submissions" data-id="${a._id}" class="bg-gray-900 text-white px-3 py-2 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm ml-1">
                                     Submissions
                                 </button>
                             </div>
@@ -315,10 +363,146 @@
         assignmentGrid.onclick = (e) => {
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
-            const action = btn.dataset.action;
-            const id = btn.dataset.id;
+            const { action, id } = btn.dataset;
+            
             if (action === 'edit') openEditModal(id);
-            if (action === 'delete') openDeleteModal(id);
+            else if (action === 'delete') openDeleteModal(id);
+            else if (action === 'submissions') {
+                const card = btn.closest('.bg-white');
+                const title = card.querySelector('h3').textContent;
+                openSubmissionsModal(id, title);
+            }
+        };
+
+        /**
+         * SUBMISSIONS & GRADING LOGIC
+         */
+        const submissionsModal = document.getElementById('submissionsModal');
+        const submissionsList = document.getElementById('submissionsList');
+        const gradingModal = document.getElementById('gradingModal');
+        const gradingForm = document.getElementById('gradingForm');
+
+        let activeAssignment = null;
+        let allSubmissions = [];
+
+        async function openSubmissionsModal(id, title) {
+            activeAssignment = currentAssignments.find(a => a._id === id);
+            document.getElementById('submissionsModalTitle').textContent = `Submissions: ${title}`;
+            submissionsModal.classList.remove('hidden');
+            
+            submissionsList.innerHTML = '<ui-spinner text="Fetching submissions..."></ui-spinner>';
+            
+            try {
+                const res = await fetch(`/api/teacher/assignments/${id}/submissions`);
+                if (res.ok) {
+                    const { submissions } = await res.json();
+                    allSubmissions = submissions;
+                    renderSubmissions(submissions);
+                } else {
+                    submissionsList.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load submissions.</p>';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderSubmissions(submissions) {
+            if (!submissions.length) {
+                submissionsList.innerHTML = `
+                    <div class="bg-white p-20 rounded-3xl text-center border border-dashed border-gray-200">
+                        <i class="fa-solid fa-face-meh text-5xl text-gray-200 mb-4"></i>
+                        <p class="text-gray-500 font-bold italic">No students have submitted this assignment yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            submissionsList.innerHTML = submissions.map(s => `
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 flex justify-between items-center group hover:border-blue-200 transition">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-xl">
+                            ${s.student.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-900">${s.student.name}</p>
+                            <p class="text-xs text-gray-400 font-medium">${new Date(s.submittedAt).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-6">
+                        ${s.status === 'graded' ? `
+                            <div class="text-right">
+                                <p class="text-xs font-black text-green-600 uppercase tracking-widest">Graded</p>
+                                <p class="text-lg font-black text-gray-900">${s.grade} / ${activeAssignment.maxPoints}</p>
+                            </div>
+                        ` : `
+                            <span class="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest">Pending</span>
+                        `}
+                        
+                        <div class="flex gap-2">
+                            ${s.attachments?.length ? `
+                                <a href="${s.attachments[0]}" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-900 hover:text-white transition shadow-sm">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                </a>
+                            ` : ''}
+                            <button data-action="grade" data-id="${s._id}" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-100">
+                                ${s.status === 'graded' ? 'Update Grade' : 'Grade Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Event Delegation for Submissions
+        submissionsList.onclick = (e) => {
+            const btn = e.target.closest('button[data-action="grade"]');
+            if (btn) {
+                const subId = btn.dataset.id;
+                const submission = allSubmissions.find(s => s._id === subId);
+                if (submission) {
+                    window.openGradingModal(submission._id, submission.grade || 0, submission.feedback || '');
+                }
+            }
+        };
+
+        window.openGradingModal = (id, currentGrade, currentFeedback) => {
+            document.getElementById('gradingSubmissionId').value = id;
+            document.getElementById('gradingScore').value = currentGrade;
+            document.getElementById('gradingFeedback').value = currentFeedback;
+            document.getElementById('gradingMaxPoints').textContent = activeAssignment.maxPoints;
+            gradingModal.classList.remove('hidden');
+        };
+
+        document.getElementById('closeSubmissionsModal').onclick = () => submissionsModal.classList.add('hidden');
+        document.getElementById('closeGradingModal').onclick = () => gradingModal.classList.add('hidden');
+
+        gradingForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('gradingSubmissionId').value;
+            const data = {
+                grade: document.getElementById('gradingScore').value,
+                feedback: document.getElementById('gradingFeedback').value
+            };
+
+            try {
+                const res = await fetch(`/api/teacher/assignments/grade/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    showToast('Submission graded successfully');
+                    gradingModal.classList.add('hidden');
+                    // Refresh submissions list
+                    openSubmissionsModal(activeAssignment._id, activeAssignment.title);
+                } else {
+                    showToast('Grading failed', 'error');
+                }
+            } catch (err) {
+                showToast('Server error', 'error');
+            }
         };
 
         /**

@@ -274,32 +274,48 @@
                     <h3 class="text-xl font-bold text-gray-900 mb-2 truncate" title="${c.title}">
                         ${c.title}
                     </h3>
-                    <p class="text-sm text-gray-500 mb-6">
-                        Teacher: <span class="text-blue-600 font-bold">${c.teacher?.name || 'Unassigned'}</span>
-                    </p>
+                    <div class="flex justify-between items-end mb-6">
+                        <p class="text-sm text-gray-500">
+                            Teacher: <span class="text-blue-600 font-bold">${c.teacher?.name || 'Unassigned'}</span>
+                        </p>
+                        <div class="text-right">
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Enrollment Fee</p>
+                            <button data-action="fee" data-id="${c._id}" data-fee="${c.enrollmentFee || 0}" class="text-lg font-black text-green-600 hover:scale-110 transition">$${c.enrollmentFee || 0}</button>
+                        </div>
+                    </div>
                     <div class="flex border-t border-gray-50 pt-4 gap-2">
-                        <button class="v-btn flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">View</button>
-                        <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">Batches</button>
-                        <button class="l-btn w-10 h-10 ${c.curriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.curriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
+                        <button data-action="view" data-id="${c._id}" data-title="${c.title}" class="flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">View</button>
+                        <button data-action="batches" data-id="${c._id}" data-title="${c.title}" class="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">Batches</button>
+                        <button data-action="lock" data-id="${c._id}" data-locked="${!c.curriculumLocked}" class="l-btn w-10 h-10 ${c.curriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.curriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
                             <i class="fa-solid fa-${c.curriculumLocked ? 'lock' : 'lock-open'}"></i>
                         </button>
-                        <button class="e-btn w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
-                        <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
+                        <button data-action="edit" data-id="${c._id}" class="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center hover:bg-indigo-600 hover:text-white transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button data-action="delete" data-id="${c._id}" data-title="${c.title}" class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 `;
-                card.querySelector('.v-btn').onclick = () => viewStudents(c._id, c.title);
-                card.querySelector('.b-btn').onclick = () => manageBatches(c._id, c.title);
-                card.querySelector('.e-btn').onclick = () => openModal(true, c);
-                card.querySelector('.l-btn').onclick = () => toggleCurriculumLock('course', c._id, !c.curriculumLocked);
-                card.querySelector('.d-btn').onclick = () => {
-                    courseToDeleteId = c._id;
-                    document.getElementById('deleteCourseTitle').textContent = c.title;
-                    modalElements.delete.classList.remove('hidden');
-                };
-
                 grid.appendChild(card);
             });
         }
+
+        // Event Delegation for Course Actions
+        document.getElementById('courseGrid').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            const { action, id, title, fee, locked } = btn.dataset;
+            const course = allCourses.find(c => c._id === id);
+
+            if (action === 'view') viewStudents(id, title);
+            else if (action === 'batches') manageBatches(id, title);
+            else if (action === 'lock') toggleCurriculumLock('course', id, locked === 'true');
+            else if (action === 'fee') window.updateFee('course', id, Number(fee));
+            else if (action === 'edit') openModal(true, course);
+            else if (action === 'delete') {
+                courseToDeleteId = id;
+                document.getElementById('deleteCourseTitle').textContent = title;
+                modalElements.delete.classList.remove('hidden');
+            }
+        });
 
         async function fetchStudents() {
             const res = await fetch('/api/admin/users?role=student');
@@ -428,6 +444,28 @@
                 }
             } catch (err) { showToast('Action failed', 'error'); }
         }
+
+        window.updateFee = async (type, id, currentFee) => {
+            const newFee = prompt(`Update enrollment fee for this ${type}:`, currentFee);
+            if (newFee === null || isNaN(newFee)) return;
+
+            try {
+                const res = await fetch(`/api/admin/courses/${id}/fee`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enrollmentFee: Number(newFee) })
+                });
+
+                if (res.ok) {
+                    showToast('Fee updated successfully');
+                    fetchCourses();
+                } else {
+                    showToast('Failed to update fee', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        };
 
         async function viewStudents(cid, name) {
             modalElements.view.classList.remove('hidden');

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Board - MIFL Student</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Academic Announcements"></ui-navbar>
+
+    <main class="p-8 max-w-5xl mx-auto">
+        <div class="mb-10 flex items-center justify-between">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Notice Board</h2>
+                <p class="text-gray-500 mt-2">Important updates regarding classes, exams, and school events.</p>
+            </div>
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+                <i class="fa-solid fa-bullhorn text-blue-600 text-xl"></i>
+            </div>
+        </div>
+
+        <div id="noticesList" class="space-y-6">
+            <!-- Loading State -->
+            <div class="text-center py-20">
+                <ui-spinner text="Fetching academic updates..."></ui-spinner>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        const noticesList = document.getElementById('noticesList');
+
+        async function fetchNotices() {
+            try {
+                // Call student-specific notices endpoint
+                const response = await fetch('/api/student/notices');
+                if (response.ok) {
+                    const { notices } = await response.json();
+                    renderNotices(notices);
+                } else if (response.status === 403) {
+                    noticesList.innerHTML = '<div class="bg-red-50 p-10 rounded-3xl text-center text-red-600 font-bold border border-red-100 shadow-sm">Access Denied: You do not have permission to view these notices.</div>';
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+            }
+        }
+
+        function renderNotices(notices) {
+            if (!notices.length) {
+                noticesList.innerHTML = '<div class="bg-white p-10 rounded-3xl text-center text-gray-500 italic border border-gray-100 shadow-sm">No active notices for your class at this time.</div>';
+                return;
+            }
+
+            noticesList.innerHTML = notices.map(n => `
+                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:border-blue-300 transition group relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-2 h-full ${n.isPinned ? 'bg-orange-500' : 'bg-blue-600'}"></div>
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="px-3 py-1 ${n.isPinned ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'} rounded-lg text-xs font-bold uppercase tracking-wider">
+                            ${n.isPinned ? 'Pinned Update' : 'Announcement'}
+                        </span>
+                        <span class="text-sm text-gray-400 font-medium">${new Date(n.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition">${n.title}</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6 whitespace-pre-wrap">${n.content}</p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">Academic Department</p>
+                            <p class="text-xs text-gray-500">Official Notice</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
+                
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
+                
+                fetchNotices();
+            } catch (err) {}
+        }
+        fetchProfile();
+    </script>
+</body>
+</html>

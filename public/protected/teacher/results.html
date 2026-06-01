@@ -65,17 +65,25 @@
             }
 
             resultsTableBody.innerHTML = exams.map(exam => `
-                <tr>
+                <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4 font-medium text-gray-900">${exam.title}</td>
-                    <td class="px-6 py-4 text-gray-600">${exam.course.title || 'Course'}</td>
+                    <td class="px-6 py-4 text-gray-600">${exam.course?.title || 'Course'}</td>
                     <td class="px-6 py-4 text-gray-600">${new Date(exam.date).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-gray-600">${exam.maxMarks}</td>
-                    <td class="px-6 py-4">
-                        <button class="text-blue-600 hover:underline font-bold">Manage Marks</button>
+                    <td class="px-6 py-4 flex gap-4">
+                        <button class="text-blue-600 hover:underline font-bold" data-action="manage" data-id="${exam._id}">Manage Marks</button>
                     </td>
                 </tr>
             `).join('');
         }
+
+        // Event Delegation for Exam Actions
+        resultsTableBody.onclick = (e) => {
+            const btn = e.target.closest('button[data-action="manage"]');
+            if (btn) {
+                window.manageMarks(btn.dataset.id);
+            }
+        };
 
         async function fetchProfile() {
             try {

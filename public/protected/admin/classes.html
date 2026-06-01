@@ -392,39 +392,50 @@
                     <h3 class="text-xl font-bold text-gray-900 mb-2">
                         ${c.name}
                     </h3>
-                    <p class="text-sm text-gray-500 mb-6">
-                        Teacher:
-                        <span class="text-blue-600 font-bold">
-                            ${c.classTeacher?.name || 'Unassigned'}
-                        </span>
-                    </p>
+                    <div class="flex justify-between items-end mb-6">
+                        <p class="text-sm text-gray-500">
+                            Teacher:
+                            <span class="text-blue-600 font-bold">
+                                ${c.classTeacher?.name || 'Unassigned'}
+                            </span>
+                        </p>
+                        <div class="text-right">
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Enrollment Fee</p>
+                            <button data-action="fee" data-id="${c._id}" data-fee="${c.enrollmentFee || 0}" class="text-lg font-black text-green-600 hover:scale-110 transition">$${c.enrollmentFee || 0}</button>
+                        </div>
+                    </div>
                     <div class="flex border-t border-gray-50 pt-4 gap-2">
-                        <button class="v-btn flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">
+                        <button data-action="view" data-id="${c._id}" data-name="${c.name}" class="flex-1 bg-gray-50 text-gray-700 py-2 rounded-lg font-bold text-xs hover:bg-gray-100 transition">
                             View
                         </button>
-                        <button class="b-btn flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">
+                        <button data-action="batches" data-id="${c._id}" data-name="${c.name}" class="flex-1 bg-blue-50 text-blue-600 py-2 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition">
                             Batches
                         </button>
-                        <button class="l-btn w-10 h-10 ${c.classCurriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.classCurriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
+                        <button data-action="lock" data-id="${c._id}" data-locked="${!c.classCurriculumLocked}" class="w-10 h-10 ${c.classCurriculumLocked ? 'bg-orange-100 text-orange-600' : 'bg-gray-50 text-gray-400'} rounded-lg flex items-center justify-center hover:bg-orange-600 hover:text-white transition" title="${c.classCurriculumLocked ? 'Unlock' : 'Lock'} Curriculum">
                             <i class="fa-solid fa-${c.classCurriculumLocked ? 'lock' : 'lock-open'}"></i>
                         </button>
-                        <button class="d-btn w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 transition">
+                        <button data-action="delete" data-id="${c._id}" class="w-10 h-10 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 transition">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 `;
-                card.querySelector('.v-btn').onclick = () =>
-                    viewStudents(c._id, c.name);
-                card.querySelector('.b-btn').onclick = () =>
-                    manageBatches(c._id, c.name);
-                card.querySelector('.l-btn').onclick = () =>
-                    toggleCurriculumLock('class', c._id, !c.classCurriculumLocked);
-                card.querySelector('.d-btn').onclick = () =>
-                    deleteClass(c._id);
-
                 grid.appendChild(card);
             });
         }
+
+        // Event Delegation for Class Actions
+        document.getElementById('classGrid').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            const { action, id, name, fee, locked } = btn.dataset;
+
+            if (action === 'view') viewStudents(id, name);
+            else if (action === 'batches') manageBatches(id, name);
+            else if (action === 'lock') toggleCurriculumLock('class', id, locked === 'true');
+            else if (action === 'fee') window.updateFee('class', id, Number(fee));
+            else if (action === 'delete') deleteClass(id);
+        });
 
         async function fetchStudents() {
             const res = await fetch('/api/admin/users?role=student');
@@ -653,6 +664,28 @@
                 }
             } catch (err) { showToast('Action failed', 'error'); }
         }
+
+        window.updateFee = async (type, id, currentFee) => {
+            const newFee = prompt(`Update enrollment fee for this ${type}:`, currentFee);
+            if (newFee === null || isNaN(newFee)) return;
+
+            try {
+                const res = await fetch(`/api/admin/classes/${id}/fee`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enrollmentFee: Number(newFee) })
+                });
+
+                if (res.ok) {
+                    showToast('Fee updated successfully');
+                    fetchClasses();
+                } else {
+                    showToast('Failed to update fee', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        };
 
         async function deleteClass(id) {
             if (confirm('Delete class?')) {

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { User } from '../schemas/models/user.model.js';
 import { Class } from '../schemas/models/class.model.js';
 import { Course } from '../schemas/models/course.model.js';
@@ -7,6 +8,9 @@ import { Attendance } from '../schemas/models/attendance.model.js';
 import { Fee } from '../schemas/models/fee.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
+import { EnrollmentRequest } from '../schemas/models/enrollmentRequest.model.js';
+import { Assignment, Submission } from '../schemas/models/assignment.model.js';
+import { Grade } from '../schemas/models/exam.model.js';
 import chalk from 'chalk';
 
 /**
@@ -531,6 +535,86 @@ export const toggleCurriculumLock = async (req: Request, res: Response) => {
 };
 
 /**
+ * ADMIN - ENROLLMENT MANAGEMENT
+ */
+export const getEnrollmentRequests = async (req: Request, res: Response) => {
+    try {
+        const requests = await EnrollmentRequest.find({ status: 'pending' })
+            .populate('student', 'name email studentId')
+            .populate('targetId')
+            .sort({ appliedAt: -1 });
+        res.status(200).json({ requests });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const processEnrollmentRequest = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // 'approved' or 'denied'
+
+        const request = await EnrollmentRequest.findById(id);
+        if (!request) return res.status(404).json({ message: 'Request not found' });
+
+        request.status = status;
+        request.processedAt = new Date();
+        request.processedBy = req.user.id;
+        await request.save();
+
+        if (status === 'approved') {
+            if (request.targetType === 'Class') {
+                await Class.findByIdAndUpdate(request.targetId, {
+                    $addToSet: { students: request.student }
+                });
+                await User.findByIdAndUpdate(request.student, {
+                    currentClass: request.targetId
+                });
+            } else {
+                await Course.findByIdAndUpdate(request.targetId, {
+                    $addToSet: { enrolledStudents: request.student }
+                });
+            }
+        }
+
+        // Notify student
+        req.io.to(String(request.student)).emit('notification', {
+            type: 'ENROLLMENT_UPDATE',
+            message: `Your enrollment request for ${request.targetType} has been ${status}.`,
+            status,
+            targetId: request.targetId
+        });
+
+        res.status(200).json({ message: `Request ${status}`, request });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateClassFee = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { enrollmentFee } = req.body;
+        await Class.findByIdAndUpdate(id, { enrollmentFee });
+        res.status(200).json({ message: 'Class fee updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateCourseFee = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { enrollmentFee } = req.body;
+        await Course.findByIdAndUpdate(id, { enrollmentFee });
+        res.status(200).json({ message: 'Course fee updated successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
  * ADMIN - STATS
  */
 export const getAdminStats = async (req: Request, res: Response) => {
@@ -550,6 +634,114 @@ export const getAdminStats = async (req: Request, res: Response) => {
             totalTeachers,
             totalClasses,
             pendingFeesAmount: pendingFees[0]?.total || 0
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * ADMIN - OVERSIGHT AGGREGATORS
+ */
+
+export const getStudentOversightData = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const targetId = new mongoose.Types.ObjectId(id as string);
+        const student = await User.findById(targetId).populate('currentClass', 'name');
+        if (!student) return res.status(404).json({ message: 'Student not found' });
+
+        const [attendance, fees, submissions, grades] = await Promise.all([
+            Attendance.find({ student: targetId }).sort({ date: -1 }),
+            Fee.find({ student: targetId }).sort({ dueDate: -1 }),
+            Submission.find({ student: targetId }).populate('assignment', 'title dueDate').sort({ submittedAt: -1 }),
+            Grade.find({ student: targetId }).populate({
+                path: 'exam',
+                populate: { path: 'course', select: 'title' }
+            }).sort({ createdAt: -1 })
+        ]);
+
+        // Calculate attendance percentage
+        const present = attendance.filter((r: any) => r.status === 'present').length;
+        const attendancePercentage = attendance.length ? ((present / attendance.length) * 100).toFixed(0) + '%' : '0%';
+
+        res.status(200).json({
+            student,
+            attendancePercentage,
+            attendance,
+            fees,
+            submissions,
+            grades
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getTeacherOversightData = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const targetId = new mongoose.Types.ObjectId(id as string);
+        const teacher = await User.findById(targetId).populate('department', 'name');
+        if (!teacher) return res.status(404).json({ message: 'Teacher not found' });
+
+        const [classes, courses, assignments] = await Promise.all([
+            Class.find({ classTeacher: targetId }),
+            Course.find({ teacher: targetId }),
+            Assignment.find({ teacher: targetId }).select('_id')
+        ]);
+
+        const assignmentIds = assignments.map((a: any) => a._id);
+        const pendingGradingCount = await Submission.countDocuments({
+            assignment: { $in: assignmentIds },
+            status: { $in: ['submitted', 'late'] }
+        });
+
+        res.status(200).json({
+            teacher,
+            stats: {
+                classesCount: classes.length,
+                coursesCount: courses.length,
+                pendingGrading: pendingGradingCount
+            },
+            classes,
+            courses
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getParentOversightData = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const targetId = new mongoose.Types.ObjectId(id as string);
+        const parent = await User.findById(targetId);
+        if (!parent) return res.status(404).json({ message: 'Parent not found' });
+
+        const children = await User.find({ parent: targetId, role: 'student' }).populate('currentClass', 'name');
+        
+        const childrenSummaries = await Promise.all(children.map(async (child) => {
+            const [attendance, latestGrade] = await Promise.all([
+                Attendance.find({ student: child._id }),
+                Grade.findOne({ student: child._id }).sort({ createdAt: -1 })
+            ]);
+
+            const present = attendance.filter((r: any) => r.status === 'present').length;
+            const attendancePct = attendance.length ? ((present / attendance.length) * 100).toFixed(0) + '%' : '0%';
+
+            return {
+                student: child,
+                summary: {
+                    attendance: attendancePct,
+                    recentGrade: latestGrade ? latestGrade.obtainedMarks : 'N/A'
+                }
+            };
+        }));
+
+        res.status(200).json({
+            parent,
+            children: childrenSummaries
         });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });

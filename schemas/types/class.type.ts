@@ -19,6 +19,7 @@ export interface IClass extends Document {
     classCurriculumSections: ICurriculumSection[];
     classCurriculumLocked: boolean;
     academicYear: string; // e.g., '2025-2026'
+    enrollmentFee: number;
     createdAt: Date;
     updatedAt: Date;
 }

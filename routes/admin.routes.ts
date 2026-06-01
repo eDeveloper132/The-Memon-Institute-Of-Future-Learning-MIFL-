@@ -5,7 +5,9 @@ import {
     getSystemAttendance, manualRecordAttendance, updateAttendance, getPendingFees, getAdminStats,
     generateFeeVoucher, updateClassBatches, updateCourseBatches,
     linkParentToStudents,
-    toggleCurriculumLock
+    toggleCurriculumLock,
+    getStudentOversightData, getTeacherOversightData, getParentOversightData,
+    getEnrollmentRequests, processEnrollmentRequest, updateClassFee, updateCourseFee
 } from '../controllers/admin.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -19,6 +21,13 @@ router.use(authorize('admin'));
  * Dashboard Stats
  */
 router.get('/stats', getAdminStats);
+
+/**
+ * Oversight & Proxying
+ */
+router.get('/oversight/student/:id', getStudentOversightData);
+router.get('/oversight/teacher/:id', getTeacherOversightData);
+router.get('/oversight/parent/:id', getParentOversightData);
 
 /**
  * User Management (Students, Teachers)
@@ -76,6 +85,14 @@ router.delete('/notices/:id', crudNotices.delete);
 router.get('/attendance', getSystemAttendance);
 router.post('/attendance', manualRecordAttendance);
 router.patch('/attendance/:id', updateAttendance);
+
+/**
+ * Enrollment Management
+ */
+router.get('/enrollment/requests', getEnrollmentRequests);
+router.patch('/enrollment/requests/:id', processEnrollmentRequest);
+router.patch('/classes/:id/fee', updateClassFee);
+router.patch('/courses/:id/fee', updateCourseFee);
 
 /**
  * Financial Oversight

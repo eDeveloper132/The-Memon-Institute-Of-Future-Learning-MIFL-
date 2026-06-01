@@ -62,6 +62,7 @@
                         <select id="courseSelect" class="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold text-gray-700 cursor-pointer transition-all">
                             <option value="">Choose a course to architect...</option>
                         </select>
+                        <p id="courseLastUpdated" class="text-[9px] font-bold text-gray-300 mt-2 hidden uppercase tracking-widest"></p>
                     </div>
                     <button id="saveCourseBtn" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95">
                         <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Deploy Syllabus
@@ -113,6 +114,7 @@
                     <div class="flex-1 min-w-[300px]">
                         <label class="block text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-3">Managed Class</label>
                         <input type="text" id="classNameDisplay" class="w-full p-4 bg-gray-50 border-none rounded-2xl font-bold text-gray-700 outline-none" readonly>
+                        <p id="classLastUpdated" class="text-[9px] font-bold text-gray-300 mt-2 hidden uppercase tracking-widest"></p>
                     </div>
                     <button id="saveClassBtn" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 active:scale-95">
                         <i class="fa-solid fa-save mr-2"></i> Update Class Roadmap
@@ -537,6 +539,12 @@
                     document.getElementById('courseOutline').value = currentCourse.outline || '';
                     renderCurriculum(document.getElementById('courseSectionsContainer'), currentCourse.curriculumSections || [], isLocked);
                     
+                    const lastUpdated = document.getElementById('courseLastUpdated');
+                    if (currentCourse.updatedAt) {
+                        lastUpdated.textContent = `Architecture Last Refined: ${new Date(currentCourse.updatedAt).toLocaleString()}`;
+                        lastUpdated.classList.remove('hidden');
+                    }
+
                     document.getElementById('courseContent').classList.remove('hidden');
                     document.getElementById('saveCourseBtn').classList.toggle('hidden', !canEdit);
                     document.getElementById('courseLockMessage').classList.toggle('hidden', !isLocked);
@@ -855,11 +863,11 @@
                                     ${canEdit ? '<th class="p-6 font-black uppercase text-[10px] tracking-widest w-32">Manage</th>' : ''}
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-gray-100" id="tableEditorBody">
             `;
 
             if (!sections || sections.length === 0) {
-                html += `<tr><td colspan="${canEdit ? 5 : 4}" class="p-20 text-center text-gray-400 font-bold italic">No data archived for this roadmap. ${canEdit ? '<button onclick="addTableSection()" class="text-blue-600 underline">Add first section</button>' : ''}</td></tr>`;
+                html += `<tr><td colspan="${canEdit ? 5 : 4}" class="p-20 text-center text-gray-400 font-bold italic">No data archived for this roadmap. ${canEdit ? '<button data-action="add-section" class="text-blue-600 underline">Add first section</button>' : ''}</td></tr>`;
             } else {
                 sections.forEach((section, sIdx) => {
                     if (!section.modules || section.modules.length === 0) {
@@ -867,7 +875,7 @@
                             <tr class="bg-gray-50/30">
                                 <td class="p-6 border-r border-gray-100">
                                     ${canEdit 
-                                        ? `<input type="text" class="font-black text-gray-900 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(section.title)}" oninput="updateTableData(${sIdx}, null, 'secTitle', this.value)">`
+                                        ? `<input type="text" class="font-black text-gray-900 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(section.title)}" data-action="update-sec-title" data-sidx="${sIdx}">`
                                         : `<span class="font-black text-gray-900">${section.title}</span>`
                                     }
                                 </td>
@@ -875,8 +883,8 @@
                                 ${canEdit ? `
                                     <td class="p-6">
                                         <div class="flex gap-2">
-                                            <button onclick="addTableModule(${sIdx})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-plus"></i></button>
-                                            <button onclick="removeTableSection(${sIdx})" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash"></i></button>
+                                            <button data-action="add-module" data-sidx="${sIdx}" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                                            <button data-action="remove-section" data-sidx="${sIdx}" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash"></i></button>
                                         </div>
                                     </td>
                                 ` : ''}
@@ -890,9 +898,9 @@
                                         <td rowspan="${section.modules.length}" class="p-6 font-black text-gray-900 border-r border-gray-100 align-top bg-gray-50/50">
                                             <div class="sticky top-6 space-y-4">
                                                 ${canEdit 
-                                                    ? `<input type="text" class="font-black text-gray-900 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(section.title)}" oninput="updateTableData(${sIdx}, null, 'secTitle', this.value)">
+                                                    ? `<input type="text" class="font-black text-gray-900 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(section.title)}" data-action="update-sec-title" data-sidx="${sIdx}">
                                                        <div class="flex items-center gap-2 mt-2">
-                                                            <input type="checkbox" class="w-3 h-3" ${section.isOptional ? 'checked' : ''} onchange="updateTableData(${sIdx}, null, 'secOptional', this.checked)">
+                                                            <input type="checkbox" class="w-3 h-3" ${section.isOptional ? 'checked' : ''} data-action="update-sec-optional" data-sidx="${sIdx}">
                                                             <span class="text-[8px] font-black uppercase text-gray-400">Optional</span>
                                                        </div>`
                                                     : `<span>${section.title}</span> ${section.isOptional ? '<br><span class="inline-block mt-2 px-2 py-0.5 bg-orange-100 text-orange-600 rounded text-[8px] font-black uppercase tracking-tighter">Optional</span>' : ''}`
@@ -900,10 +908,10 @@
                                                 
                                                 ${canEdit ? `
                                                     <div class="flex gap-1 pt-4">
-                                                        <button onclick="moveTableItem('sec', ${sIdx}, -1)" class="p-1.5 bg-white border border-gray-100 rounded hover:text-blue-600 shadow-sm"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
-                                                        <button onclick="moveTableItem('sec', ${sIdx}, 1)" class="p-1.5 bg-white border border-gray-100 rounded hover:text-blue-600 shadow-sm"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
-                                                        <button onclick="addTableModule(${sIdx})" class="p-1.5 bg-white border border-gray-100 rounded hover:text-green-600 shadow-sm"><i class="fa-solid fa-plus text-[10px]"></i></button>
-                                                        <button onclick="removeTableSection(${sIdx})" class="p-1.5 bg-white border border-gray-100 rounded hover:text-red-600 shadow-sm"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                                                        <button data-action="move-sec" data-sidx="${sIdx}" data-dir="-1" class="p-1.5 bg-white border border-gray-100 rounded hover:text-blue-600 shadow-sm"><i class="fa-solid fa-chevron-up text-[10px]"></i></button>
+                                                        <button data-action="move-sec" data-sidx="${sIdx}" data-dir="1" class="p-1.5 bg-white border border-gray-100 rounded hover:text-blue-600 shadow-sm"><i class="fa-solid fa-chevron-down text-[10px]"></i></button>
+                                                        <button data-action="add-module" data-sidx="${sIdx}" class="p-1.5 bg-white border border-gray-100 rounded hover:text-green-600 shadow-sm"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                                                        <button data-action="remove-section" data-sidx="${sIdx}" class="p-1.5 bg-white border border-gray-100 rounded hover:text-red-600 shadow-sm"><i class="fa-solid fa-trash text-[10px]"></i></button>
                                                     </div>
                                                 ` : ''}
                                             </div>
@@ -913,20 +921,20 @@
                                         <div class="flex items-start gap-3">
                                             <span class="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-[10px] font-black text-gray-400 shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all">${mIdx + 1}</span>
                                             ${canEdit 
-                                                ? `<input type="text" class="font-bold text-gray-800 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(m.title)}" placeholder="Module Title" oninput="updateTableData(${sIdx}, ${mIdx}, 'modTitle', this.value)">`
+                                                ? `<input type="text" class="font-bold text-gray-800 bg-transparent border-b border-gray-200 w-full focus:border-blue-500 outline-none" value="${escapeHTML(m.title)}" placeholder="Module Title" data-action="update-mod-title" data-sidx="${sIdx}" data-midx="${mIdx}">`
                                                 : `<span class="font-bold text-gray-800 leading-tight pt-0.5">${m.title || 'Untitled Milestone'}</span>`
                                             }
                                         </div>
                                     </td>
                                     <td class="p-6 border-r border-gray-100 align-top">
                                         ${canEdit
-                                            ? `<input type="text" class="px-2 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-600 uppercase tracking-tighter w-full outline-none focus:ring-1 focus:ring-blue-500" value="${escapeHTML(m.duration)}" placeholder="Timing" oninput="updateTableData(${sIdx}, ${mIdx}, 'modDuration', this.value)">`
+                                            ? `<input type="text" class="px-2 py-1 bg-gray-100 rounded-lg text-[9px] font-black text-gray-600 uppercase tracking-tighter w-full outline-none focus:ring-1 focus:ring-blue-500" value="${escapeHTML(m.duration)}" placeholder="Timing" data-action="update-mod-duration" data-sidx="${sIdx}" data-midx="${mIdx}">`
                                             : `<span class="px-3 py-1 bg-gray-100 rounded-full text-[9px] font-black text-gray-500 uppercase tracking-tighter whitespace-nowrap">${m.duration || '-'}</span>`
                                         }
                                     </td>
                                     <td class="p-6 space-y-4">
                                         ${canEdit
-                                            ? `<textarea class="w-full text-xs text-gray-600 leading-relaxed font-medium bg-gray-50/50 border-none rounded-xl p-3 outline-none focus:ring-1 focus:ring-blue-500 h-24" placeholder="Description" oninput="updateTableData(${sIdx}, ${mIdx}, 'modDesc', this.value)">${escapeHTML(m.description)}</textarea>`
+                                            ? `<textarea class="w-full text-xs text-gray-600 leading-relaxed font-medium bg-gray-50/50 border-none rounded-xl p-3 outline-none focus:ring-1 focus:ring-blue-500 h-24" placeholder="Description" data-action="update-mod-desc" data-sidx="${sIdx}" data-midx="${mIdx}">${escapeHTML(m.description)}</textarea>`
                                             : `<p class="text-xs text-gray-600 leading-relaxed font-medium line-clamp-3 hover:line-clamp-none transition-all cursor-default">${m.description || 'Details pending...'}</p>`
                                         }
                                         
@@ -934,10 +942,10 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 ${(m.learningObjectives || []).map((o, oIdx) => `
                                                     <span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[9px] font-bold border border-blue-100/50 flex items-center gap-1">
-                                                        # ${canEdit ? `<input type="text" class="bg-transparent border-none p-0 outline-none w-20" value="${escapeHTML(o)}" oninput="updateTableData(${sIdx}, ${mIdx}, 'modObj', {idx: ${oIdx}, val: this.value})"> <button onclick="removeTableSubItem(${sIdx}, ${mIdx}, 'obj', ${oIdx})" class="hover:text-red-500">&times;</button>` : o}
+                                                        # ${canEdit ? `<input type="text" class="bg-transparent border-none p-0 outline-none w-20" value="${escapeHTML(o)}" data-action="update-mod-obj" data-sidx="${sIdx}" data-midx="${mIdx}" data-oidx="${oIdx}"> <button data-action="remove-sub-obj" data-sidx="${sIdx}" data-midx="${mIdx}" data-oidx="${oIdx}" class="hover:text-red-500">&times;</button>` : o}
                                                     </span>
                                                 `).join('')}
-                                                ${canEdit ? `<button onclick="addTableSubItem(${sIdx}, ${mIdx}, 'obj')" class="px-2 py-0.5 bg-gray-50 text-gray-400 rounded-md text-[9px] font-bold border border-dashed border-gray-200 hover:bg-blue-50 hover:text-blue-600">+ Outcome</button>` : ''}
+                                                ${canEdit ? `<button data-action="add-sub-obj" data-sidx="${sIdx}" data-midx="${mIdx}" class="px-2 py-0.5 bg-gray-50 text-gray-400 rounded-md text-[9px] font-bold border border-dashed border-gray-200 hover:bg-blue-50 hover:text-blue-600">+ Outcome</button>` : ''}
                                             </div>
 
                                             <div class="flex flex-wrap gap-3">
@@ -945,23 +953,23 @@
                                                     <div class="flex items-center gap-1.5 text-[9px] font-black text-gray-400">
                                                         <i class="fa-solid fa-link"></i> 
                                                         ${canEdit 
-                                                            ? `<input type="text" class="bg-transparent border-none p-0 outline-none w-16" value="${escapeHTML(r.title)}" placeholder="Title" oninput="updateTableData(${sIdx}, ${mIdx}, 'modRes', {idx: ${rIdx}, field: 'title', val: this.value})">
-                                                               <input type="text" class="bg-transparent border-none p-0 outline-none w-20 text-blue-400" value="${escapeHTML(r.url)}" placeholder="URL" oninput="updateTableData(${sIdx}, ${mIdx}, 'modRes', {idx: ${rIdx}, field: 'url', val: this.value})">
-                                                               <button onclick="removeTableSubItem(${sIdx}, ${mIdx}, 'res', ${rIdx})" class="hover:text-red-500">&times;</button>`
+                                                            ? `<input type="text" class="bg-transparent border-none p-0 outline-none w-16" value="${escapeHTML(r.title)}" placeholder="Title" data-action="update-mod-res" data-sidx="${sIdx}" data-midx="${mIdx}" data-ridx="${rIdx}" data-field="title">
+                                                               <input type="text" class="bg-transparent border-none p-0 outline-none w-20 text-blue-400" value="${escapeHTML(r.url)}" placeholder="URL" data-action="update-mod-res" data-sidx="${sIdx}" data-midx="${mIdx}" data-ridx="${rIdx}" data-field="url">
+                                                               <button data-action="remove-sub-res" data-sidx="${sIdx}" data-midx="${mIdx}" data-ridx="${rIdx}" class="hover:text-red-500">&times;</button>`
                                                             : `<a href="${r.url}" target="_blank" class="hover:text-blue-600 transition-colors">${r.title}</a>`
                                                         }
                                                     </div>
                                                 `).join('')}
-                                                ${canEdit ? `<button onclick="addTableSubItem(${sIdx}, ${mIdx}, 'res')" class="text-[9px] font-black text-gray-300 hover:text-blue-600">+ Link</button>` : ''}
+                                                ${canEdit ? `<button data-action="add-sub-res" data-sidx="${sIdx}" data-midx="${mIdx}" class="text-[9px] font-black text-gray-300 hover:text-blue-600">+ Link</button>` : ''}
                                             </div>
                                         </div>
                                     </td>
                                     ${canEdit ? `
                                         <td class="p-6 align-top">
                                             <div class="flex flex-col gap-2">
-                                                <button onclick="moveTableItem('mod', {sIdx: ${sIdx}, mIdx: ${mIdx}}, -1)" class="p-2 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button onclick="moveTableItem('mod', {sIdx: ${sIdx}, mIdx: ${mIdx}}, 1)" class="p-2 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition"><i class="fa-solid fa-chevron-down"></i></button>
-                                                <button onclick="removeTableModule(${sIdx}, ${mIdx})" class="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition"><i class="fa-solid fa-trash-can"></i></button>
+                                                <button data-action="move-mod" data-sidx="${sIdx}" data-midx="${mIdx}" data-dir="-1" class="p-2 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition"><i class="fa-solid fa-chevron-up"></i></button>
+                                                <button data-action="move-mod" data-sidx="${sIdx}" data-midx="${mIdx}" data-dir="1" class="p-2 bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 rounded-xl transition"><i class="fa-solid fa-chevron-down"></i></button>
+                                                <button data-action="remove-module" data-sidx="${sIdx}" data-midx="${mIdx}" class="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl transition"><i class="fa-solid fa-trash-can"></i></button>
                                             </div>
                                         </td>
                                     ` : ''}
@@ -976,7 +984,7 @@
                 html += `
                     <tr class="bg-gray-50/50">
                         <td colspan="5" class="p-6 text-center">
-                            <button onclick="addTableSection()" class="bg-white text-blue-600 border border-blue-100 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition shadow-sm active:scale-95">
+                            <button data-action="add-section" class="bg-white text-blue-600 border border-blue-100 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-50 transition shadow-sm active:scale-95">
                                 <i class="fa-solid fa-plus-circle mr-2"></i> Add New Learning Path
                             </button>
                         </td>
@@ -992,6 +1000,56 @@
             `;
             return html;
         }
+
+        // Global Event Delegation for Table Editor
+        document.getElementById('previewContent').addEventListener('input', (e) => {
+            const el = e.target;
+            const action = el.dataset.action;
+            if (!action) return;
+
+            const sIdx = parseInt(el.dataset.sidx);
+            const mIdx = parseInt(el.dataset.midx);
+            const oIdx = parseInt(el.dataset.oidx);
+            const ridx = parseInt(el.dataset.ridx);
+            const val = el.value;
+
+            if (action === 'update-sec-title') workingSections[sIdx].title = val;
+            if (action === 'update-mod-title') workingSections[sIdx].modules[mIdx].title = val;
+            if (action === 'update-mod-duration') workingSections[sIdx].modules[mIdx].duration = val;
+            if (action === 'update-mod-desc') workingSections[sIdx].modules[mIdx].description = val;
+            if (action === 'update-mod-obj') workingSections[sIdx].modules[mIdx].learningObjectives[oIdx] = val;
+            if (action === 'update-mod-res') workingSections[sIdx].modules[mIdx].resources[ridx][el.dataset.field] = val;
+        });
+
+        document.getElementById('previewContent').addEventListener('change', (e) => {
+            const el = e.target;
+            if (el.dataset.action === 'update-sec-optional') {
+                workingSections[parseInt(el.dataset.sidx)].isOptional = el.checked;
+            }
+        });
+
+        document.getElementById('previewContent').addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+            const sIdx = parseInt(btn.dataset.sidx);
+            const mIdx = parseInt(btn.dataset.midx);
+            const oIdx = parseInt(btn.dataset.oidx);
+            const ridx = parseInt(btn.dataset.ridx);
+            const dir = parseInt(btn.dataset.dir);
+
+            if (action === 'add-section') window.addTableSection();
+            if (action === 'remove-section') window.removeTableSection(sIdx);
+            if (action === 'add-module') window.addTableModule(sIdx);
+            if (action === 'remove-module') window.removeTableModule(sIdx, mIdx);
+            if (action === 'add-sub-obj') window.addTableSubItem(sIdx, mIdx, 'obj');
+            if (action === 'remove-sub-obj') window.removeTableSubItem(sIdx, mIdx, 'obj', oIdx);
+            if (action === 'add-sub-res') window.addTableSubItem(sIdx, mIdx, 'res');
+            if (action === 'remove-sub-res') window.removeTableSubItem(sIdx, mIdx, 'res', ridx);
+            if (action === 'move-sec') window.moveTableItem('sec', sIdx, dir);
+            if (action === 'move-mod') window.moveTableItem('mod', { sIdx, mIdx }, dir);
+        });
 
         /**
          * TABLE EDITOR ACTIONS
@@ -1140,6 +1198,12 @@
 
                     renderCurriculum(document.getElementById('classSectionsContainer'), myClass.classCurriculumSections || [], isLocked);
                     
+                    const lastUpdated = document.getElementById('classLastUpdated');
+                    if (myClass.updatedAt) {
+                        lastUpdated.textContent = `Roadmap Last Synced: ${new Date(myClass.updatedAt).toLocaleString()}`;
+                        lastUpdated.classList.remove('hidden');
+                    }
+
                     document.getElementById('saveClassBtn').classList.toggle('hidden', !canEdit);
                     document.getElementById('classLockMessage').classList.toggle('hidden', !isLocked);
                     document.getElementById('addClassSection').classList.toggle('hidden', !canEdit);

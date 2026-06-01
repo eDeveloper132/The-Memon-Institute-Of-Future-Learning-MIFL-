@@ -53,6 +53,14 @@
             </div>
         </div>
 
+        <!-- Attendance Summary -->
+        <div id="attendanceSummary" class="hidden grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <ui-card id="totalStudentsCard" title="Class Size" value="..." color="blue"></ui-card>
+            <ui-card id="avgAttendanceCard" title="Avg. Attendance" value="..." color="green"></ui-card>
+            <ui-card id="atRiskCard" title="At-Risk Students" value="..." color="red"></ui-card>
+            <ui-card id="todayPresentCard" title="Today Present" value="..." color="orange"></ui-card>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
             <table class="w-full text-left">
                 <thead class="bg-gray-50 border-b border-gray-200">
@@ -204,17 +212,36 @@
             studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-20 text-center"><div class="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent mx-auto"></div></td></tr>';
 
             try {
-                let query = `date=${date}`;
-                if (activeMode === 'class') query += `&classId=${classId}`;
-                else query += `&courseId=${courseId}&batchId=${batchId}`;
+                let queryParams = `date=${date}`;
+                let statsParams = '';
+                if (activeMode === 'class') {
+                    queryParams += `&classId=${classId}`;
+                    statsParams = `classId=${classId}`;
+                } else {
+                    queryParams += `&courseId=${courseId}&batchId=${batchId}`;
+                    statsParams = `courseId=${courseId}&batchId=${batchId}`;
+                }
 
-                const response = await fetch(`/api/teacher/attendance?${query}`);
-                if (response.ok) {
-                    const { students, records } = await response.json();
-                    renderStudents(students, records);
+                const [attendanceRes, statsRes] = await Promise.all([
+                    fetch(`/api/teacher/attendance?${queryParams}`),
+                    fetch(`/api/teacher/attendance/stats?${statsParams}`)
+                ]);
+
+                if (attendanceRes.ok) {
+                    const { students, records } = await attendanceRes.json();
+                    
+                    // Stats processing
+                    if (statsRes.ok) {
+                        const stats = await statsRes.json();
+                        renderStats(stats);
+                        renderStudents(students, records, stats.studentPercentages);
+                    } else {
+                        renderStudents(students, records);
+                    }
+                    
                     saveAttendanceBtn.classList.remove('hidden');
                 } else {
-                    const err = await response.json();
+                    const err = await attendanceRes.json();
                     showToast(err.message || 'Failed to load students', 'error');
                 }
             } catch (err) {
@@ -222,37 +249,70 @@
             }
         }
 
-        function renderStudents(students, records) {
+        function renderStats(stats) {
+            document.getElementById('attendanceSummary').classList.remove('hidden');
+            document.getElementById('totalStudentsCard').setAttribute('value', stats.totalStudents);
+            document.getElementById('avgAttendanceCard').setAttribute('value', stats.avgAttendance);
+            document.getElementById('atRiskCard').setAttribute('value', stats.atRiskCount);
+            
+            // Percentage color logic for avg
+            const avgVal = parseInt(stats.avgAttendance);
+            document.getElementById('avgAttendanceCard').setAttribute('color', avgVal >= 75 ? 'green' : 'orange');
+        }
+
+        function renderStudents(students, records, percentages = []) {
             if (!students || !students.length) {
                 studentTableBody.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-gray-500">No students found for this selection.</td></tr>';
                 saveAttendanceBtn.classList.add('hidden');
                 return;
             }
 
+            let todayPresent = 0;
+
             studentTableBody.innerHTML = students.map(student => {
                 const record = records.find(r => String(r.student._id || r.student) === String(student._id));
                 const status = record ? record.status : 'present';
+                if (status === 'present') todayPresent++;
+
+                const studentStat = percentages.find(p => String(p.sid) === String(student._id));
+                const overallPct = studentStat ? studentStat.percentage.toFixed(0) + '%' : '100%';
+                const isAtRisk = studentStat && studentStat.percentage < 75;
 
                 return `
-                    <tr data-student-id="${student._id}" class="hover:bg-gray-50 transition">
+                    <tr data-student-id="${student._id}" class="hover:bg-gray-50 transition ${isAtRisk ? 'bg-red-50/30' : ''}">
                         <td class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-tighter">
-                            ${student._id.slice(-8)}
+                            <div class="flex items-center gap-2">
+                                ${isAtRisk ? '<i class="fa-solid fa-triangle-exclamation text-red-500" title="Low Attendance"></i>' : ''}
+                                ${student._id.slice(-8)}
+                            </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="font-bold text-gray-900">${student.name}</div>
-                            <div class="text-[10px] text-gray-400">${student.email}</div>
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <div class="font-bold text-gray-900">${student.name}</div>
+                                    <div class="text-[10px] text-gray-400">${student.email}</div>
+                                </div>
+                                <span class="text-[9px] font-black px-2 py-0.5 rounded bg-gray-100 text-gray-500 uppercase tracking-widest">
+                                    Overall: ${overallPct}
+                                </span>
+                            </div>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 flex items-center gap-4">
                             <select class="status-select bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
                                 <option value="present" ${status === 'present' ? 'selected' : ''}>Present</option>
                                 <option value="absent" ${status === 'absent' ? 'selected' : ''} class="text-red-600">Absent</option>
                                 <option value="late" ${status === 'late' ? 'selected' : ''} class="text-orange-600">Late</option>
                                 <option value="excused" ${status === 'excused' ? 'selected' : ''} class="text-blue-600">Excused</option>
                             </select>
+                            <a href="/protected/teacher/student-view.html?studentId=${student._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:text-blue-600 transition" title="View Progress">
+                                <i class="fa-solid fa-chart-line"></i>
+                            </a>
                         </td>
                     </tr>
                 `;
             }).join('');
+
+            document.getElementById('todayPresentCard').setAttribute('value', todayPresent);
         }
 
         async function saveAttendance() {

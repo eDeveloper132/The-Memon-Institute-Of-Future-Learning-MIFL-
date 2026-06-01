@@ -15,18 +15,58 @@
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900">Assignments</h2>
-            <p class="text-gray-500 mt-2">View and submit your course assignments.</p>
+            <p class="text-gray-500 mt-2">Track, complete, and submit your coursework digitally.</p>
         </div>
 
         <div id="assignmentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full text-center py-20 text-gray-500">
-                <ui-spinner text="Loading assignments..."></ui-spinner>
-            </div>
+            <ui-spinner text="Loading assignments..."></ui-spinner>
         </div>
     </main>
 
+    <!-- Submission Modal -->
+    <div id="submissionModal" class="fixed inset-0 bg-black/50 z-[2000] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 id="modalTitle" class="text-xl font-bold text-gray-900 truncate">Submit Assignment</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-gray-600 transition p-2">&times;</button>
+            </div>
+            <form id="submissionForm" class="p-8 space-y-6">
+                <input type="hidden" id="assignmentId" name="assignmentId">
+                <div>
+                    <label class="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2">Message to Teacher</label>
+                    <textarea name="content" rows="4" class="w-full px-4 py-3 rounded-2xl border border-gray-200 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition resize-none" placeholder="Add any notes or context about your submission..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-black text-gray-700 uppercase tracking-widest mb-2">Files / Attachments</label>
+                    <div id="dropzone" class="border-2 border-dashed border-gray-200 rounded-3xl p-8 text-center hover:border-blue-500 transition cursor-pointer bg-gray-50 group">
+                        <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 mb-2 group-hover:text-blue-500 transition"></i>
+                        <p class="text-sm text-gray-500 font-medium">Click to select files or drag and drop</p>
+                        <p class="text-[10px] text-gray-400 mt-1 uppercase font-bold">PDF, DOC, ZIP up to 10MB</p>
+                        <input type="file" id="fileInput" multiple class="hidden">
+                    </div>
+                    <div id="fileList" class="mt-4 space-y-2"></div>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-100 active:scale-95">
+                        Confirm Submission
+                    </button>
+                    <p class="text-[10px] text-gray-400 text-center mt-4 font-medium italic">New submissions will overwrite previous attempts.</p>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
-        const assignmentGrid = document.getElementById('assignmentGrid');
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        const grid = document.getElementById('assignmentGrid');
+        const modal = document.getElementById('submissionModal');
+        const form = document.getElementById('submissionForm');
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+
+        let selectedFiles = [];
 
         async function fetchAssignments() {
             try {
@@ -36,34 +76,47 @@
                     renderAssignments(assignments, submissions);
                 }
             } catch (err) {
-                assignmentGrid.innerHTML = '<p class="text-center text-red-500 py-10">Failed to load assignments.</p>';
+                grid.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load assignments.</p>';
             }
         }
 
         function renderAssignments(assignments, submissions) {
             if (!assignments.length) {
-                assignmentGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No assignments for your courses.</div>';
+                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-400 font-bold italic">No assignments posted for your courses.</div>';
                 return;
             }
 
-            assignmentGrid.innerHTML = assignments.map(a => {
-                const submission = submissions.find(s => s.assignment === a._id);
+            grid.innerHTML = assignments.map(a => {
+                const submission = submissions.find(s => String(s.assignment) === String(a._id));
                 const isSubmitted = !!submission;
                 const status = isSubmitted ? (submission.status || 'submitted') : 'pending';
-                const statusColors = { pending: 'bg-yellow-100 text-yellow-700', submitted: 'bg-blue-100 text-blue-700', graded: 'bg-green-100 text-green-700', late: 'bg-red-100 text-red-700' };
+                const statusStyles = {
+                    pending: 'bg-yellow-100 text-yellow-700',
+                    submitted: 'bg-blue-100 text-blue-700',
+                    graded: 'bg-green-100 text-green-700',
+                    late: 'bg-red-100 text-red-700'
+                };
 
                 return `
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 ${statusColors[status]} rounded text-[10px] font-bold uppercase">${status}</span>
-                            <span class="text-[10px] text-gray-400 font-bold">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-xl hover:shadow-blue-500/5 transition duration-300">
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="px-2.5 py-1 ${statusStyles[status]} rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                ${status}
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-black uppercase tracking-tighter">
+                                Due: ${new Date(a.dueDate).toLocaleDateString()}
+                            </span>
                         </div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-1 truncate">${a.title}</h3>
-                        <p class="text-gray-500 text-xs mb-4">Course: ${a.course?.title || 'General'}</p>
-                        <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-2">${a.description}</p>
-                        <div class="flex border-t border-gray-50 pt-4">
-                            <button class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition text-xs uppercase tracking-wider">
-                                ${isSubmitted ? 'View Submission' : 'Submit Now'}
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">${a.title}</h3>
+                        <div class="flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-book-open text-[10px] text-blue-500"></i>
+                            <p class="text-xs text-gray-500 font-bold uppercase tracking-tight">${a.course?.title || 'General'}</p>
+                        </div>
+                        <p class="text-gray-500 text-sm mb-8 flex-1 line-clamp-3 leading-relaxed">${a.description}</p>
+                        
+                        <div class="pt-6 border-t border-gray-50">
+                            <button data-action="submit" data-id="${a._id}" data-title="${a.title}" class="w-full ${isSubmitted ? 'bg-gray-100 text-gray-600' : 'bg-blue-600 text-white'} py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:brightness-110 transition shadow-sm active:scale-95">
+                                ${isSubmitted ? 'Update Submission' : 'Submit Assignment'}
                             </button>
                         </div>
                     </div>
@@ -71,32 +124,96 @@
             }).join('');
         }
 
-        async function fetchProfile() {
-            try {
-                const response = await fetch('/api/auth/me');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
-                const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
-
-                customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
-                });
-
-                fetchAssignments();
-            } catch (err) {
-                window.location.href = '/api/auth/login';
-            }
-        }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
+        // Event Delegation for Assignments
+        grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action="submit"]');
+            if (btn) {
+                window.openSubmissionModal(btn.dataset.id, btn.dataset.title);
             }
         });
+
+        window.openSubmissionModal = (id, title) => {
+            document.getElementById('assignmentId').value = id;
+            document.getElementById('modalTitle').textContent = `Submit: ${title}`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            selectedFiles = [];
+            fileList.innerHTML = '';
+        };
+
+        document.getElementById('closeModal').onclick = () => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        };
+
+        dropzone.onclick = () => fileInput.click();
+        fileInput.onchange = (e) => {
+            selectedFiles = Array.from(e.target.files);
+            renderFileList();
+        };
+
+        function renderFileList() {
+            fileList.innerHTML = selectedFiles.map((f, i) => `
+                <div class="flex justify-between items-center p-3 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold">
+                    <span class="truncate pr-4"><i class="fa-solid fa-paperclip mr-2"></i>${f.name}</span>
+                    <button type="button" data-action="remove-file" data-index="${i}" class="text-blue-400 hover:text-red-500 transition"><i class="fa-solid fa-circle-xmark"></i></button>
+                </div>
+            `).join('');
+        }
+
+        // Event Delegation for File List
+        fileList.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action="remove-file"]');
+            if (btn) {
+                window.removeFile(parseInt(btn.dataset.index));
+            }
+        });
+
+        window.removeFile = (i) => {
+            selectedFiles.splice(i, 1);
+            renderFileList();
+        };
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('assignmentId').value;
+            const content = form.content.value;
+
+            // In a real scenario, use FormData for file upload
+            // For now, we simulate the submission
+            try {
+                const res = await fetch(`/api/student/assignments/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+
+                if (res.ok) {
+                    showToast('Assignment submitted successfully', 'success');
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    fetchAssignments();
+                } else {
+                    showToast('Failed to submit assignment', 'error');
+                }
+            } catch (err) {
+                showToast('An error occurred', 'error');
+            }
+        };
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/student/profile');
+                const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    document.querySelector('ui-navbar').renderLinks(user);
+                });
+            } catch (err) {}
+        }
+
         fetchProfile();
+        fetchAssignments();
     </script>
 </body>
 </html>

@@ -98,16 +98,19 @@ export const getFamilyFees = async (req: any, res: Response) => {
 /**
  * PARENT - COMMUNICATION
  */
-export const getNotices = async (req: Request, res: Response) => {
+export const getNotices = async (req: any, res: Response) => {
     try {
+        console.log(`[Parent Controller] Fetching notices for user: ${req.user?.id} [${req.user?.role}]`);
         const now = new Date();
         const notices = await Notice.find({ 
             audience: { $in: ['all', 'parents'] },
             $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }] 
         }).sort({ isPinned: -1, createdAt: -1 });
         
+        console.log(`[Parent Controller] Found ${notices.length} notices`);
         res.status(200).json({ notices });
     } catch (error) {
+        console.error(chalk.red('[Parent Controller] getNotices error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

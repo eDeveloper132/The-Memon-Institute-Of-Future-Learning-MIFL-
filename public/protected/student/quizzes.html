@@ -15,91 +15,237 @@
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900">Quizzes</h2>
-            <p class="text-gray-500 mt-2">Take upcoming quizzes and view your past performance.</p>
+            <p class="text-gray-500 mt-2">Assess your knowledge through interactive quizzes.</p>
         </div>
 
         <div id="quizGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="col-span-full text-center py-20 text-gray-500">
-                <ui-spinner text="Fetching active quizzes..."></ui-spinner>
-            </div>
+            <ui-spinner text="Fetching active quizzes..."></ui-spinner>
         </div>
     </main>
 
+    <!-- Quiz Interface Modal -->
+    <div id="quizModal" class="fixed inset-0 bg-white z-[3000] hidden flex-col overflow-y-auto p-4 md:p-12">
+        <div class="max-w-4xl mx-auto w-full">
+            <div class="flex justify-between items-center mb-12">
+                <div>
+                    <h2 id="quizTitle" class="text-3xl font-black text-gray-900">Quiz Title</h2>
+                    <p id="quizCourse" class="text-gray-400 font-black uppercase tracking-widest text-xs mt-1">Course Title</p>
+                </div>
+                <div class="text-right">
+                    <p id="timer" class="text-4xl font-black text-blue-600 tracking-tighter tabular-nums">00:00</p>
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Time Remaining</p>
+                </div>
+            </div>
+
+            <div id="quizBody" class="space-y-12">
+                <!-- Questions injected here -->
+            </div>
+
+            <div class="mt-16 pt-8 border-t border-gray-100 flex justify-between items-center pb-20">
+                <p class="text-gray-400 text-sm font-medium">Please ensure all questions are answered before submitting.</p>
+                <button id="submitQuizBtn" class="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-blue-700 transition shadow-xl shadow-blue-100 active:scale-95">
+                    Finish & Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
-        const quizGrid = document.getElementById('quizGrid');
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        const grid = document.getElementById('quizGrid');
+        const modal = document.getElementById('quizModal');
+        const timerEl = document.getElementById('timer');
+        const body = document.getElementById('quizBody');
+
+        let currentQuiz = null;
+        let userAnswers = {};
+        let timerInterval = null;
 
         async function fetchQuizzes() {
             try {
                 const res = await fetch('/api/student/quizzes');
-                if (res.ok) {
-                    const { quizzes, attempts } = await res.json();
-                    renderQuizzes(quizzes, attempts);
-                }
+                if (!res.ok) throw new Error();
+                const { quizzes, attempts } = await res.json();
+                renderQuizzes(quizzes, attempts);
             } catch (err) {
-                quizGrid.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load quizzes.</p>';
+                grid.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load quizzes.</p>';
             }
         }
 
         function renderQuizzes(quizzes, attempts) {
             if (!quizzes.length) {
-                quizGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No active quizzes at the moment.</div>';
+                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-400 font-bold italic">No active quizzes at the moment.</div>';
                 return;
             }
 
-            quizGrid.innerHTML = quizzes.map(q => {
-                const attempt = attempts.find(a => a.quiz === q._id);
+            grid.innerHTML = quizzes.map(q => {
+                const attempt = attempts.find(a => String(a.quiz) === String(q._id));
                 const isAttempted = !!attempt;
 
                 return `
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="px-2 py-1 ${isAttempted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} rounded text-[10px] font-bold uppercase">
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-xl transition group">
+                        <div class="flex justify-between items-start mb-6">
+                            <span class="px-2.5 py-1 ${isAttempted ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} rounded-lg text-[10px] font-black uppercase tracking-widest">
                                 ${isAttempted ? 'Completed' : 'Upcoming'}
                             </span>
-                            <span class="text-[10px] text-gray-400 font-bold">Time: ${q.duration} mins</span>
+                            <div class="flex items-center gap-1 text-[10px] text-gray-400 font-black uppercase">
+                                <i class="fa-solid fa-clock"></i>
+                                <span>${q.duration || 15} mins</span>
+                            </div>
                         </div>
-                        <h3 class="text-lg font-bold text-gray-900 mb-1 truncate">${q.title}</h3>
-                        <p class="text-gray-500 text-xs mb-4">Course: ${q.course?.title || 'General'}</p>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-600 mb-2 font-medium">Starts: ${new Date(q.startTime).toLocaleString()}</p>
-                            ${isAttempted ? `<p class="text-sm font-bold text-blue-600 mt-2">Score: ${attempt.score}/${q.questions.length}</p>` : ''}
-                        </div>
-                        <div class="flex border-t border-gray-50 pt-4 mt-4">
-                            <button class="w-full ${isAttempted ? 'bg-gray-100 text-gray-500' : 'bg-blue-600 text-white hover:bg-blue-700'} py-2 rounded-lg font-bold transition text-xs uppercase tracking-wider" ${isAttempted ? 'disabled' : ''}>
-                                ${isAttempted ? 'Results Locked' : 'Enter Quiz'}
-                            </button>
+                        <h3 class="text-xl font-bold text-gray-900 mb-1 group-hover:text-blue-600 transition">${q.title}</h3>
+                        <p class="text-gray-500 text-xs font-bold uppercase tracking-tight mb-6">${q.course?.title || 'General'}</p>
+                        
+                        <div class="mt-auto pt-6 border-t border-gray-50">
+                            ${isAttempted ? `
+                                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                                    <span class="text-xs text-gray-500 font-bold uppercase tracking-widest">Score</span>
+                                    <span class="text-lg font-black text-blue-600">${attempt.score} / ${q.questions.length}</span>
+                                </div>
+                            ` : `
+                                <button data-action="start-quiz" data-id="${q._id}" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-100">
+                                    Enter Quiz
+                                </button>
+                            `}
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        async function fetchProfile() {
-            try {
-                const response = await fetch('/api/auth/me');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
-                const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
-
-                customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
-                });
-
-                fetchQuizzes();
-            } catch (err) {
-                window.location.href = '/api/auth/login';
-            }
-        }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
+        // Event Delegation for Quiz Grid
+        grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action="start-quiz"]');
+            if (btn) {
+                window.startQuiz(btn.dataset.id);
             }
         });
+
+        window.startQuiz = async (id) => {
+            const res = await fetch(`/api/student/quizzes`); // In a real app, fetch specific quiz details
+            const { quizzes } = await res.json();
+            currentQuiz = quizzes.find(q => String(q._id) === String(id));
+            
+            if (!currentQuiz) return showToast('Failed to load quiz details', 'error');
+
+            userAnswers = {};
+            document.getElementById('quizTitle').textContent = currentQuiz.title;
+            document.getElementById('quizCourse').textContent = currentQuiz.course?.title || 'Course';
+            
+            body.innerHTML = currentQuiz.questions.map((q, i) => `
+                <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                    <div class="flex gap-4 mb-6">
+                        <span class="w-8 h-8 rounded-lg bg-gray-900 text-white flex items-center justify-center font-black text-xs">${i + 1}</span>
+                        <h4 class="text-xl font-bold text-gray-900 leading-snug">${q.questionText}</h4>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 ml-12">
+                        ${q.options.map((opt, optIdx) => `
+                            <button data-action="select-option" data-question="${i}" data-option="${optIdx}" id="q-${i}-opt-${optIdx}" class="option-btn text-left p-4 rounded-2xl border border-gray-100 bg-gray-50 hover:border-blue-500 hover:bg-white transition font-medium text-gray-600 group">
+                                <span class="w-6 h-6 rounded-md bg-white border border-gray-200 inline-flex items-center justify-center mr-3 text-[10px] font-black group-hover:bg-blue-500 group-hover:text-white transition uppercase">${String.fromCharCode(65 + optIdx)}</span>
+                                ${opt}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            startTimer(currentQuiz.duration || 15);
+        };
+
+        // Event Delegation for Quiz Options
+        body.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action="select-option"]');
+            if (btn) {
+                window.selectOption(parseInt(btn.dataset.question), parseInt(btn.dataset.option));
+            }
+        });
+
+        window.selectOption = (qIdx, optIdx) => {
+            userAnswers[qIdx] = optIdx;
+            // Visual feedback
+            const btns = document.querySelectorAll(`[id^="q-${qIdx}-opt-"]`);
+            btns.forEach(b => {
+                b.classList.remove('border-blue-500', 'bg-white', 'ring-4', 'ring-blue-500/10');
+                b.classList.add('bg-gray-50', 'border-gray-100');
+            });
+            const selected = document.getElementById(`q-${qIdx}-opt-${optIdx}`);
+            selected.classList.remove('bg-gray-50', 'border-gray-100');
+            selected.classList.add('border-blue-500', 'bg-white', 'ring-4', 'ring-blue-500/10');
+        };
+
+        function startTimer(mins) {
+            let seconds = mins * 60;
+            updateTimerDisplay(seconds);
+            
+            timerInterval = setInterval(() => {
+                seconds--;
+                updateTimerDisplay(seconds);
+                if (seconds <= 0) {
+                    clearInterval(timerInterval);
+                    submitQuiz();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60);
+            const s = totalSeconds % 60;
+            timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            if (totalSeconds < 60) timerEl.classList.add('text-red-600');
+            else timerEl.classList.remove('text-red-600');
+        }
+
+        async function submitQuiz() {
+            clearInterval(timerInterval);
+            const answers = Object.entries(userAnswers).map(([qIdx, optIdx]) => ({
+                questionIndex: parseInt(qIdx),
+                selectedOption: optIdx
+            }));
+
+            try {
+                const res = await fetch(`/api/student/quizzes/${currentQuiz._id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ answers })
+                });
+
+                if (res.ok) {
+                    showToast('Quiz submitted successfully!', 'success');
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    fetchQuizzes();
+                } else {
+                    const data = await res.json();
+                    showToast(data.message || 'Submission failed', 'error');
+                }
+            } catch (err) {
+                showToast('An error occurred', 'error');
+            }
+        }
+
+        document.getElementById('submitQuizBtn').onclick = () => {
+            if (Object.keys(userAnswers).length < currentQuiz.questions.length) {
+                if (!confirm('You have unanswered questions. Submit anyway?')) return;
+            }
+            submitQuiz();
+        };
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/student/profile');
+                const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    document.querySelector('ui-navbar').renderLinks(user);
+                });
+            } catch (err) {}
+        }
+
         fetchProfile();
+        fetchQuizzes();
     </script>
 </body>
 </html>

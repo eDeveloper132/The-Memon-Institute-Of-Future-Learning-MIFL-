@@ -16,7 +16,9 @@ import adminRoutes from "./routes/admin.routes.js";
 import studentRoutes from "./routes/student.routes.js";
 import parentRoutes from "./routes/parent.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
+import enrollmentRoutes from "./routes/enrollment.routes.js";
 import { authenticate } from "./middlewares/auth.js";
+
 import { setupSocket } from "./socket.js";
 
 const app = express();
@@ -71,6 +73,8 @@ app.use("/api/student", studentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/parent", parentRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/enrollment", enrollmentRoutes);
+
 
 // 404 Catch-all Handler
 app.use((req: Request, res: Response) => {

@@ -10,31 +10,30 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     
-    <ui-navbar title="My Course Files & Materials"></ui-navbar>
+    <ui-navbar title="Course Materials"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900">Course Materials</h2>
-            <p class="text-gray-500 mt-2">Access outlines, lecture notes, and files posted by your teachers.</p>
+            <p class="text-gray-500 mt-2">Access learning resources, lecture notes, and supplementary files.</p>
         </div>
 
-        <div id="materialsList" class="space-y-6">
-            <div class="col-span-full text-center py-20 text-gray-500 font-bold italic">
-                <ui-spinner text="Fetching course materials..."></ui-spinner>
-            </div>
+        <div id="materialsList" class="space-y-8">
+            <ui-spinner text="Fetching course materials..."></ui-spinner>
         </div>
     </main>
 
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
         const list = document.getElementById('materialsList');
 
         async function fetchMaterials() {
             try {
                 const res = await fetch('/api/student/materials');
-                if (res.ok) {
-                    const { materials } = await res.json();
-                    renderMaterials(materials);
-                }
+                if (!res.ok) throw new Error();
+                const { materials } = await res.json();
+                renderMaterials(materials);
             } catch (err) {
                 list.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load materials.</p>';
             }
@@ -42,7 +41,12 @@
 
         function renderMaterials(materials) {
             if (!materials.length) {
-                list.innerHTML = '<div class="bg-white p-20 rounded-3xl text-center text-gray-500 font-bold border border-dashed border-gray-200">No course materials uploaded yet by your teachers.</div>';
+                list.innerHTML = `
+                    <div class="bg-white p-20 rounded-3xl text-center border border-dashed border-gray-200">
+                        <i class="fa-solid fa-folder-open text-5xl text-gray-200 mb-4"></i>
+                        <p class="text-gray-500 font-bold italic">No course materials uploaded yet by your teachers.</p>
+                    </div>
+                `;
                 return;
             }
 
@@ -59,25 +63,29 @@
                     <div class="p-6 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
                         <div>
                             <h3 class="font-bold text-gray-900">${group.title}</h3>
-                            <p class="text-xs text-gray-400 font-bold uppercase tracking-widest">${group.teacher}</p>
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Instructor: ${group.teacher}</p>
                         </div>
-                        <span class="text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">${group.items.length} Files</span>
+                        <span class="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-tighter">${group.items.length} Resources</span>
                     </div>
                     <div class="divide-y divide-gray-100">
                         ${group.items.map(item => `
-                            <div class="p-4 flex justify-between items-center hover:bg-gray-50 transition">
+                            <div class="p-5 flex justify-between items-center hover:bg-gray-50 transition group">
                                 <div class="flex items-center">
-                                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
-                                        <i class="fa-solid fa-file-${item.type === 'link' ? 'link' : 'pdf'} text-xl"></i>
+                                    <div class="w-12 h-12 bg-white border border-gray-100 text-blue-600 rounded-2xl flex items-center justify-center mr-4 shadow-sm group-hover:scale-110 transition">
+                                        <i class="${getFileIcon(item.fileUrl || item.type)} text-xl"></i>
                                     </div>
                                     <div>
                                         <p class="font-bold text-gray-900">${item.title}</p>
-                                        <p class="text-[10px] text-gray-400 uppercase font-extrabold tracking-widest">${item.type} | Uploaded ${new Date(item.createdAt).toLocaleDateString()}</p>
+                                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">
+                                            ${new Date(item.createdAt).toLocaleDateString()} • ${item.description || 'No description'}
+                                        </p>
                                     </div>
                                 </div>
-                                <button class="text-blue-600 hover:text-blue-800 p-2 transition transform hover:scale-110">
-                                    <i class="fa-solid fa-${item.type === 'link' ? 'arrow-up-right-from-square' : 'cloud-download-alt'} text-xl"></i>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <a href="${item.fileUrl}" target="_blank" download class="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition active:scale-95 shadow-sm shadow-blue-100">
+                                        <i class="fa-solid fa-cloud-arrow-down text-lg"></i>
+                                    </a>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -85,32 +93,38 @@
             `).join('');
         }
 
-        async function fetchProfile() {
-            try {
-                const response = await fetch('/api/auth/me');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
-                const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
-
-                customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
-                });
-
-                fetchMaterials();
-            } catch (err) {
-                window.location.href = '/api/auth/login';
+        function getFileIcon(path = '') {
+            const ext = String(path).split('.').pop().toLowerCase();
+            switch (ext) {
+                case 'pdf': return 'fa-solid fa-file-pdf';
+                case 'doc':
+                case 'docx': return 'fa-solid fa-file-word';
+                case 'xls':
+                case 'xlsx': return 'fa-solid fa-file-excel';
+                case 'ppt':
+                case 'pptx': return 'fa-solid fa-file-powerpoint';
+                case 'jpg':
+                case 'jpeg':
+                case 'png': return 'fa-solid fa-file-image';
+                case 'zip':
+                case 'rar': return 'fa-solid fa-file-zipper';
+                default: return 'fa-solid fa-file-lines';
             }
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
-            }
-        });
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/student/profile');
+                const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    document.querySelector('ui-navbar').renderLinks(user);
+                });
+            } catch (err) {}
+        }
+
         fetchProfile();
+        fetchMaterials();
     </script>
 </body>
 </html>

@@ -39,6 +39,7 @@ const courseSchema = new Schema<ICourse>(
         outline: String,
         curriculumSections: [curriculumSectionSchema],
         curriculumLocked: { type: Boolean, default: false },
+        enrollmentFee: { type: Number, default: 0 },
     },
     { timestamps: true }
 );

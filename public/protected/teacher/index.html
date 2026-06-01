@@ -75,10 +75,37 @@
                     updateCard('classesCard', stats.classesCount);
                     updateCard('gradingCard', stats.pendingGrading);
                     updateCard('studentsCard', stats.totalStudents);
-                    updateCard('feedbackCard', stats.avgFeedback);
+                    updateCard('feedbackCard', "2"); // Placeholder for Institutes
                 }
             } catch (err) {
                 console.error('Failed to fetch stats:', err);
+            }
+        }
+
+        async function fetchSchedule() {
+            try {
+                const res = await fetch('/api/teacher/classes');
+                if (res.ok) {
+                    const { classes } = await res.json();
+                    const list = document.getElementById('scheduleList');
+                    
+                    if (classes.length === 0) {
+                        list.innerHTML = '<p class="text-gray-500 italic">No classes assigned yet.</p>';
+                        return;
+                    }
+
+                    list.innerHTML = classes.map(c => `
+                        <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition group flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-gray-800 group-hover:text-blue-600">${c.name} - ${c.section}</p>
+                                <p class="text-xs text-gray-500 font-medium">Grade ${c.gradeLevel} • ${c.students.length} Students</p>
+                            </div>
+                            <a href="/protected/teacher/attendance.html?classId=${c._id}" class="text-xs font-bold text-blue-600 hover:underline">Mark Attendance</a>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
 
@@ -100,6 +127,7 @@
                 });
                 
                 fetchStats();
+                fetchSchedule();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }

@@ -38,6 +38,7 @@ const classSchema = new Schema<IClass>(
         classCurriculumSections: [curriculumSectionSchema],
         classCurriculumLocked: { type: Boolean, default: false },
         academicYear: { type: String, required: true },
+        enrollmentFee: { type: Number, default: 0 },
     },
     { timestamps: true }
 );

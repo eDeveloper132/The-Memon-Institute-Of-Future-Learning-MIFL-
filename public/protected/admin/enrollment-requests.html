@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrollment Requests - MIFL Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Enrollment Management"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-10">
+            <h2 class="text-3xl font-black text-gray-900">Enrollment Requests</h2>
+            <p class="text-gray-500 mt-2 font-medium">Review and process student applications for classes and courses.</p>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-8 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Pending Applications</h3>
+                <div class="flex gap-2">
+                    <button id="refreshRequestsBtn" class="p-2 text-gray-400 hover:text-blue-600 transition">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase font-black tracking-widest">
+                        <tr>
+                            <th class="px-8 py-4">Student</th>
+                            <th class="px-8 py-4">Target Type</th>
+                            <th class="px-8 py-4">Applying For</th>
+                            <th class="px-8 py-4">Fee</th>
+                            <th class="px-8 py-4">Applied At</th>
+                            <th class="px-8 py-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestTableBody" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="6" class="px-8 py-20 text-center">
+                                <ui-spinner text="Fetching requests..."></ui-spinner>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="noRequests" class="hidden p-20 text-center text-gray-400 italic">
+                    <i class="fa-solid fa-inbox text-5xl mb-4 text-gray-100"></i>
+                    <p class="font-bold">No pending enrollment requests.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        async function init() {
+            try {
+                const res = await fetch('/api/auth/me');
+                const { user } = await res.json();
+                if (user.role !== 'admin') { window.location.href = '/'; return; }
+
+                customElements.whenDefined('ui-navbar').then(() => {
+                    document.querySelector('ui-navbar').renderLinks(user);
+                });
+
+                fetchRequests();
+            } catch (err) { window.location.href = '/api/auth/login'; }
+        }
+
+        window.fetchRequests = async () => {
+            const tbody = document.getElementById('requestTableBody');
+            const noRequests = document.getElementById('noRequests');
+
+            try {
+                const res = await fetch('/api/admin/enrollment/requests');
+                if (res.ok) {
+                    const { requests } = await res.json();
+                    renderRequests(requests);
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-red-500 font-bold">Failed to load requests.</td></tr>';
+            }
+        };
+
+        function renderRequests(requests) {
+            const tbody = document.getElementById('requestTableBody');
+            const noRequests = document.getElementById('noRequests');
+
+            if (!requests.length) {
+                tbody.innerHTML = '';
+                noRequests.classList.remove('hidden');
+                return;
+            }
+
+            noRequests.classList.add('hidden');
+            tbody.innerHTML = requests.map(r => `
+                <tr class="hover:bg-gray-50 transition group">
+                    <td class="px-8 py-6">
+                        <p class="font-bold text-gray-900">${r.student.name}</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">${r.student.studentId || 'ID N/A'}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${r.targetType === 'Class' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}">
+                            ${r.targetType}
+                        </span>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="font-bold text-gray-700">${r.targetId?.name || r.targetId?.title || 'Unknown'}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="font-black text-gray-900">$${r.feeAtTimeOfApplication}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="text-xs text-gray-500 font-medium">${new Date(r.appliedAt).toLocaleString()}</p>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button data-action="approved" data-id="${r._id}" class="px-4 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition active:scale-95 shadow-lg shadow-green-100">
+                                Approve
+                            </button>
+                            <button data-action="denied" data-id="${r._id}" class="px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:text-white transition active:scale-90">
+                                Deny
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.processRequest = async (id, status) => {
+            if (!confirm(`Are you sure you want to ${status} this request?`)) return;
+
+            try {
+                const res = await fetch(`/api/admin/enrollment/requests/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+
+                if (res.ok) {
+                    showToast(`Request ${status}`);
+                    window.fetchRequests();
+                } else {
+                    showToast('Action failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        };
+
+        // Attach Events
+        document.getElementById('refreshRequestsBtn').onclick = () => window.fetchRequests();
+        
+        document.getElementById('requestTableBody').onclick = (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (btn) {
+                window.processRequest(btn.dataset.id, btn.dataset.action);
+            }
+        };
+
+        init();
+    </script>
+</body>
+</html>

@@ -76,6 +76,14 @@
                 window.location.href = '/protected/teacher/index.html';
                 return;
             }
+            if (user.role === 'student') {
+                window.location.href = '/protected/student/index.html';
+                return;
+            }
+            if (user.role === 'parent') {
+                window.location.href = '/protected/parent/index.html';
+                return;
+            }
             
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('dashboardContent').classList.remove('hidden');

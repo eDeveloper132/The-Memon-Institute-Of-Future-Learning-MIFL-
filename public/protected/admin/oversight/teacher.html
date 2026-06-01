@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Oversight - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-10">
+            <h2 class="text-4xl font-bold text-gray-900" id="teacherName">Loading Teacher...</h2>
+            <p class="text-gray-500 mt-2">Faculty Workflow and Class Management Oversight.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <ui-card id="classesCard" title="Assigned Classes" value="..." color="blue"></ui-card>
+            <ui-card id="coursesCard" title="Courses Managed" value="..." color="green"></ui-card>
+            <ui-card id="gradingCard" title="Pending Grading" value="..." color="orange"></ui-card>
+            <ui-card id="deptCard" title="Department" value="..." color="purple"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Classes List -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Assigned Classes</h3>
+                <div id="classesList" class="space-y-4">
+                    <ui-spinner text="Loading classes..."></ui-spinner>
+                </div>
+            </div>
+
+            <!-- Courses List -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Courses Portfolio</h3>
+                <div id="coursesList" class="space-y-4">
+                    <ui-spinner text="Loading courses..."></ui-spinner>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+        import { injectOversightHeader } from './header.js';
+
+        const params = new URLSearchParams(window.location.search);
+        const teacherId = params.get('id');
+
+        async function fetchOversightData() {
+            if (!teacherId) {
+                showToast('No teacher ID provided', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/oversight/teacher/${teacherId}`);
+                if (!res.ok) throw new Error('Failed to fetch data');
+                
+                const data = await res.json();
+                renderOversight(data);
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to load oversight data', 'error');
+            }
+        }
+
+        function renderOversight(data) {
+            const { teacher, stats, classes, courses } = data;
+            
+            injectOversightHeader('Teacher', teacher.name);
+            document.getElementById('teacherName').textContent = teacher.name;
+
+            document.getElementById('classesCard').setAttribute('value', stats.classesCount);
+            document.getElementById('coursesCard').setAttribute('value', stats.coursesCount);
+            document.getElementById('gradingCard').setAttribute('value', stats.pendingGrading);
+            document.getElementById('deptCard').setAttribute('value', teacher.department?.name || 'N/A');
+
+            // Render Classes
+            const classesList = document.getElementById('classesList');
+            if (classes.length === 0) {
+                classesList.innerHTML = '<p class="text-gray-400 italic">No classes assigned.</p>';
+            } else {
+                classesList.innerHTML = classes.map(c => `
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-900">${c.name} - ${c.section}</p>
+                            <p class="text-xs text-gray-500">Grade ${c.gradeLevel} • ${c.students.length} Students</p>
+                        </div>
+                        <span class="text-xs font-bold text-blue-600">Active</span>
+                    </div>
+                `).join('');
+            }
+
+            // Render Courses
+            const coursesList = document.getElementById('coursesList');
+            if (courses.length === 0) {
+                coursesList.innerHTML = '<p class="text-gray-400 italic">No courses managed.</p>';
+            } else {
+                coursesList.innerHTML = courses.map(c => `
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                        <p class="font-bold text-gray-900">${c.title}</p>
+                        <p class="text-xs text-gray-500">${c.batches?.length || 0} active batches</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        fetchOversightData();
+    </script>
+</body>
+</html>

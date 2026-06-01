@@ -10,45 +10,55 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
     
-    <ui-navbar title="My Fee Vouchers"></ui-navbar>
+    <ui-navbar title="Fee Vouchers"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-8">
             <h2 class="text-3xl font-bold text-gray-900">Fee Vouchers</h2>
-            <p class="text-gray-500 mt-2">Generate and view your academic fee vouchers.</p>
+            <p class="text-gray-500 mt-2">Manage your tuition payments and download formal receipts.</p>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-900">Your Academic Vouchers</h3>
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Request New Voucher</button>
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-xl font-bold text-gray-900">Payment History</h3>
+                <button class="bg-white text-blue-600 border border-blue-100 px-6 py-3 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-50 transition active:scale-95 shadow-sm">
+                    Request Support
+                </button>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
-                    <thead class="bg-gray-50 border-b">
+                    <thead class="bg-gray-50 text-gray-400 text-[10px] uppercase font-black tracking-widest">
                         <tr>
-                            <th class="px-6 py-3 text-sm font-bold text-gray-700 uppercase">Voucher ID</th>
-                            <th class="px-6 py-3 text-sm font-bold text-gray-700 uppercase">Description</th>
-                            <th class="px-6 py-3 text-sm font-bold text-gray-700 uppercase">Amount</th>
-                            <th class="px-6 py-3 text-sm font-bold text-gray-700 uppercase">Status</th>
-                            <th class="px-6 py-3 text-sm font-bold text-gray-700 uppercase text-right">Action</th>
+                            <th class="px-8 py-4">Voucher ID</th>
+                            <th class="px-8 py-4">Description</th>
+                            <th class="px-8 py-4">Due Date</th>
+                            <th class="px-8 py-4">Amount</th>
+                            <th class="px-8 py-4">Status</th>
+                            <th class="px-8 py-4 text-right">Receipt</th>
                         </tr>
                     </thead>
-                    <tbody id="voucherTableBody" class="divide-y">
+                    <tbody id="voucherTableBody" class="divide-y divide-gray-100">
                         <tr>
-                            <td colspan="5" class="px-6 py-10 text-center text-gray-500">
-                                <ui-spinner text="Fetching vouchers..."></ui-spinner>
+                            <td colspan="6" class="px-8 py-20 text-center">
+                                <ui-spinner text="Loading financial records..."></ui-spinner>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+                <div id="noVouchers" class="hidden p-20 text-center text-gray-400 italic">
+                    <i class="fa-solid fa-receipt text-5xl mb-4 text-gray-100"></i>
+                    <p class="font-bold">No fee vouchers found.</p>
+                </div>
             </div>
         </div>
     </main>
 
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
         const tableBody = document.getElementById('voucherTableBody');
+        const noVouchers = document.getElementById('noVouchers');
 
         async function fetchVouchers() {
             try {
@@ -58,29 +68,42 @@
                     renderVouchers(vouchers);
                 }
             } catch (err) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-red-500">Failed to load vouchers</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-red-500 font-bold">Failed to load vouchers.</td></tr>';
             }
         }
 
         function renderVouchers(vouchers) {
             if (!vouchers.length) {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">No vouchers found.</td></tr>';
+                tableBody.innerHTML = '';
+                noVouchers.classList.remove('hidden');
                 return;
             }
 
+            noVouchers.classList.add('hidden');
             tableBody.innerHTML = vouchers.map(v => `
-                <tr class="hover:bg-gray-50 transition">
-                    <td class="px-6 py-4 font-mono text-sm uppercase">${v._id.slice(-8)}</td>
-                    <td class="px-6 py-4">${v.type || 'Semester Fee'}</td>
-                    <td class="px-6 py-4 font-bold text-gray-900">$${v.amount.toLocaleString()}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 rounded text-xs font-bold uppercase 
+                <tr class="hover:bg-gray-50 transition group">
+                    <td class="px-8 py-6">
+                        <span class="font-mono text-xs text-gray-400 font-bold uppercase">#${v._id.slice(-8)}</span>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="font-bold text-gray-900">${v.type || 'Semester Tuition'}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="text-sm text-gray-500 font-medium">${new Date(v.dueDate).toLocaleDateString()}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <p class="text-lg font-black text-gray-900">$${v.amount.toLocaleString()}</p>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest 
                             ${v.status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
                             ${v.status}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-right">
-                        <button class="text-blue-600 hover:text-blue-800 font-bold"><i class="fa-solid fa-download mr-1"></i> PDF</button>
+                    <td class="px-8 py-6 text-right">
+                        <button class="w-10 h-10 inline-flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition active:scale-95 shadow-sm shadow-blue-100">
+                            <i class="fa-solid fa-file-invoice-dollar text-lg"></i>
+                        </button>
                     </td>
                 </tr>
             `).join('');
@@ -89,31 +112,16 @@
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/student/profile');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
                 if (window.initSocket) window.initSocket(user);
-
                 customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    document.querySelector('ui-navbar').renderLinks(user);
                 });
-
-                fetchVouchers();
-                
-                fetchVouchers();
-            } catch (err) {
-                window.location.href = '/api/auth/login';
-            }
+            } catch (err) {}
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
-            }
-        });
+
         fetchProfile();
+        fetchVouchers();
     </script>
 </body>
 </html>

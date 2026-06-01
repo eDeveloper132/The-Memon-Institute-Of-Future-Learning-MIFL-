@@ -89,8 +89,14 @@ export const getDashboardStats = async (req: any, res: Response) => {
         const totalStudents = studentIds.size;
 
         // Get pending grading (Assignments & Exams)
+        const teacherAssignments = await Assignment.find({ teacher: teacherId }).select('_id');
+        const assignmentIds = teacherAssignments.map(a => a._id);
+
         const [pendingAssignments, pendingExams] = await Promise.all([
-            Submission.countDocuments({ status: 'submitted' }),
+            Submission.countDocuments({ 
+                assignment: { $in: assignmentIds },
+                status: { $in: ['submitted', 'late'] } 
+            }),
             Grade.countDocuments({ grade: { $exists: false } }) // Simplified logic
         ]);
 
@@ -127,6 +133,99 @@ export const getTeacherClasses = async (req: any, res: Response) => {
             .select('name section gradeLevel students classOutline classCurriculumSections classCurriculumLocked');
         res.status(200).json({ classes });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getStudentSummary = async (req: any, res: Response) => {
+    try {
+        const { studentId } = req.params;
+        const teacherId = req.user.id;
+
+        // Verify teacher has access to this student (student is in one of teacher's classes or courses)
+        const [teacherClasses, teacherCourses] = await Promise.all([
+            Class.find({ classTeacher: teacherId }),
+            Course.find({ teacher: teacherId })
+        ]);
+
+        const allowedStudentIds = new Set();
+        teacherClasses.forEach(cls => cls.students.forEach(id => allowedStudentIds.add(id.toString())));
+        teacherCourses.forEach(crs => crs.batches.forEach(b => b.students.forEach(id => allowedStudentIds.add(id.toString()))));
+
+        if (!allowedStudentIds.has(studentId) && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Not authorized to view this student' });
+        }
+
+        // Aggregate student data
+        const [student, attendance, results, assignments, submissions] = await Promise.all([
+            User.findById(studentId).select('name email phoneNumber currentClass profilePicture'),
+            Attendance.find({ student: studentId }),
+            Grade.find({ student: studentId }).populate({
+                path: 'exam',
+                populate: { path: 'course', select: 'title' }
+            }),
+            Assignment.find({ student: studentId }), // Not quite right, assignments are by class/course
+            Submission.find({ student: studentId }).populate('assignment', 'title')
+        ]);
+
+        // Calculate attendance percentage
+        const present = attendance.filter(r => r.status === 'present').length;
+        const attendancePercentage = attendance.length ? ((present / attendance.length) * 100).toFixed(0) + '%' : '0%';
+
+        res.status(200).json({
+            student,
+            attendancePercentage,
+            attendanceRecords: attendance.length,
+            recentGrades: results.slice(-5),
+            submissions: submissions.slice(-5)
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getAttendanceStats = async (req: any, res: Response) => {
+    try {
+        const { classId, courseId, batchId } = req.query;
+        let query: any = {};
+        let studentIds: string[] = [];
+
+        if (classId) {
+            query.class = classId;
+            const cls = await Class.findById(classId);
+            studentIds = cls?.students.map(s => s.toString()) || [];
+        } else if (courseId && batchId) {
+            query.course = courseId;
+            query.batch = batchId;
+            const course = await Course.findById(courseId);
+            const batch = course?.batches.find((b: any) => b._id.toString() === batchId);
+            studentIds = batch?.students.map((s: any) => s.toString()) || [];
+        }
+
+        const allRecords = await Attendance.find(query);
+        
+        // Calculate stats per student
+        const studentStats = studentIds.map(sid => {
+            const studentRecords = allRecords.filter(r => r.student.toString() === sid);
+            const present = studentRecords.filter(r => r.status === 'present').length;
+            const percentage = studentRecords.length ? (present / studentRecords.length) * 100 : 100;
+            return { sid, percentage };
+        });
+
+        const avgAttendance = studentStats.length 
+            ? (studentStats.reduce((acc, s) => acc + s.percentage, 0) / studentStats.length).toFixed(0) + '%'
+            : '100%';
+        
+        const atRiskCount = studentStats.filter(s => s.percentage < 75).length;
+
+        res.status(200).json({
+            totalStudents: studentIds.length,
+            avgAttendance,
+            atRiskCount,
+            studentPercentages: studentStats
+        });
+    } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -299,6 +398,24 @@ export const getAssignments = async (req: any, res: Response) => {
             .populate('class', 'name');
         res.status(200).json({ assignments });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getSubmissionsForAssignment = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const assignment = await Assignment.findById(id);
+        if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
+        
+        // Authorization check
+        if (String(assignment.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        const submissions = await Submission.find({ assignment: id }).populate('student', 'name email');
+        res.status(200).json({ submissions });
+    } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
 };

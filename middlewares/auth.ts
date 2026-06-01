@@ -42,6 +42,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 export const authorize = (...roles: string[]) => {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
         if (!req.user || !roles.includes(req.user.role)) {
+            console.log(`[Auth] Authorization failed for ${req.url}. User role: ${req.user?.role}, Required roles: ${roles}`);
             if (req.accepts('html')) {
                 return res.status(403).send('<h1>403 Forbidden - Permission Denied</h1>');
             }

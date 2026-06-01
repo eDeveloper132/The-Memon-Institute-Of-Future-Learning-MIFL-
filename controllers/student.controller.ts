@@ -99,7 +99,7 @@ export const getMyFees = async (req: any, res: Response) => {
 export const getMyAssignments = async (req: any, res: Response) => {
     try {
         const user = await User.findById(req.user.id);
-        if (!user || !user.currentClass) return res.status(200).json({ assignments: [] });
+        if (!user || !user.currentClass) return res.status(200).json({ assignments: [], submissions: [] });
 
         const assignments = await Assignment.find({ class: user.currentClass })
             .populate('course', 'title')
@@ -117,25 +117,32 @@ export const getMyAssignments = async (req: any, res: Response) => {
 export const submitAssignment = async (req: any, res: Response) => {
     try {
         const { assignmentId } = req.params;
-        const submission = await Submission.create({
-            ...req.body,
-            assignment: assignmentId,
-            student: req.user.id,
-            submittedAt: new Date()
-        });
+        
+        // Use findOneAndUpdate to overwrite existing submission or create a new one
+        const submission = await Submission.findOneAndUpdate(
+            { assignment: assignmentId, student: req.user.id },
+            { 
+                ...req.body, 
+                submittedAt: new Date(),
+                // Reset status to pending if it was graded (optional, but usually good)
+                status: 'pending' 
+            },
+            { upsert: true, new: true }
+        );
 
         // Notify the teacher
         const assignment = await Assignment.findById(assignmentId);
         if (assignment) {
             req.io.to(String(assignment.teacher)).emit('notification', {
                 type: 'ASSIGNMENT_SUBMISSION',
-                message: `A student has submitted an assignment: ${assignment.title}`,
+                message: `A student has updated/submitted an assignment: ${assignment.title}`,
                 submissionId: submission._id
             });
         }
 
         res.status(201).json({ message: 'Assignment submitted', submission });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -183,6 +190,12 @@ export const attemptQuiz = async (req: any, res: Response) => {
         const quiz = await Quiz.findById(quizId);
         if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
         if (!quiz.isActive) return res.status(400).json({ message: 'Quiz is no longer active' });
+
+        // Check if student already attempted this quiz
+        const existingAttempt = await QuizAttempt.findOne({ quiz: quizId, student: req.user.id });
+        if (existingAttempt) {
+            return res.status(400).json({ message: 'Quiz already attempted' });
+        }
 
         // Calculate score
         let score = 0;

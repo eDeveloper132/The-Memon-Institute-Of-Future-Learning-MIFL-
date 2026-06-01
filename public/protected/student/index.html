@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Student Dashboard"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">Welcome back, <span id="studentName">Student</span>!</h2>
+                <p class="text-gray-500 mt-2">Here is your academic overview.</p>
+            </div>
+            <button id="refreshBtn" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 text-blue-600 hover:bg-blue-50 transition active:scale-95">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <ui-card id="attendanceCard" title="Overall Attendance" value="..." color="indigo"></ui-card>
+            <ui-card id="feesCard" title="Pending Fees" value="..." color="red"></ui-card>
+            <ui-card id="assignmentsCard" title="Pending Assignments" value="..." color="orange"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Latest Notices -->
+            <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fa-solid fa-bullhorn text-blue-600"></i> Latest Notices
+                    </h3>
+                    <a href="/protected/student/notices.html" class="text-blue-600 font-bold text-sm hover:underline">View All</a>
+                </div>
+                <div id="noticesList" class="space-y-4">
+                    <ui-spinner text="Fetching notices..."></ui-spinner>
+                </div>
+            </section>
+
+            <!-- Upcoming Assignments -->
+            <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fa-solid fa-file-lines text-orange-600"></i> Upcoming Deadlines
+                    </h3>
+                    <a href="/protected/student/assignments.html" class="text-blue-600 font-bold text-sm hover:underline">All Assignments</a>
+                </div>
+                <div id="assignmentsList" class="space-y-4">
+                    <ui-spinner text="Fetching assignments..."></ui-spinner>
+                </div>
+            </section>
+        </div>
+
+        <!-- Enrollment Opportunities -->
+        <section class="mt-12 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <div class="mb-8">
+                <h3 class="text-2xl font-black text-gray-900 flex items-center gap-4">
+                    <i class="fa-solid fa-graduation-cap text-indigo-600"></i> Explore Opportunities
+                </h3>
+                <p class="text-gray-500 mt-1 font-medium">Join new classes or enroll in specialized courses.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Available Classes -->
+                <div>
+                    <h4 class="text-xs font-black text-indigo-600 uppercase tracking-[0.2em] mb-4">Academic Classes</h4>
+                    <div id="availableClasses" class="space-y-3">
+                        <ui-spinner text="Searching classes..."></ui-spinner>
+                    </div>
+                </div>
+
+                <!-- Available Courses -->
+                <div>
+                    <h4 class="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4">Specialized Courses</h4>
+                    <div id="availableCourses" class="space-y-3">
+                        <ui-spinner text="Searching courses..."></ui-spinner>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        async function fetchDashboardData() {
+            try {
+                // Fetch profile first to get class info
+                const profileRes = await fetch('/api/student/profile');
+                if (!profileRes.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await profileRes.json();
+                document.getElementById('studentName').textContent = user.name.split(' ')[0];
+
+                if (window.initSocket) window.initSocket(user);
+                
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar) navbar.renderLinks(user);
+                });
+
+                // Parallel fetch of all components
+                await Promise.all([
+                    updateAttendance(),
+                    updateFees(),
+                    updateAssignments(),
+                    updateNotices(),
+                    updateEnrollmentOpportunities()
+                ]);
+
+            } catch (err) {
+                console.error('Dashboard load failed:', err);
+                showToast('Failed to load dashboard data', 'error');
+            }
+        }
+
+        async function updateAttendance() {
+            const res = await fetch('/api/student/attendance');
+            if (res.ok) {
+                const data = await res.json();
+                const records = data.records || [];
+                const present = records.filter((r) => r.status === 'present').length;
+                const percent = records.length ? ((present / records.length) * 100).toFixed(0) + '%' : '0%';
+                document.getElementById('attendanceCard').setAttribute('value', percent);
+            }
+        }
+
+        async function updateFees() {
+            const res = await fetch('/api/student/fees');
+            if (res.ok) {
+                const data = await res.json();
+                const vouchers = data.vouchers || [];
+                const pending = vouchers.filter((v) => v.status !== 'paid').length;
+                document.getElementById('feesCard').setAttribute('value', pending);
+            }
+        }
+
+        async function updateAssignments() {
+            const res = await fetch('/api/student/assignments');
+            if (res.ok) {
+                const data = await res.json();
+                const assignments = data.assignments || [];
+                const submissions = data.submissions || [];
+                
+                const submittedIds = new Set(submissions.map(s => String(s.assignment)));
+                const pending = assignments.filter(a => !submittedIds.has(String(a._id)));
+                
+                document.getElementById('assignmentsCard').setAttribute('value', pending.length);
+
+                const list = document.getElementById('assignmentsList');
+                if (pending.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center py-8 font-medium italic">No pending assignments! 🎉</p>';
+                } else {
+                    list.innerHTML = pending.slice(0, 3).map(a => `
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-orange-200 transition">
+                            <p class="font-bold text-gray-900">${a.title}</p>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs text-gray-500">${a.course?.title || 'Course'}</span>
+                                <span class="text-xs font-bold text-orange-600">Due: ${new Date(a.dueDate).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        async function updateNotices() {
+            const res = await fetch('/api/student/notices');
+            if (res.ok) {
+                const data = await res.json();
+                const notices = data.notices || [];
+                const list = document.getElementById('noticesList');
+                
+                if (notices.length === 0) {
+                    list.innerHTML = '<p class="text-gray-400 text-center py-8 font-medium italic">No new notices.</p>';
+                } else {
+                    list.innerHTML = notices.slice(0, 3).map(n => `
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 ${n.isPinned ? 'border-l-4 border-l-blue-500' : ''} hover:border-blue-200 transition">
+                            <div class="flex items-center gap-2 mb-1">
+                                ${n.isPinned ? '<i class="fa-solid fa-thumbtack text-[10px] text-blue-500"></i>' : ''}
+                                <p class="font-bold text-gray-900">${n.title}</p>
+                            </div>
+                            <p class="text-xs text-gray-500 line-clamp-2">${n.content}</p>
+                            <p class="text-[10px] text-gray-400 mt-2 font-bold uppercase">${new Date(n.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+
+        async function updateEnrollmentOpportunities() {
+            try {
+                const res = await fetch('/api/enrollment/available');
+                if (res.ok) {
+                    const data = await res.json();
+                    const classes = data.classes || [];
+                    const courses = data.courses || [];
+                    renderOpportunityList('availableClasses', classes, 'Class');
+                    renderOpportunityList('availableCourses', courses, 'Course');
+                }
+            } catch (err) {
+                console.error('Enrollment fetch failed:', err);
+            }
+        }
+
+        function renderOpportunityList(containerId, items, type) {
+            const container = document.getElementById(containerId);
+            if (items.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 italic py-4">No available offerings at this time.</p>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex justify-between items-center group hover:bg-white hover:shadow-xl hover:shadow-indigo-500/5 transition duration-300">
+                    <div>
+                        <p class="font-bold text-gray-900">${item.name || item.title}</p>
+                        <div class="flex items-center gap-3 mt-1">
+                            <span class="text-[10px] font-black uppercase text-gray-400 tracking-widest">${type === 'Class' ? `Grade ${item.gradeLevel}` : item.code}</span>
+                            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
+                            <span class="text-[10px] font-black uppercase text-green-600 tracking-widest">$${item.enrollmentFee || 0} Fee</span>
+                        </div>
+                    </div>
+                    <div>
+                        ${renderEnrollmentButton(item, type)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderEnrollmentButton(item, type) {
+            if (item.enrollmentStatus === 'enrolled') {
+                return '<span class="px-4 py-2 bg-green-100 text-green-600 rounded-xl text-xs font-black uppercase tracking-widest">Enrolled</span>';
+            }
+            if (item.enrollmentStatus === 'pending') {
+                return `
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="px-4 py-2 bg-orange-100 text-orange-600 rounded-xl text-xs font-black uppercase tracking-widest">Pending</span>
+                        <button data-action="cancel" data-request-id="${item.requestId}" class="text-[9px] font-black uppercase text-red-400 hover:text-red-600 tracking-tighter">Cancel</button>
+                    </div>
+                `;
+            }
+            return `<button data-action="apply" data-type="${type}" data-id="${item._id}" class="px-6 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 active:scale-95 transition">Apply</button>`;
+        }
+
+        // Event Delegation for Enrollment
+        document.body.addEventListener('click', (e) => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+
+            const action = btn.dataset.action;
+            if (action === 'apply') {
+                window.applyEnrollment(btn.dataset.type, btn.dataset.id);
+            } else if (action === 'cancel') {
+                window.cancelApplication(btn.dataset.requestId);
+            }
+        });
+
+        window.applyEnrollment = async (targetType, targetId) => {
+            try {
+                const res = await fetch('/api/enrollment/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ targetType, targetId })
+                });
+
+                if (res.ok) {
+                    showToast('Application submitted successfully', 'success');
+                    updateEnrollmentOpportunities();
+                } else {
+                    const data = await res.json();
+                    showToast(data.message || 'Enrollment failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        };
+
+        window.cancelApplication = async (requestId) => {
+            try {
+                const res = await fetch(`/api/enrollment/requests/${requestId}/cancel`, {
+                    method: 'PATCH'
+                });
+
+                if (res.ok) {
+                    showToast('Application cancelled');
+                    updateEnrollmentOpportunities();
+                } else {
+                    showToast('Cancellation failed', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        };
+
+        document.getElementById('refreshBtn').onclick = async () => {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('animate-spin');
+            await fetchDashboardData();
+            setTimeout(() => btn.classList.remove('animate-spin'), 500);
+            showToast('Dashboard updated', 'success');
+        };
+
+        fetchDashboardData();
+    </script>
+</body>
+</html>

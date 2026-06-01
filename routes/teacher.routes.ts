@@ -4,12 +4,15 @@ import {
     getTeacherCourses,
     getTeacherClasses,
     getAttendanceData, 
+    getAttendanceStats,
     markAttendance, 
     createAssignment,
     getAssignments,
     updateAssignment,
     deleteAssignment,
     gradeSubmission,
+    getSubmissionsForAssignment,
+    getStudentSummary,
     uploadMaterial,
     getMaterials,
     updateCourseCurriculum,
@@ -36,17 +39,20 @@ router.use(authorize('teacher', 'admin'));
 router.get('/stats', getDashboardStats);
 router.get('/courses', getTeacherCourses);
 router.get('/classes', getTeacherClasses);
+router.get('/students/:studentId/summary', getStudentSummary);
 
 /**
  * Attendance
  */
 router.get('/attendance', getAttendanceData);
+router.get('/attendance/stats', getAttendanceStats);
 router.post('/attendance', markAttendance);
 
 /**
  * Assignments
  */
 router.get('/assignments', getAssignments);
+router.get('/assignments/:id/submissions', getSubmissionsForAssignment);
 router.post('/assignments', createAssignment);
 router.patch('/assignments/:id', updateAssignment);
 router.delete('/assignments/:id', deleteAssignment);

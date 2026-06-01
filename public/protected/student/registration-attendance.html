@@ -3,132 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration & Attendance - MIFL</title>
+    <title>Attendance Tracking - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     
-    <ui-navbar title="Course Registration & Attendance"></ui-navbar>
+    <ui-navbar title="Attendance Tracking"></ui-navbar>
 
     <main class="p-8 max-w-7xl mx-auto">
         <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900">Registration & Attendance</h2>
-            <p class="text-gray-500 mt-2">Manage your course enrollments and track your attendance.</p>
+            <h2 class="text-3xl font-bold text-gray-900">Attendance Tracking</h2>
+            <p class="text-gray-500 mt-2">Monitor your presence and engagement across all courses.</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Registration Section -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Course Registration</h3>
-                <div class="space-y-4">
-                    <p class="text-gray-600">Your Registered Courses:</p>
-                    <div id="enrolledCourses" class="space-y-2">
-                        <ui-spinner text="Loading courses..."></ui-spinner>
-                    </div>
+        <!-- Attendance Stats -->
+        <div id="attendanceStats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <ui-spinner text="Calculating stats..."></ui-spinner>
+        </div>
+
+        <!-- Detailed Records -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Recent Records</h3>
+                <div class="flex gap-2">
+                    <select id="courseFilter" class="px-3 py-2 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Courses</option>
+                    </select>
                 </div>
             </div>
-
-            <!-- Attendance Section -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">My Attendance</h3>
-                <div id="attendanceList" class="space-y-4">
-                    <ui-spinner text="Loading attendance..."></ui-spinner>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-black tracking-widest">
+                        <tr>
+                            <th class="px-6 py-4">Date</th>
+                            <th class="px-6 py-4">Course</th>
+                            <th class="px-6 py-4">Status</th>
+                            <th class="px-6 py-4">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTable" class="divide-y divide-gray-100">
+                        <!-- Rows injected here -->
+                    </tbody>
+                </table>
+                <div id="noRecords" class="hidden p-12 text-center text-gray-400 italic">
+                    No attendance records found for the selected filter.
                 </div>
             </div>
         </div>
     </main>
 
     <script type="module">
-        const enrolledCourses = document.getElementById('enrolledCourses');
-        const attendanceList = document.getElementById('attendanceList');
+        import { showToast } from '/components/ui-components.js?v=1.6';
 
-        async function fetchAcademicData() {
+        let allRecords = [];
+
+        async function fetchAttendance() {
             try {
-                // Fetch attendance
-                const attRes = await fetch('/api/student/attendance');
-                if (attRes.ok) {
-                    const { records } = await attRes.json();
-                    renderAttendance(records);
-                }
-
-                // Fetch courses/classes
-                // Note: getMyCourses was proposed in the controller
-                const courseRes = await fetch('/api/student/profile'); // Using profile as it might have links or separate call
-                // For simplicity, let's assume a dedicated endpoint or we fetch from profile
-                // Let's use the attendance records to derive enrolled courses for now if separate endpoint isn't ready
+                const res = await fetch('/api/student/attendance');
+                if (!res.ok) throw new Error('Failed to fetch attendance');
+                
+                const { records } = await res.json();
+                allRecords = records.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                renderStats(allRecords);
+                populateFilters(allRecords);
+                renderTable(allRecords);
             } catch (err) {
-                console.error('Failed to fetch academic data');
+                showToast('Failed to load attendance', 'error');
             }
         }
 
-        function renderAttendance(records) {
+        function renderStats(records) {
+            const stats = document.getElementById('attendanceStats');
             if (!records.length) {
-                attendanceList.innerHTML = '<p class="text-gray-500 italic">No attendance records found.</p>';
-                enrolledCourses.innerHTML = '<p class="text-gray-500 italic">No courses registered.</p>';
+                stats.innerHTML = '<p class="text-gray-400 italic col-span-full text-center">No attendance data available.</p>';
                 return;
             }
 
-            // Group by course and calculate percentage
-            const stats = {};
+            const present = records.filter(r => r.status === 'present').length;
+            const late = records.filter(r => r.status === 'late').length;
+            const total = records.length;
+            const percentage = ((present / total) * 100).toFixed(0);
+
+            stats.innerHTML = `
+                <ui-card title="Overall Percentage" value="${percentage}%" color="${percentage >= 75 ? 'green' : 'red'}"></ui-card>
+                <ui-card title="Days Present" value="${present}" color="blue"></ui-card>
+                <ui-card title="Days Late" value="${late}" color="orange"></ui-card>
+            `;
+        }
+
+        function populateFilters(records) {
+            const filter = document.getElementById('courseFilter');
+            const courses = new Map();
             records.forEach(r => {
-                const courseId = r.course?._id || 'General';
-                const courseTitle = r.course?.title || 'General Class';
-                if (!stats[courseId]) stats[courseId] = { title: courseTitle, present: 0, total: 0 };
-                stats[courseId].total++;
-                if (r.status === 'present') stats[courseId].present++;
+                if (r.course) courses.set(String(r.course._id), r.course.title);
             });
 
-            enrolledCourses.innerHTML = Object.values(stats).map(s => `
-                <div class="p-3 bg-blue-50 text-blue-700 rounded-lg flex justify-between items-center font-medium">
-                    <span>${s.title}</span>
-                    <span class="text-xs bg-blue-200 px-2 py-1 rounded">Active</span>
-                </div>
-            `).join('');
+            courses.forEach((title, id) => {
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.textContent = title;
+                filter.appendChild(opt);
+            });
 
-            attendanceList.innerHTML = Object.values(stats).map(s => {
-                const percent = ((s.present / s.total) * 100).toFixed(0);
-                return `
-                    <div class="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg transition border border-transparent hover:border-gray-100">
-                        <div>
-                            <h4 class="font-bold text-gray-800">${s.title}</h4>
-                            <p class="text-sm text-gray-500">${s.present}/${s.total} Lectures Attended</p>
-                        </div>
-                        <div class="text-2xl font-bold ${percent >= 75 ? 'text-green-600' : 'text-red-600'}">${percent}%</div>
-                    </div>
-                `;
-            }).join('');
+            filter.onchange = (e) => {
+                const filtered = e.target.value === 'all' 
+                    ? allRecords 
+                    : allRecords.filter(r => String(r.course?._id) === e.target.value);
+                renderTable(filtered);
+            };
+        }
+
+        function renderTable(records) {
+            const tbody = document.getElementById('attendanceTable');
+            const noRecords = document.getElementById('noRecords');
+            
+            if (!records.length) {
+                tbody.innerHTML = '';
+                noRecords.classList.remove('hidden');
+                return;
+            }
+
+            noRecords.classList.add('hidden');
+            tbody.innerHTML = records.map(r => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-medium text-gray-900">${new Date(r.date).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-gray-600">${r.course?.title || 'N/A'}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${getStatusStyle(r.status)}">
+                            ${r.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-400">${r.remarks || '-'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusStyle(status) {
+            switch (status) {
+                case 'present': return 'bg-green-100 text-green-700';
+                case 'absent': return 'bg-red-100 text-red-700';
+                case 'late': return 'bg-orange-100 text-orange-700';
+                case 'excused': return 'bg-blue-100 text-blue-700';
+                default: return 'bg-gray-100 text-gray-700';
+            }
         }
 
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/student/profile');
-                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
                 if (window.initSocket) window.initSocket(user);
-
                 customElements.whenDefined('ui-navbar').then(() => {
-                    const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    document.querySelector('ui-navbar').renderLinks(user);
                 });
-
-                await Promise.all([
-                
-                fetchAcademicData();
-            } catch (err) {
-                window.location.href = '/api/auth/login';
-            }
+            } catch (err) {}
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
-            }
-        });
+
         fetchProfile();
+        fetchAttendance();
     </script>
 </body>
 </html>

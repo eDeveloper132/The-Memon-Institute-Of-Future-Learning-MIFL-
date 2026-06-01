@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Oversight - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900" id="studentName">Loading Student...</h2>
+                <p class="text-gray-500 mt-2">Academic and Financial Oversight Overview.</p>
+            </div>
+            <button id="refreshBtn" class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 text-blue-600 hover:bg-blue-50 transition active:scale-95">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <ui-card id="attendanceCard" title="Overall Attendance" value="..." color="indigo"></ui-card>
+            <ui-card id="feesCard" title="Pending Fees" value="..." color="red"></ui-card>
+            <ui-card id="assignmentsCard" title="Pending Assignments" value="..." color="orange"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Academic Results -->
+            <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3 mb-6">
+                    <i class="fa-solid fa-graduation-cap text-blue-600"></i> Academic Results
+                </h3>
+                <div id="resultsList" class="space-y-4">
+                    <ui-spinner text="Fetching results..."></ui-spinner>
+                </div>
+            </section>
+
+            <!-- Recent Attendance -->
+            <section class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 flex items-center gap-3 mb-6">
+                    <i class="fa-solid fa-calendar-check text-green-600"></i> Recent Attendance
+                </h3>
+                <div id="attendanceList" class="space-y-4">
+                    <ui-spinner text="Fetching attendance..."></ui-spinner>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+        import { injectOversightHeader } from './header.js';
+
+        const params = new URLSearchParams(window.location.search);
+        const studentId = params.get('id');
+
+        async function fetchOversightData() {
+            if (!studentId) {
+                showToast('No student ID provided', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/admin/oversight/student/${studentId}`);
+                if (!res.ok) throw new Error('Failed to fetch data');
+                
+                const data = await res.json();
+                renderOversight(data);
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to load oversight data', 'error');
+            }
+        }
+
+        function renderOversight(data) {
+            const { student, attendancePercentage, attendance, fees, submissions, grades } = data;
+            
+            injectOversightHeader('Student', student.name);
+            document.getElementById('studentName').textContent = student.name;
+
+            document.getElementById('attendanceCard').setAttribute('value', attendancePercentage);
+            
+            const pendingFees = fees.filter(f => f.status !== 'paid').length;
+            document.getElementById('feesCard').setAttribute('value', pendingFees);
+
+            const pendingAssignments = submissions.filter(s => s.status !== 'graded').length;
+            document.getElementById('assignmentsCard').setAttribute('value', pendingAssignments);
+
+            // Render Results
+            const resultsList = document.getElementById('resultsList');
+            if (grades.length === 0) {
+                resultsList.innerHTML = '<p class="text-gray-400 italic">No exam results recorded.</p>';
+            } else {
+                resultsList.innerHTML = grades.slice(0, 5).map(g => `
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-900">${g.exam.title}</p>
+                            <p class="text-xs text-gray-500">${g.exam.course.title}</p>
+                        </div>
+                        <p class="text-xl font-black text-blue-600">${g.obtainedMarks}/${g.exam.maxMarks}</p>
+                    </div>
+                `).join('');
+            }
+
+            // Render Attendance
+            const attendanceList = document.getElementById('attendanceList');
+            if (attendance.length === 0) {
+                attendanceList.innerHTML = '<p class="text-gray-400 italic">No attendance records found.</p>';
+            } else {
+                attendanceList.innerHTML = attendance.slice(0, 5).map(a => `
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-900">${new Date(a.date).toLocaleDateString()}</p>
+                            <p class="text-xs text-gray-500">${a.course ? a.course.title : 'General'}</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-black uppercase ${a.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">${a.status}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        document.getElementById('refreshBtn').onclick = async () => {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('animate-spin');
+            await fetchOversightData();
+            setTimeout(() => btn.classList.remove('animate-spin'), 500);
+            showToast('Oversight data refreshed');
+        };
+
+        fetchOversightData();
+    </script>
+</body>
+</html>

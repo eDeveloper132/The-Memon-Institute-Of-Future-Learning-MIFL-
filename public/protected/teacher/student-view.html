@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Progress - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    
+    <ui-navbar title="Student Performance Monitoring"></ui-navbar>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="mb-10 flex items-center gap-6">
+            <a href="/protected/teacher/index.html" class="w-12 h-12 flex items-center justify-center bg-white rounded-xl shadow-sm border border-gray-100 text-gray-400 hover:text-blue-600 transition">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900" id="studentName">Loading Student...</h2>
+                <p class="text-gray-500" id="studentEmail">...</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <ui-card id="attendanceCard" title="Overall Attendance" value="..." color="green"></ui-card>
+            <ui-card id="gradeCard" title="Recent Results" value="..." color="blue"></ui-card>
+            <ui-card id="submissionCard" title="Assignments Submitted" value="..." color="orange"></ui-card>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Recent Grades -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Academic Results</h3>
+                <div id="resultsList" class="space-y-4">
+                    <ui-spinner text="Loading results..."></ui-spinner>
+                </div>
+            </div>
+
+            <!-- Recent Submissions -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Recent Submissions</h3>
+                <div id="submissionsList" class="space-y-4">
+                    <ui-spinner text="Loading submissions..."></ui-spinner>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        const params = new URLSearchParams(window.location.search);
+        const studentId = params.get('studentId');
+
+        async function fetchSummary() {
+            if (!studentId) {
+                showToast('Student ID is missing', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/teacher/students/${studentId}/summary`);
+                if (res.ok) {
+                    const data = await res.json();
+                    renderSummary(data);
+                } else {
+                    showToast('Failed to fetch student summary', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderSummary(data) {
+            document.getElementById('studentName').textContent = data.student.name;
+            document.getElementById('studentEmail').textContent = data.student.email;
+
+            document.getElementById('attendanceCard').setAttribute('value', data.attendancePercentage);
+            document.getElementById('gradeCard').setAttribute('value', data.recentGrades.length);
+            document.getElementById('submissionCard').setAttribute('value', data.submissions.length);
+
+            const resultsList = document.getElementById('resultsList');
+            if (data.recentGrades.length === 0) {
+                resultsList.innerHTML = '<p class="text-gray-500 italic">No exam results recorded.</p>';
+            } else {
+                resultsList.innerHTML = data.recentGrades.map(g => `
+                    <div class="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${g.exam.title}</p>
+                            <p class="text-sm text-gray-500">${g.exam.course.title}</p>
+                        </div>
+                        <p class="text-xl font-bold text-blue-600">${g.obtainedMarks}/${g.exam.maxMarks}</p>
+                    </div>
+                `).join('');
+            }
+
+            const submissionsList = document.getElementById('submissionsList');
+            if (data.submissions.length === 0) {
+                submissionsList.innerHTML = '<p class="text-gray-500 italic">No assignments submitted.</p>';
+            } else {
+                submissionsList.innerHTML = data.submissions.map(s => `
+                    <div class="p-4 bg-gray-50 rounded-lg flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-gray-800">${s.assignment.title}</p>
+                            <p class="text-sm text-gray-500">Submitted on ${new Date(s.submittedAt).toLocaleDateString()}</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-bold uppercase ${s.status === 'graded' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                            ${s.status}
+                        </span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function fetchProfile() {
+            try {
+                const response = await fetch('/api/auth/me');
+                if (!response.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await response.json();
+                if (window.initSocket) window.initSocket(user);
+                
+                customElements.whenDefined('ui-navbar').then(() => {
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar && navbar.renderLinks) {
+                        navbar.renderLinks(user);
+                    }
+                });
+                
+                fetchSummary();
+            } catch (err) {
+                window.location.href = '/api/auth/login';
+            }
+        }
+
+        fetchProfile();
+    </script>
+</body>
+</html>

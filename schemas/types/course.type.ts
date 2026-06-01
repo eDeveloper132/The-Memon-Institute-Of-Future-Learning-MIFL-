@@ -34,6 +34,7 @@ export interface ICourse extends Document {
     outline?: string; // Structured course outline
     curriculumSections: ICurriculumSection[]; // Updated: Array of curriculum sections
     curriculumLocked: boolean; // Admin lock status
+    enrollmentFee: number;
     enrolledStudents: Types.ObjectId[]; // Ref to User (Student)
     batches: ICourseBatch[];
     createdAt: Date;

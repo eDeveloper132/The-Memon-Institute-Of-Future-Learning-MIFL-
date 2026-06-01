@@ -149,6 +149,7 @@ class UINavbar extends HTMLElement {
                 { label: 'Departments', href: '/protected/admin/departments.html', icon: 'fa-sitemap' },
                 { label: 'Classes', href: '/protected/admin/classes.html', icon: 'fa-school' },
                 { label: 'Courses', href: '/protected/admin/courses.html', icon: 'fa-book' },
+                { label: 'Enrollment', href: '/protected/admin/enrollment-requests.html', icon: 'fa-file-signature' },
                 { label: 'Staff Attendance', href: '/protected/admin/teacher-attendance.html', icon: 'fa-user-clock' },
                 { label: 'Student Attendance', href: '/protected/admin/student-attendance.html', icon: 'fa-calendar-check' },
                 { label: 'Fees', href: '/protected/admin/fees.html', icon: 'fa-file-invoice-dollar' },
@@ -173,6 +174,7 @@ class UINavbar extends HTMLElement {
                 { label: 'Assignments', href: '/protected/student/assignments.html', icon: 'fa-file-lines' },
                 { label: 'Quizzes', href: '/protected/student/quizzes.html', icon: 'fa-bolt' },
                 { label: 'Resources', href: '/protected/student/course-files.html', icon: 'fa-folder-open' },
+                { label: 'Notices', href: '/protected/student/notices.html', icon: 'fa-bullhorn' },
                 { label: 'Messages', href: '/protected/messages.html', icon: 'fa-comments' }
             ],
             parent: [
