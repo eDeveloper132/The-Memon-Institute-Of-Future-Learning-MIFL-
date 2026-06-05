@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notice Board | Teacher Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans antialiased min-h-screen">
+    
+    <ui-navbar title="Teacher Dashboard"></ui-navbar>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Notice Board</h1>
+                <p class="text-sm text-gray-500 mt-1">View important updates and communicate with your classes.</p>
+            </div>
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition transform hover:-translate-y-0.5 shadow-lg shadow-blue-200 whitespace-nowrap">
+                <i class="fa-solid fa-plus mr-2"></i> Post Notice
+            </button>
+        </div>
+
+        <!-- Notices Container -->
+        <div id="noticesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Notices will be injected here -->
+        </div>
+    </div>
+
+    <!-- Create Notice Modal -->
+    <div id="noticeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">Post New Notice</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition text-xl">&times;</button>
+            </div>
+            
+            <form id="noticeForm" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Title</label>
+                    <input type="text" id="noticeTitle" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" placeholder="e.g., Assignment Deadline Extended">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Type</label>
+                        <select id="noticeType" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <option value="academic">Academic</option>
+                            <option value="exam">Exam</option>
+                            <option value="event">Event</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Audience</label>
+                        <select id="noticeAudience" required onchange="toggleTargetClass()" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <option value="students">My Students</option>
+                            <option value="admins">Administration</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="targetClassContainer">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Target Class</label>
+                    <select id="targetClass" required class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        <option value="">Loading classes...</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-1">Content</label>
+                    <textarea id="noticeContent" required rows="4" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition resize-none" placeholder="Detailed message here..."></textarea>
+                </div>
+                
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-bold transition">Cancel</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-200">Post Notice</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- UI Components Script -->
+    <script type="module" src="/components/ui-components.js"></script>
+
+    <script>
+        let noticesList = [];
+        let classesList = [];
+        let currentUserId = null;
+
+        const modal = document.getElementById('noticeModal');
+        const modalContent = modal.querySelector('div');
+
+        function openModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modalContent.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.getElementById('noticeForm').reset();
+                toggleTargetClass(); // Reset UI state
+            }, 300);
+        }
+
+        function toggleTargetClass() {
+            const audience = document.getElementById('noticeAudience').value;
+            const classContainer = document.getElementById('targetClassContainer');
+            const classSelect = document.getElementById('targetClass');
+
+            if (audience === 'students') {
+                classContainer.style.display = 'block';
+                classSelect.required = true;
+            } else {
+                classContainer.style.display = 'none';
+                classSelect.required = false;
+                classSelect.value = '';
+            }
+        }
+
+        async function fetchClasses() {
+            try {
+                const response = await fetch('/api/teacher/classes');
+                if (response.ok) {
+                    const data = await response.json();
+                    classesList = data.classes;
+                    
+                    const select = document.getElementById('targetClass');
+                    if (classesList.length === 0) {
+                        select.innerHTML = '<option value="">No classes assigned</option>';
+                    } else {
+                        select.innerHTML = '<option value="">Select a class...</option>' + 
+                            classesList.map(c => `<option value="${c._id}">${c.name} (${c.gradeLevel} - ${c.section})</option>`).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load classes', error);
+            }
+        }
+
+        async function fetchNotices() {
+            const container = document.getElementById('noticesContainer');
+            container.innerHTML = '<ui-spinner text="Loading notices..."></ui-spinner>';
+
+            try {
+                const response = await fetch('/api/teacher/notices');
+                
+                if (!response.ok) throw new Error('Failed to fetch notices');
+                
+                const data = await response.json();
+                noticesList = data.notices;
+                renderNotices();
+                
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-bold bg-white rounded-2xl shadow-sm border border-red-100">Failed to load notices</div>`;
+            }
+        }
+
+        function getAudienceBadge(notice) {
+            if (notice.audience.includes('all')) return '<span class="bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide">System Wide</span>';
+            
+            let badges = [];
+            notice.audience.forEach(a => {
+                if (a === 'students') {
+                    // Try to resolve class name if possible, else generic
+                    let className = 'Students';
+                    if (notice.targetClass) {
+                        const cls = classesList.find(c => c._id === notice.targetClass);
+                        if (cls) className = `Class: ${cls.name}`;
+                    }
+                    badges.push(`<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">${className}</span>`);
+                } else if (a === 'admins') {
+                    badges.push(`<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">Admins</span>`);
+                } else {
+                    badges.push(`<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase">${a}</span>`);
+                }
+            });
+            return badges.join(' ');
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                'academic': '<i class="fa-solid fa-book text-blue-500"></i>',
+                'exam': '<i class="fa-solid fa-file-pen text-orange-500"></i>',
+                'holiday': '<i class="fa-solid fa-umbrella-beach text-green-500"></i>',
+                'event': '<i class="fa-solid fa-calendar-star text-purple-500"></i>',
+                'admin': '<i class="fa-solid fa-bullhorn text-red-500"></i>'
+            };
+            return icons[type] || icons['admin'];
+        }
+
+        function renderNotices() {
+            const container = document.getElementById('noticesContainer');
+            
+            if (noticesList.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100 border-dashed">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
+                            <i class="fa-solid fa-bell-slash text-2xl"></i>
+                        </div>
+                        <p class="text-gray-500 font-medium">No notices found.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = noticesList.map(notice => {
+                const isAuthor = notice.author === currentUserId;
+                return `
+                <div class="bg-white p-6 rounded-2xl shadow-sm border ${isAuthor ? 'border-blue-100' : 'border-gray-100'} hover:shadow-md transition flex flex-col h-full relative group">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-lg">
+                                ${getTypeIcon(notice.type)}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-900 leading-tight">${notice.title}</h3>
+                                <p class="text-xs text-gray-400 mt-0.5">${new Date(notice.createdAt).toLocaleDateString()} at ${new Date(notice.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                            </div>
+                        </div>
+                        ${isAuthor ? `
+                        <button onclick="deleteNotice('${notice._id}')" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Delete Notice">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-1 mb-4">
+                        ${getAudienceBadge(notice)}
+                        ${isAuthor ? '<span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ml-auto">Authored by you</span>' : ''}
+                    </div>
+
+                    <div class="text-gray-600 text-sm flex-1 whitespace-pre-wrap leading-relaxed">${notice.content}</div>
+                </div>
+            `}).join('');
+        }
+
+        document.getElementById('noticeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Posting...';
+
+            const audience = document.getElementById('noticeAudience').value;
+            const targetClass = document.getElementById('targetClass').value;
+
+            const payload = {
+                title: document.getElementById('noticeTitle').value,
+                type: document.getElementById('noticeType').value,
+                audience: [audience], // API expects array
+                content: document.getElementById('noticeContent').value
+            };
+
+            if (audience === 'students') {
+                payload.targetClass = targetClass;
+            }
+
+            try {
+                const response = await fetch('/api/teacher/notices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.message || 'Failed to post notice');
+                }
+
+                window.showToast('Notice posted successfully!');
+                closeModal();
+                fetchNotices(); // Refresh list
+
+            } catch (error) {
+                window.showToast(error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        });
+
+        async function deleteNotice(id) {
+            if (!confirm('Are you sure you want to delete this notice?')) return;
+
+            try {
+                const response = await fetch(`/api/teacher/notices/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete notice');
+
+                window.showToast('Notice deleted successfully');
+                noticesList = noticesList.filter(n => n._id !== id);
+                renderNotices();
+            } catch (error) {
+                window.showToast(error.message, 'error');
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/auth/me');
+                if (res.ok) {
+                    const data = await res.json();
+                    currentUserId = data.user._id;
+                    const navbar = document.querySelector('ui-navbar');
+                    if (navbar) navbar.userData = data.user;
+                    if(window.initSocket) window.initSocket(data.user);
+                    
+                    // Fetch classes first so renderNotices can map class names
+                    await fetchClasses();
+                    fetchNotices();
+                } else {
+                    window.location.href = '/api/auth/login';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+    </script>
+</body>
+</html>

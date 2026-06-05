@@ -10,6 +10,8 @@ import { Material } from '../schemas/models/material.model.js';
 import { Quiz, QuizAttempt } from '../schemas/models/quiz.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
+import { NotificationService } from '../services/notification.service.js';
+import mongoose from 'mongoose';
 import chalk from 'chalk';
 
 /**
@@ -118,25 +120,26 @@ export const submitAssignment = async (req: any, res: Response) => {
     try {
         const { assignmentId } = req.params;
         
-        // Use findOneAndUpdate to overwrite existing submission or create a new one
         const submission = await Submission.findOneAndUpdate(
             { assignment: assignmentId, student: req.user.id },
             { 
                 ...req.body, 
                 submittedAt: new Date(),
-                // Reset status to pending if it was graded (optional, but usually good)
                 status: 'pending' 
             },
             { upsert: true, new: true }
         );
 
-        // Notify the teacher
+        // Notify the teacher via NotificationService
         const assignment = await Assignment.findById(assignmentId);
         if (assignment) {
-            req.io.to(String(assignment.teacher)).emit('notification', {
-                type: 'ASSIGNMENT_SUBMISSION',
-                message: `A student has updated/submitted an assignment: ${assignment.title}`,
-                submissionId: submission._id
+            await NotificationService.send({
+                recipient: new mongoose.Types.ObjectId(assignment.teacher) as any,
+                type: 'ACADEMIC',
+                title: 'New Assignment Submission',
+                content: `A student has updated/submitted an assignment: ${assignment.title}`,
+                data: { assignmentId: assignment._id, submissionId: submission._id, studentId: req.user.id },
+                priority: 'medium'
             });
         }
 
@@ -185,19 +188,17 @@ export const getAvailableQuizzes = async (req: any, res: Response) => {
 export const attemptQuiz = async (req: any, res: Response) => {
     try {
         const { quizId } = req.params;
-        const { answers } = req.body; // Expecting [{ questionIndex: Number, selectedOption: Number }]
+        const { answers } = req.body; 
 
         const quiz = await Quiz.findById(quizId);
         if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
         if (!quiz.isActive) return res.status(400).json({ message: 'Quiz is no longer active' });
 
-        // Check if student already attempted this quiz
         const existingAttempt = await QuizAttempt.findOne({ quiz: quizId, student: req.user.id });
         if (existingAttempt) {
             return res.status(400).json({ message: 'Quiz already attempted' });
         }
 
-        // Calculate score
         let score = 0;
         if (answers && Array.isArray(answers)) {
             answers.forEach((ans: any) => {
@@ -230,24 +231,15 @@ export const getMyNotices = async (req: any, res: Response) => {
         const now = new Date();
 
         const query: any = {
-            $and: [
-                {
-                    $or: [
-                        { audience: 'all' },
-                        { audience: 'students' },
-                        ...(studentClass ? [{ targetClass: studentClass }] : [])
-                    ]
-                },
-                {
-                    $or: [
-                        { expiryDate: { $exists: false } },
-                        { expiryDate: { $gte: now } }
-                    ]
-                }
-            ]
+            audience: { $in: ['all', 'students'] },
+            $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }]
         };
+        
+        if (studentClass) {
+            query.targetClass = studentClass;
+        }
 
-        const notices = await Notice.find(query).sort({ isPinned: -1, createdAt: -1 });
+        const notices = await Notice.find(query).sort({ isPinned: -1, createdAt: -1 }).populate('author', 'name');
         res.status(200).json({ notices });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -307,7 +299,6 @@ export const sendStudentMessage = async (req: any, res: Response) => {
             content
         });
 
-        // Emit via Socket.IO
         req.io.to(receiver).emit('receiveMessage', newMessage);
         req.io.to(sender).emit('messageSent', newMessage);
 

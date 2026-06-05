@@ -9,6 +9,8 @@ import { Fee } from '../schemas/models/fee.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
 import { EnrollmentRequest } from '../schemas/models/enrollmentRequest.model.js';
+import { RoleService } from '../services/role.service.js';
+import { NotificationService } from '../services/notification.service.js';
 import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Grade } from '../schemas/models/exam.model.js';
 import chalk from 'chalk';
@@ -111,12 +113,19 @@ export const crudNotices = {
                 author: req.user.id
             });
 
-            // Emit via Socket.IO
-            req.io.emit('notification', {
+            // Populate author for real-time notification
+            const populatedNotice = await Notice.findById(notice._id).populate('author', 'name');
+
+            // Broadcast via NotificationService
+            await NotificationService.broadcast({
                 type: 'NEW_NOTICE',
                 title: notice.title,
                 content: notice.content,
-                id: notice._id
+                data: { 
+                    noticeType: notice.type || 'admin',
+                    author: (populatedNotice?.author as any)?.name || 'Admin',
+                    id: notice._id
+                }
             });
 
             res.status(201).json({ message: 'Notice created successfully', notice });
@@ -456,11 +465,11 @@ export const generateFeeVoucher = async (req: Request, res: Response) => {
             
             await Fee.bulkWrite(operations);
 
-            req.io.emit('notification', {
-                type: 'GENERAL_FEE_VOUCHER',
-                message: `New fee vouchers for ${type} have been generated. Please check your account.`,
-                amount,
-                dueDate
+            await NotificationService.broadcast({
+                type: 'SYSTEM',
+                title: 'New Fee Vouchers Generated',
+                content: `New fee vouchers for ${type} (Amount: ${amount}) have been generated. Due date: ${new Date(dueDate).toLocaleDateString()}`,
+                data: { type, amount, dueDate }
             });
 
             return res.status(201).json({ message: `Vouchers generated for ${students.length} students` });
@@ -468,11 +477,13 @@ export const generateFeeVoucher = async (req: Request, res: Response) => {
 
         const fee = await Fee.create({ student: studentId, amount, type, dueDate, status: 'unpaid', remarks });
 
-        req.io.to(String(studentId)).emit('notification', {
-            type: 'SINGLE_FEE_VOUCHER',
-            message: `A new fee voucher for ${type} (Amount: ${amount}) has been generated.`,
-            feeId: fee._id,
-            dueDate
+        await NotificationService.send({
+            recipient: new mongoose.Types.ObjectId(studentId) as any,
+            type: 'FEE',
+            title: 'New Fee Voucher Generated',
+            content: `A new fee voucher for ${type} (Amount: ${amount}) has been generated. Due date: ${new Date(dueDate).toLocaleDateString()}`,
+            data: { feeId: fee._id, amount, dueDate },
+            priority: 'high'
         });
 
         res.status(201).json({ message: 'Voucher generated', fee });
@@ -570,6 +581,15 @@ export const processEnrollmentRequest = async (req: any, res: Response) => {
                 await User.findByIdAndUpdate(request.student, {
                     currentClass: request.targetId
                 });
+
+                // Automated Role Transition: User/Applicant -> Student (Active)
+                await RoleService.transition({
+                    userId: String(request.student),
+                    newRole: 'student',
+                    trigger: 'ENROLLMENT_APPROVAL',
+                    reason: `Approved enrollment for Class ID: ${request.targetId}`,
+                    changedBy: req.user.id
+                });
             } else {
                 await Course.findByIdAndUpdate(request.targetId, {
                     $addToSet: { enrolledStudents: request.student }
@@ -577,12 +597,14 @@ export const processEnrollmentRequest = async (req: any, res: Response) => {
             }
         }
 
-        // Notify student
-        req.io.to(String(request.student)).emit('notification', {
-            type: 'ENROLLMENT_UPDATE',
-            message: `Your enrollment request for ${request.targetType} has been ${status}.`,
-            status,
-            targetId: request.targetId
+        // Notify student via NotificationService
+        await NotificationService.send({
+            recipient: new mongoose.Types.ObjectId(request.student) as any,
+            type: 'ENROLLMENT',
+            title: `Enrollment Request ${status === 'approved' ? 'Approved' : 'Denied'}`,
+            content: `Your enrollment request for ${request.targetType} has been ${status}.`,
+            data: { requestId: request._id, status, targetType: request.targetType, targetId: request.targetId },
+            priority: status === 'approved' ? 'high' : 'medium'
         });
 
         res.status(200).json({ message: `Request ${status}`, request });

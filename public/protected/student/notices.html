@@ -13,13 +13,24 @@
     <ui-navbar title="Academic Announcements"></ui-navbar>
 
     <main class="p-8 max-w-5xl mx-auto">
-        <div class="mb-10 flex items-center justify-between">
+        <div class="mb-10 flex items-center justify-between flex-wrap gap-4">
             <div>
-                <h2 class="text-3xl font-bold text-gray-900">Notice Board</h2>
-                <p class="text-gray-500 mt-2">Important updates regarding classes, exams, and school events.</p>
+                <h2 class="text-4xl font-black text-gray-900 tracking-tight">Academic Notice Board</h2>
+                <p class="text-gray-500 mt-1 font-medium">Stay updated with the latest school and class announcements.</p>
             </div>
-            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
-                <i class="fa-solid fa-bullhorn text-blue-600 text-xl"></i>
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="noticeSearch" placeholder="Search notices..." class="pl-12 pr-6 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition w-64">
+                </div>
+                <select id="typeFilter" class="px-6 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-gray-700">
+                    <option value="all">All Categories</option>
+                    <option value="academic">Academic</option>
+                    <option value="exam">Exams</option>
+                    <option value="holiday">Holidays</option>
+                    <option value="event">Events</option>
+                    <option value="admin">Admin</option>
+                </select>
             </div>
         </div>
 
@@ -32,15 +43,29 @@
     </main>
 
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
         const noticesList = document.getElementById('noticesList');
+        const noticeSearch = document.getElementById('noticeSearch');
+        const typeFilter = document.getElementById('typeFilter');
+        
+        let allNotices = [];
+
+        const typeIcons = {
+            academic: { icon: 'fa-book', color: 'blue' },
+            exam: { icon: 'fa-file-pen', color: 'red' },
+            holiday: { icon: 'fa-calendar-day', color: 'green' },
+            event: { icon: 'fa-star', color: 'purple' },
+            admin: { icon: 'fa-bullhorn', color: 'indigo' }
+        };
 
         async function fetchNotices() {
             try {
-                // Call student-specific notices endpoint
                 const response = await fetch('/api/student/notices');
                 if (response.ok) {
                     const { notices } = await response.json();
-                    renderNotices(notices);
+                    allNotices = notices;
+                    renderNotices(allNotices);
                 } else if (response.status === 403) {
                     noticesList.innerHTML = '<div class="bg-red-50 p-10 rounded-3xl text-center text-red-600 font-bold border border-red-100 shadow-sm">Access Denied: You do not have permission to view these notices.</div>';
                 }
@@ -51,33 +76,86 @@
 
         function renderNotices(notices) {
             if (!notices.length) {
-                noticesList.innerHTML = '<div class="bg-white p-10 rounded-3xl text-center text-gray-500 italic border border-gray-100 shadow-sm">No active notices for your class at this time.</div>';
+                noticesList.innerHTML = '<div class="bg-white p-20 rounded-[3rem] text-center shadow-xl shadow-blue-500/5 border border-gray-100">' +
+                    '<div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-300">' +
+                    '<i class="fa-solid fa-inbox text-4xl"></i></div>' +
+                    '<h3 class="text-xl font-bold text-gray-900 mb-2">No notices found</h3>' +
+                    '<p class="text-gray-400">Try adjusting your filters or check back later.</p></div>';
                 return;
             }
 
-            noticesList.innerHTML = notices.map(n => `
-                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:border-blue-300 transition group relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-2 h-full ${n.isPinned ? 'bg-orange-500' : 'bg-blue-600'}"></div>
-                    <div class="flex justify-between items-start mb-6">
-                        <span class="px-3 py-1 ${n.isPinned ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'} rounded-lg text-xs font-bold uppercase tracking-wider">
-                            ${n.isPinned ? 'Pinned Update' : 'Announcement'}
-                        </span>
-                        <span class="text-sm text-gray-400 font-medium">${new Date(n.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition">${n.title}</h3>
-                    <p class="text-gray-600 leading-relaxed mb-6 whitespace-pre-wrap">${n.content}</p>
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 font-bold">
-                            <i class="fa-solid fa-user-tie"></i>
+            noticesList.innerHTML = notices.map(n => {
+                const config = typeIcons[n.type] || typeIcons.admin;
+                const date = new Date(n.createdAt).toLocaleDateString('en-PK', { 
+                    day: 'numeric', month: 'long', year: 'numeric' 
+                });
+
+                return `
+                    <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 p-8 hover:shadow-xl hover:shadow-blue-500/5 transition duration-300 group relative overflow-hidden">
+                        ${n.isPinned ? `
+                            <div class="absolute top-0 right-0">
+                                <div class="bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-1 rotate-45 translate-x-4 translate-y-3 shadow-sm">Pinned</div>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="flex items-start gap-6">
+                            <div class="w-14 h-14 rounded-2xl bg-${config.color}-50 text-${config.color}-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition duration-300">
+                                <i class="fa-solid ${config.icon}"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-${config.color}-600 bg-${config.color}-50 px-3 py-1 rounded-full">${n.type || 'Announcement'}</span>
+                                    <span class="text-xs text-gray-400 font-bold">${date}</span>
+                                </div>
+                                <h3 class="text-2xl font-black text-gray-900 mb-3 group-hover:text-blue-600 transition truncate">${n.title}</h3>
+                                <p class="text-gray-600 leading-relaxed mb-6 whitespace-pre-wrap">${n.content}</p>
+                                
+                                ${n.attachments && n.attachments.length > 0 ? `
+                                    <div class="mb-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <h4 class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Attachments</h4>
+                                        <div class="flex flex-wrap gap-3">
+                                            ${n.attachments.map(url => `
+                                                <a href="${url}" target="_blank" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-xs font-bold text-gray-700 hover:text-blue-600 hover:border-blue-200 transition shadow-sm">
+                                                    <i class="fa-solid fa-paperclip opacity-50"></i>
+                                                    <span>${url.split('/').pop()}</span>
+                                                </a>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                <div class="flex items-center gap-3 border-t border-gray-50 pt-6">
+                                    <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-black border border-blue-100">
+                                        ${n.author?.name ? n.author.name.charAt(0) : 'A'}
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-black text-gray-900">${n.author?.name || 'Academic Administration'}</p>
+                                        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Official Notice</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-sm font-bold text-gray-900">Academic Department</p>
-                            <p class="text-xs text-gray-500">Official Notice</p>
-                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
+
+        function filterAndSearch() {
+            const searchTerm = noticeSearch.value.toLowerCase();
+            const filterType = typeFilter.value;
+
+            const filtered = allNotices.filter(n => {
+                const matchesSearch = n.title.toLowerCase().includes(searchTerm) || 
+                                     n.content.toLowerCase().includes(searchTerm);
+                const matchesType = filterType === 'all' || n.type === filterType;
+                return matchesSearch && matchesType;
+            });
+
+            renderNotices(filtered);
+        }
+
+        noticeSearch.oninput = filterAndSearch;
+        typeFilter.onchange = filterAndSearch;
 
         async function fetchProfile() {
             try {

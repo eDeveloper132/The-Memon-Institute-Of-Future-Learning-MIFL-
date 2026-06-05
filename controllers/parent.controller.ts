@@ -102,10 +102,10 @@ export const getNotices = async (req: any, res: Response) => {
     try {
         console.log(`[Parent Controller] Fetching notices for user: ${req.user?.id} [${req.user?.role}]`);
         const now = new Date();
-        const notices = await Notice.find({ 
+        const notices = await Notice.find({
             audience: { $in: ['all', 'parents'] },
-            $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }] 
-        }).sort({ isPinned: -1, createdAt: -1 });
+            $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }]
+        }).sort({ isPinned: -1, createdAt: -1 }).populate('author', 'name');
         
         console.log(`[Parent Controller] Found ${notices.length} notices`);
         res.status(200).json({ notices });

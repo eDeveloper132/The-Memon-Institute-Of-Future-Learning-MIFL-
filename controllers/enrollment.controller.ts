@@ -3,6 +3,7 @@ import { Class } from '../schemas/models/class.model.js';
 import { Course } from '../schemas/models/course.model.js';
 import { User } from '../schemas/models/user.model.js';
 import { EnrollmentRequest } from '../schemas/models/enrollmentRequest.model.js';
+import { NotificationService } from '../services/notification.service.js';
 import chalk from 'chalk';
 
 /**
@@ -67,7 +68,6 @@ export const applyForEnrollment = async (req: any, res: Response) => {
             }
         }
 
-        // Get target to fetch current fee
         let target;
         if (targetType === 'Class') target = await Class.findById(targetId);
         else target = await Course.findById(targetId);
@@ -81,11 +81,12 @@ export const applyForEnrollment = async (req: any, res: Response) => {
             feeAtTimeOfApplication: (target as any).enrollmentFee || 0
         });
 
-        // Notify admin
-        req.io.emit('notification', {
+        // Notify admins via NotificationService broadcast
+        await NotificationService.broadcast({
             type: 'ENROLLMENT_REQUEST',
-            message: `New enrollment request for ${targetType}: ${ (target as any).name || (target as any).title }`,
-            requestId: request._id
+            title: 'New Enrollment Request',
+            content: `New enrollment request for ${targetType}: ${(target as any).name || (target as any).title}`,
+            data: { requestId: request._id, studentId }
         });
 
         res.status(201).json({ message: 'Application submitted successfully', request });
@@ -101,9 +102,10 @@ export const applyForEnrollment = async (req: any, res: Response) => {
 export const cancelEnrollmentRequest = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const request = await EnrollmentRequest.findOne({ _id: id, student: req.user.id, status: 'pending' });
-        
-        if (!request) return res.status(404).json({ message: 'Pending request not found' });
+        const studentId = req.user.id;
+
+        const request = await EnrollmentRequest.findOne({ _id: id, student: studentId, status: 'pending' });
+        if (!request) return res.status(404).json({ message: 'Request not found' });
 
         request.status = 'cancelled';
         await request.save();

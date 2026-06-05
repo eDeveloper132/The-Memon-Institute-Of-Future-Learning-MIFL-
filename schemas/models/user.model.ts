@@ -39,6 +39,11 @@ const userSchema = new Schema<IUser>(
         isEmailVerified: { type: Boolean, default: false },
         emailVerificationToken: String,
         pendingEmail: String,
+        notificationPrefs: {
+            email: { type: Boolean, default: true },
+            socket: { type: Boolean, default: true },
+            inApp: { type: Boolean, default: true },
+        },
     },
     { timestamps: true }
 );

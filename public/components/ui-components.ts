@@ -22,6 +22,24 @@ class UINavbar extends HTMLElement {
                     <!-- Connection Status -->
                     <div id="connectionStatus" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-500" title="Checking connection..."></div>
 
+                    <!-- Notification Bell -->
+                    <div class="relative">
+                        <button id="notificationBellBtn" class="text-gray-400 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl relative">
+                            <i class="fa-solid fa-bell text-lg"></i>
+                            <span id="notificationBadge" class="absolute top-1.5 right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center hidden">0</span>
+                        </button>
+                        <!-- Dropdown -->
+                        <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-[1001] max-h-96 flex-col">
+                            <div class="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                                <h3 class="font-bold text-gray-700 text-sm">Notifications</h3>
+                                <button id="markAllReadBtn" class="text-xs text-blue-600 hover:underline">Mark all read</button>
+                            </div>
+                            <div id="notificationList" class="overflow-y-auto flex-1 p-2 space-y-1">
+                                <div class="text-center text-sm text-gray-500 py-4 italic">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="hidden sm:flex flex-col text-right mr-2">
                         <span id="userName" class="text-gray-900 font-bold text-sm leading-none">Loading...</span>
                         <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
@@ -85,6 +103,46 @@ class UINavbar extends HTMLElement {
         const overlay = this.querySelector('#mobileMenuOverlay');
         const logoutBtn = this.querySelector('#logoutBtn');
         const mobileLogoutBtn = this.querySelector('#mobileLogoutBtn');
+        const notificationBellBtn = this.querySelector('#notificationBellBtn');
+        const notificationDropdown = this.querySelector('#notificationDropdown');
+        const markAllReadBtn = this.querySelector('#markAllReadBtn');
+
+        // Toggle Notification Dropdown
+        notificationBellBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationDropdown?.classList.toggle('hidden');
+            notificationDropdown?.classList.toggle('flex');
+            if (!notificationDropdown?.classList.contains('hidden')) {
+                this.loadNotifications();
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notificationDropdown?.classList.contains('hidden') && !this.contains(e.target as Node)) {
+                notificationDropdown?.classList.add('hidden');
+                notificationDropdown?.classList.remove('flex');
+            }
+        });
+
+        markAllReadBtn?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
+                if (res.ok) {
+                    this.loadNotifications();
+                    const badge = this.querySelector('#notificationBadge');
+                    if (badge) badge.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error('Failed to mark all read', err);
+            }
+        });
+
+        // Listen for real-time notifications
+        document.addEventListener('newNotification', () => {
+            this.loadNotifications();
+        });
 
         const toggleMenu = (open: boolean) => {
             const sidebar = this.querySelector('#mobileSidebar');
@@ -120,6 +178,62 @@ class UINavbar extends HTMLElement {
         mobileLogoutBtn?.addEventListener('click', handleLogout);
     }
 
+    private async loadNotifications() {
+        try {
+            const res = await fetch('/api/notifications?status=unread');
+            if (!res.ok) throw new Error('Failed to fetch notifications');
+            const data = await res.json();
+            
+            const list = this.querySelector('#notificationList');
+            const badge = this.querySelector('#notificationBadge');
+            
+            if (badge) {
+                if (data.notifications.length > 0) {
+                    badge.textContent = data.notifications.length.toString();
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            if (list) {
+                if (data.notifications.length === 0) {
+                    list.innerHTML = '<div class="text-center text-sm text-gray-500 py-4 italic">No new notifications</div>';
+                    return;
+                }
+
+                list.innerHTML = data.notifications.map((n: any) => `
+                    <div class="p-3 border-b border-gray-50 hover:bg-blue-50 cursor-pointer rounded-lg transition group" data-id="${n._id}">
+                        <div class="flex justify-between items-start mb-1">
+                            <h4 class="font-bold text-gray-800 text-sm">${n.title}</h4>
+                            <span class="text-[10px] text-gray-400 whitespace-nowrap ml-2">${new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 line-clamp-2">${n.content}</p>
+                    </div>
+                `).join('');
+
+                // Add click events to mark as read
+                list.querySelectorAll('[data-id]').forEach(el => {
+                    el.addEventListener('click', async (e) => {
+                        e.stopPropagation(); // Prevent dropdown from closing immediately
+                        const id = el.getAttribute('data-id');
+                        try {
+                            const readRes = await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+                            if (readRes.ok) {
+                                el.remove();
+                                this.loadNotifications(); // Refresh count
+                            }
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    });
+                });
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     renderLinks(user: string | any): void {
         const role = typeof user === 'string' ? user : user.role;
         this.userData = typeof user === 'string' ? { role } : user;
@@ -143,6 +257,7 @@ class UINavbar extends HTMLElement {
         const links: Record<string, { label: string, href: string, icon: string }[]> = {
             admin: [
                 { label: 'Dashboard', href: '/protected/admin/index.html', icon: 'fa-chart-pie' },
+                { label: 'Notices', href: '/protected/admin/notices.html', icon: 'fa-bullhorn' },
                 { label: 'Students', href: '/protected/admin/students.html', icon: 'fa-users' },
                 { label: 'Parents', href: '/protected/admin/parents.html', icon: 'fa-children' },
                 { label: 'Teachers', href: '/protected/admin/teachers.html', icon: 'fa-chalkboard-user' },
@@ -157,6 +272,7 @@ class UINavbar extends HTMLElement {
             ],
             teacher: [
                 { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
+                { label: 'Notices', href: '/protected/teacher/notices.html', icon: 'fa-bullhorn' },
                 { label: 'Attendance', href: '/protected/teacher/attendance.html', icon: 'fa-calendar-day' },
                 { label: 'Assignments', href: '/protected/teacher/assignments.html', icon: 'fa-clipboard-list' },
                 { label: 'Curriculum', href: '/protected/teacher/curriculum.html', icon: 'fa-layer-group' },
@@ -456,7 +572,12 @@ export const initSocket = async (user: any) => {
     });
 
     // Unified Event Listeners (Same for Sockets and Polling)
-    socket.on('notification', (data: any) => showToast(data.message, 'info'));
+    socket.on('notification', (data: any) => {
+        const title = data.title || 'Notification';
+        const content = data.content || data.message || '';
+        showToast(`<strong>${title}</strong><br>${content}`, 'info');
+        document.dispatchEvent(new CustomEvent('newNotification', { detail: data }));
+    });
     socket.on('receiveMessage', (message: any) => {
         showToast('New message received!', 'info');
         document.dispatchEvent(new CustomEvent('newMessage', { detail: message }));

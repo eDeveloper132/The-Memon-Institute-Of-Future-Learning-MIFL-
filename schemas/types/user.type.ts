@@ -39,6 +39,12 @@ export interface IUser extends Document {
     emailVerificationToken?: string;
     pendingEmail?: string;
     
+    notificationPrefs: {
+        email: boolean;
+        socket: boolean;
+        inApp: boolean;
+    };
+    
     createdAt: Date;
     updatedAt: Date;
     comparePassword(password: string): Promise<boolean>;

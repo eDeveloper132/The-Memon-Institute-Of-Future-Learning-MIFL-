@@ -9,11 +9,50 @@ import { Quiz } from '../schemas/models/quiz.model.js';
 import { Material } from '../schemas/models/material.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
+import { NotificationService } from '../services/notification.service.js';
+import mongoose from 'mongoose';
 import chalk from 'chalk';
 
 /**
  * Teacher Dashboard Stats
  */
+export const getDashboardStats = async (req: any, res: Response) => {
+    try {
+        const teacherId = req.user.id;
+
+        // Get count of classes where this user is the class teacher
+        const classesCount = await Class.countDocuments({ classTeacher: teacherId });
+
+        // Get count of students across all classes taught by this teacher
+        const classes = await Class.find({ classTeacher: teacherId });
+        const studentIds = new Set();
+        classes.forEach(cls => cls.students.forEach(id => studentIds.add(id.toString())));
+        const totalStudents = studentIds.size;
+
+        // Get pending grading (Assignments & Exams)
+        const teacherAssignments = await Assignment.find({ teacher: teacherId }).select('_id');
+        const assignmentIds = teacherAssignments.map(a => a._id);
+
+        const [pendingAssignments, pendingExams] = await Promise.all([
+            Submission.countDocuments({ 
+                assignment: { $in: assignmentIds },
+                status: { $in: ['submitted', 'late'] } 
+            }),
+            Grade.countDocuments({ grade: { $exists: false } }) // Simplified logic
+        ]);
+
+        res.status(200).json({
+            classesCount,
+            totalStudents,
+            pendingGrading: pendingAssignments + pendingExams,
+            avgFeedback: "4.8/5" // Placeholder
+        });
+    } catch (error: any) {
+        console.error(chalk.red('Get Dashboard Stats error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 /**
  * Curriculum Management
  */
@@ -75,43 +114,6 @@ export const updateClassCurriculum = async (req: any, res: Response) => {
     }
 };
 
-export const getDashboardStats = async (req: any, res: Response) => {
-    try {
-        const teacherId = req.user.id;
-
-        // Get count of classes where this user is the class teacher
-        const classesCount = await Class.countDocuments({ classTeacher: teacherId });
-
-        // Get count of students across all classes taught by this teacher
-        const classes = await Class.find({ classTeacher: teacherId });
-        const studentIds = new Set();
-        classes.forEach(cls => cls.students.forEach(id => studentIds.add(id.toString())));
-        const totalStudents = studentIds.size;
-
-        // Get pending grading (Assignments & Exams)
-        const teacherAssignments = await Assignment.find({ teacher: teacherId }).select('_id');
-        const assignmentIds = teacherAssignments.map(a => a._id);
-
-        const [pendingAssignments, pendingExams] = await Promise.all([
-            Submission.countDocuments({ 
-                assignment: { $in: assignmentIds },
-                status: { $in: ['submitted', 'late'] } 
-            }),
-            Grade.countDocuments({ grade: { $exists: false } }) // Simplified logic
-        ]);
-
-        res.status(200).json({
-            classesCount,
-            totalStudents,
-            pendingGrading: pendingAssignments + pendingExams,
-            avgFeedback: "4.8/5" // Placeholder
-        });
-    } catch (error: any) {
-        console.error(chalk.red('Get Dashboard Stats error:'), error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-};
-
 /**
  * Attendance Logic
  */
@@ -142,7 +144,7 @@ export const getStudentSummary = async (req: any, res: Response) => {
         const { studentId } = req.params;
         const teacherId = req.user.id;
 
-        // Verify teacher has access to this student (student is in one of teacher's classes or courses)
+        // Verify teacher has access to this student
         const [teacherClasses, teacherCourses] = await Promise.all([
             Class.find({ classTeacher: teacherId }),
             Course.find({ teacher: teacherId })
@@ -164,7 +166,7 @@ export const getStudentSummary = async (req: any, res: Response) => {
                 path: 'exam',
                 populate: { path: 'course', select: 'title' }
             }),
-            Assignment.find({ student: studentId }), // Not quite right, assignments are by class/course
+            Assignment.find({ student: studentId }), 
             Submission.find({ student: studentId }).populate('assignment', 'title')
         ]);
 
@@ -205,7 +207,6 @@ export const getAttendanceStats = async (req: any, res: Response) => {
 
         const allRecords = await Attendance.find(query);
         
-        // Calculate stats per student
         const studentStats = studentIds.map(sid => {
             const studentRecords = allRecords.filter(r => r.student.toString() === sid);
             const present = studentRecords.filter(r => r.status === 'present').length;
@@ -292,12 +293,13 @@ export const markAttendance = async (req: any, res: Response) => {
 
         await Attendance.bulkWrite(operations);
 
-        // Notify relevant room
+        // Notify relevant room via NotificationService broadcast
         const room = classId ? `class:${classId}` : `course:${courseId}`;
-        req.io.to(room).emit('notification', {
-            type: 'ATTENDANCE_MARKED',
-            message: `Attendance for ${dateObj.toLocaleDateString()} has been recorded.`,
-            id: classId || courseId
+        await NotificationService.broadcast({
+            type: 'ACADEMIC',
+            title: 'Attendance Recorded',
+            content: `Attendance for ${dateObj.toLocaleDateString()} has been recorded.`,
+            data: { id: classId || courseId }
         });
 
         res.status(200).json({ message: 'Attendance recorded successfully' });
@@ -324,16 +326,12 @@ export const createAssignment = async (req: any, res: Response) => {
             maxPoints
         });
 
-        // Notify relevant room
-        // If batch is targeted, we still notify the course room but include batch metadata
-        // Students in the course room will filter based on their own batch enrollment
-        const room = classId ? `class:${classId}` : `course:${course}`;
-        
-        req.io.to(room).emit('notification', {
-            type: 'NEW_ASSIGNMENT',
-            message: `A new assignment "${assignment.title}" has been posted.`,
-            assignmentId: assignment._id,
-            batchId: batch || null
+        // Broadcast to relevant group via NotificationService
+        await NotificationService.broadcast({
+            type: 'ACADEMIC',
+            title: 'New Assignment Posted',
+            content: `A new assignment "${assignment.title}" has been posted.`,
+            data: { assignmentId: assignment._id, batchId: batch || null, classId }
         });
 
         res.status(201).json({ message: 'Assignment created successfully', assignment });
@@ -381,12 +379,10 @@ export const deleteAssignment = async (req: any, res: Response) => {
         }
 
         await Assignment.findByIdAndDelete(id);
-        // Also delete related submissions
         await Submission.deleteMany({ assignment: id });
 
         res.status(200).json({ message: 'Assignment deleted successfully' });
     } catch (error) {
-        console.error('[Teacher Controller] deleteAssignment error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -408,7 +404,6 @@ export const getSubmissionsForAssignment = async (req: any, res: Response) => {
         const assignment = await Assignment.findById(id);
         if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
         
-        // Authorization check
         if (String(assignment.teacher) !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized' });
         }
@@ -431,14 +426,17 @@ export const gradeSubmission = async (req: any, res: Response) => {
             { new: true }
         );
 
-        if (submission) {
-            // Notify student about graded submission
-            req.io.to(String(submission.student)).emit('notification', {
-                type: 'ASSIGNMENT_GRADED',
-                message: `Your submission for an assignment has been graded.`,
-                submissionId: submission._id
-            });
-        }
+        if (!submission) return res.status(404).json({ message: 'Submission not found' });
+
+        // Notify student via NotificationService
+        await NotificationService.send({
+            recipient: new mongoose.Types.ObjectId(submission.student) as any,
+            type: 'ACADEMIC',
+            title: 'Assignment Graded',
+            content: `Your submission for an assignment has been graded. Grade: ${grade}`,
+            data: { submissionId, grade },
+            priority: 'medium'
+        });
 
         res.status(200).json({ message: 'Submission graded', submission });
     } catch (error) {
@@ -499,7 +497,6 @@ export const getQuizzes = async (req: any, res: Response) => {
  */
 export const createExam = async (req: any, res: Response) => {
     try {
-        // Ensure the teacher owns the course
         const course = await Course.findOne({ _id: req.body.course, teacher: req.user.id });
         if (!course) return res.status(403).json({ message: 'Not authorized for this course' });
 
@@ -514,7 +511,6 @@ export const recordGrade = async (req: any, res: Response) => {
     try {
         const { examId, studentId, obtainedMarks, remarks } = req.body;
         
-        // Verify teacher owns the exam's course
         const exam: any = await Exam.findById(examId).populate('course');
         if (!exam || String(exam.course.teacher) !== req.user.id) {
             return res.status(403).json({ message: 'Unauthorized grading attempt' });
@@ -530,11 +526,14 @@ export const recordGrade = async (req: any, res: Response) => {
             { new: true, upsert: true, runValidators: true }
         );
 
-        // Notify student about new grade
-        req.io.to(String(studentId)).emit('notification', {
-            type: 'EXAM_GRADE_RECORDED',
-            message: `A new grade has been recorded for your exam: ${exam.title}`,
-            examId: exam._id
+        // Notify student via NotificationService
+        await NotificationService.send({
+            recipient: new mongoose.Types.ObjectId(studentId) as any,
+            type: 'ACADEMIC',
+            title: 'Exam Graded',
+            content: `A new grade has been recorded for your exam: ${exam.title}. Marks: ${obtainedMarks}`,
+            data: { examId, gradeId: grade._id },
+            priority: 'medium'
         });
 
         res.status(200).json({ message: 'Grade recorded', grade });
@@ -564,15 +563,84 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
 export const getTeacherNotices = async (req: any, res: Response) => {
     try {
         const now = new Date();
+        const teacherId = req.user.id;
+        
+        // Find classes this teacher teaches to filter targetClass notices
+        const classes = await Class.find({ classTeacher: teacherId }).select('_id');
+        const classIds = classes.map(c => c._id);
+
         const query: any = {
-            $and: [
-                { audience: { $in: ['all', 'teachers'] } },
-                { $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }] }
-            ]
+             $or: [
+                 { audience: { $in: ['all', 'teachers'] } },
+                 { targetClass: { $in: classIds } },
+                 { author: teacherId }
+             ],
+             $and: [
+                 { $or: [{ expiryDate: { $exists: false } }, { expiryDate: { $gte: now } }, { expiryDate: null }] }
+             ]
         };
 
         const notices = await Notice.find(query).sort({ isPinned: -1, createdAt: -1 });
         res.status(200).json({ notices });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const createNotice = async (req: any, res: Response) => {
+    try {
+        const { title, content, audience, targetClass, type, expiryDate, isPinned } = req.body;
+        
+        // Validation: Teacher can only target 'admins' or 'students'
+        if (audience.includes('all') || audience.includes('parents') || audience.includes('teachers')) {
+            return res.status(403).json({ message: "Teachers cannot broadcast to 'all', 'parents', or 'teachers'." });
+        }
+
+        // If targeting students, targetClass must be provided
+        if (audience.includes('students') && !targetClass) {
+            return res.status(400).json({ message: "targetClass is required when audience includes 'students'." });
+        }
+
+        const notice = await Notice.create({
+            title,
+            content,
+            author: req.user.id,
+            audience: audience || ['students'],
+            targetClass,
+            type: type || 'academic',
+            expiryDate,
+            isPinned: isPinned || false
+        });
+
+        // Broadcast via NotificationService
+        await NotificationService.broadcast({
+            type: 'NEW_NOTICE',
+            title: notice.title,
+            content: notice.content,
+            data: { 
+                noticeType: notice.type,
+                id: notice._id,
+                targetClass
+            }
+        });
+
+        res.status(201).json({ message: 'Notice created successfully', notice });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] createNotice error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteNotice = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const notice = await Notice.findById(id);
+
+        if (!notice) return res.status(404).json({ message: 'Notice not found' });
+        if (String(notice.author) !== req.user.id) return res.status(403).json({ message: 'Unauthorized: You can only delete your own notices' });
+
+        await Notice.findByIdAndDelete(id);
+        res.status(200).json({ message: 'Notice deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
@@ -631,7 +699,6 @@ export const sendTeacherMessage = async (req: any, res: Response) => {
             content
         });
 
-        // Emit via Socket.IO
         req.io.to(receiver).emit('receiveMessage', newMessage);
         req.io.to(sender).emit('messageSent', newMessage);
 

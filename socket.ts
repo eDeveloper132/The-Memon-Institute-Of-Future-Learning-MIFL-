@@ -2,8 +2,17 @@ import { Server } from 'socket.io';
 import { Message } from './schemas/models/message.model.js';
 import chalk from 'chalk';
 
+let io: Server;
+
+export const getIO = () => {
+    if (!io) {
+        throw new Error('Socket.io not initialized');
+    }
+    return io;
+};
+
 export const setupSocket = (httpServer: any) => {
-    const io = new Server(httpServer, {
+    io = new Server(httpServer, {
         cors: {
             origin: "*",
             methods: ["GET", "POST"]

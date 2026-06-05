@@ -1,0 +1,77 @@
+openapi: 3.0.0
+info:
+  title: Notification Management API
+  version: 1.0.0
+  description: API for managing user notifications and preferences.
+
+paths:
+  /api/notifications:
+    get:
+      summary: Get user notifications
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [unread, read, all]
+          default: unread
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+  
+  /api/notifications/{id}/read:
+    patch:
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+
+  /api/notifications/read-all:
+    patch:
+      summary: Mark all notifications as read
+      responses:
+        '200':
+          description: All notifications marked as read
+
+  /api/notifications/preferences:
+    get:
+      summary: Get notification preferences
+    patch:
+      summary: Update notification preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Preferences'
+
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        _id: { type: string }
+        type: { type: string }
+        title: { type: string }
+        content: { type: string }
+        data: { type: object }
+        readAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+    
+    Preferences:
+      type: object
+      properties:
+        email: { type: boolean }
+        socket: { type: boolean }
+        inApp: { type: boolean }

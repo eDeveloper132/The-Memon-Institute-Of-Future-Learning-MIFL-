@@ -22,8 +22,10 @@ import {
     createExam,
     recordGrade,
     getExamsAndGrades,
-    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage,
-    getTeacherNotices
+    getTeacherNotices,
+    createNotice,
+    deleteNotice,
+    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage
 } from '../controllers/teacher.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 
@@ -78,7 +80,13 @@ router.post('/quizzes', createQuiz);
 router.post('/exams', createExam);
 router.post('/grades', recordGrade);
 router.get('/results', getExamsAndGrades);
+
+/**
+ * Notices
+ */
 router.get('/notices', getTeacherNotices);
+router.post('/notices', createNotice);
+router.delete('/notices/:id', deleteNotice);
 
 /**
  * Messaging

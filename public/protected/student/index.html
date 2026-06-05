@@ -180,14 +180,28 @@
                 if (notices.length === 0) {
                     list.innerHTML = '<p class="text-gray-400 text-center py-8 font-medium italic">No new notices.</p>';
                 } else {
+                    const typeIcons = {
+                        academic: 'fa-book',
+                        exam: 'fa-file-pen',
+                        holiday: 'fa-calendar-day',
+                        event: 'fa-star',
+                        admin: 'fa-bullhorn'
+                    };
+
                     list.innerHTML = notices.slice(0, 3).map(n => `
-                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 ${n.isPinned ? 'border-l-4 border-l-blue-500' : ''} hover:border-blue-200 transition">
-                            <div class="flex items-center gap-2 mb-1">
-                                ${n.isPinned ? '<i class="fa-solid fa-thumbtack text-[10px] text-blue-500"></i>' : ''}
-                                <p class="font-bold text-gray-900">${n.title}</p>
+                        <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 ${n.isPinned ? 'border-l-4 border-l-orange-500' : 'border-l-4 border-l-blue-500'} hover:border-blue-200 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <div class="flex items-center gap-2">
+                                    <i class="fa-solid ${typeIcons[n.type] || 'fa-bullhorn'} text-xs ${n.isPinned ? 'text-orange-500' : 'text-blue-500'}"></i>
+                                    <p class="font-bold text-gray-900 truncate">${n.title}</p>
+                                </div>
+                                ${n.isPinned ? '<span class="text-[8px] font-black uppercase text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">Pinned</span>' : ''}
                             </div>
-                            <p class="text-xs text-gray-500 line-clamp-2">${n.content}</p>
-                            <p class="text-[10px] text-gray-400 mt-2 font-bold uppercase">${new Date(n.createdAt).toLocaleDateString()}</p>
+                            <p class="text-xs text-gray-500 line-clamp-2 mb-2">${n.content}</p>
+                            <div class="flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-tight">
+                                <span>${n.author?.name || 'Academic Dept'}</span>
+                                <span>${new Date(n.createdAt).toLocaleDateString()}</span>
+                            </div>
                         </div>
                     `).join('');
                 }

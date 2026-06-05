@@ -8,9 +8,14 @@ const noticeSchema = new Schema<INotice>(
         author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         audience: [{ 
             type: String, 
-            enum: ['all', 'students', 'teachers', 'parents'],
+            enum: ['all', 'students', 'teachers', 'parents', 'admins'],
             default: 'all'
         }],
+        type: {
+            type: String,
+            enum: ['academic', 'exam', 'holiday', 'event', 'admin'],
+            default: 'admin'
+        },
         targetClass: { type: Schema.Types.ObjectId, ref: 'Class' },
         expiryDate: Date,
         isPinned: { type: Boolean, default: false },
