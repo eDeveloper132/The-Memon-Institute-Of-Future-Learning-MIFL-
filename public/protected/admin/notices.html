@@ -18,7 +18,7 @@
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Notice Board</h1>
                 <p class="text-sm text-gray-500 mt-1">Broadcast important announcements to different roles across the system.</p>
             </div>
-            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition transform hover:-translate-y-0.5 shadow-lg shadow-blue-200">
+            <button id="createNoticeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition transform hover:-translate-y-0.5 shadow-lg shadow-blue-200">
                 <i class="fa-solid fa-plus mr-2"></i> Create Notice
             </button>
         </div>
@@ -34,7 +34,7 @@
         <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h3 class="text-lg font-bold text-gray-800">Create New Notice</h3>
-                <button onclick="closeModal()" class="text-gray-400 hover:text-red-500 transition text-xl">&times;</button>
+                <button id="closeModalBtnTop" class="text-gray-400 hover:text-red-500 transition text-xl">&times;</button>
             </div>
             
             <form id="noticeForm" class="p-6 space-y-4">
@@ -71,7 +71,7 @@
                 </div>
                 
                 <div class="pt-4 flex gap-3">
-                    <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-bold transition">Cancel</button>
+                    <button type="button" id="closeModalBtnBottom" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-bold transition">Cancel</button>
                     <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition shadow-lg shadow-blue-200">Broadcast</button>
                 </div>
             </form>
@@ -105,6 +105,11 @@
                 document.getElementById('noticeForm').reset();
             }, 300);
         }
+
+        // Event Listeners for Modal
+        document.getElementById('createNoticeBtn').addEventListener('click', openModal);
+        document.getElementById('closeModalBtnTop').addEventListener('click', closeModal);
+        document.getElementById('closeModalBtnBottom').addEventListener('click', closeModal);
 
         async function fetchNotices() {
             const container = document.getElementById('noticesContainer');
@@ -168,7 +173,7 @@
                                 <p class="text-xs text-gray-400 mt-0.5">${new Date(notice.createdAt).toLocaleDateString()} at ${new Date(notice.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
                             </div>
                         </div>
-                        <button onclick="deleteNotice('${notice._id}')" class="text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Delete Notice">
+                        <button data-delete-id="${notice._id}" class="delete-notice-btn text-gray-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Delete Notice">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
@@ -181,6 +186,15 @@
                 </div>
             `).join('');
         }
+
+        // Event Delegation for Delete Buttons
+        document.getElementById('noticesContainer').addEventListener('click', (e) => {
+            const btn = e.target.closest('.delete-notice-btn');
+            if (btn) {
+                const id = btn.getAttribute('data-delete-id');
+                deleteNotice(id);
+            }
+        });
 
         document.getElementById('noticeForm').addEventListener('submit', async (e) => {
             e.preventDefault();
