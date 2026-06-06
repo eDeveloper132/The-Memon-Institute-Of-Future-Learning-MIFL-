@@ -1,8 +1,8 @@
 ---
-description: "Task list for Comprehensive Email Notification System implementation"
+description: "Task list for Comprehensive Documentation Update implementation"
 ---
 
-# Tasks: Comprehensive Email Notification System
+# Tasks: Comprehensive Documentation Update
 
 **Input**: Design documents from `/specs/main/`
 **Prerequisites**: plan.md, spec.md, research.md
@@ -15,89 +15,43 @@ description: "Task list for Comprehensive Email Notification System implementati
 
 ## Phase 1: Setup
 
-**Purpose**: Initial project preparation
-
 - [x] T001 Initialize design artifacts in specs/main/
-- [x] T002 Create `services/emailTemplates.ts` with basic branding and structure
 
-## Phase 2: Foundational (Templates & Core Service)
+## Phase 2: Core Documentation Updates (Priority: P1) 🎯 MVP
 
-**Purpose**: Centralize all email content logic
+**Goal**: Update all README files to reflect the current state of the project.
 
-- [x] T003 Implement `getAcademicEmail(type, data)` in `services/emailTemplates.ts`
-- [x] T004 Implement `getAttendanceEmail(childName, date)` in `services/emailTemplates.ts`
-- [x] T005 Implement `getFinanceEmail(type, data)` in `services/emailTemplates.ts`
-- [x] T006 Implement `getAdminAlertEmail(type, data)` in `services/emailTemplates.ts`
-- [x] T007 Implement `getMessagingEmail(senderName, preview)` in `services/emailTemplates.ts`
+**Independent Test**: Read every README and verify information matches the current TypeScript codebase.
 
----
+### Implementation for Phase 2
 
-## Phase 3: User Story 1 - Academic Notifications (Priority: P1) 🎯 MVP
-
-**Goal**: Students and Parents receive emails for new materials, assignments, and results
-
-**Independent Test**: Post a new assignment as Teacher, verify students receive emails
-
-### Implementation for User Story 1
-
-- [x] T008 [US1] Integrate assignment alerts in `postAssignment` (createAssignment) in `controllers/teacher.controller.ts`
-- [x] T009 [US1] Integrate grading alerts in `gradeAssignment` (gradeSubmission & recordGrade) in `controllers/teacher.controller.ts`
-- [x] T010 [US1] Integrate study material alerts in `postMaterial` (uploadMaterial) in `controllers/teacher.controller.ts`
-- [x] T011 [US1] Integrate quiz alerts in `createQuiz` in `controllers/teacher.controller.ts`
-- [x] T012 [US1] Integrate exam schedule alerts in `createExam` in `controllers/teacher.controller.ts`
-
-**Checkpoint**: Academic event loop is fully notified via email.
+- [x] T002 [US1] Update root `README.md` with new features (real-time, email), modern stack details, and Principle III (npx tsc) gate.
+- [x] T003 [P] [US1] Update `config/README.md` to include `mailService` and environment variables.
+- [x] T004 [P] [US1] Update `controllers/README.md` to document notification trigger patterns.
+- [x] T005 [P] [US1] Update `middlewares/README.md` to reflect student-only rate limiting and CSP-aware security.
+- [x] T006 [P] [US1] Update `public/README.md` with the full list of custom Web Components.
+- [x] T007 [P] [US1] Update `routes/README.md` to map current API endpoints.
+- [x] T008 [P] [US1] Update `schemas/README.md` with relationship and indexing details.
+- [x] T009 [P] [US1] Update `services/README.md` to document `NotificationService` and `RoleService`.
+- [x] T010 [P] [US1] Update `types/README.md` to explain global and schema-level types.
 
 ---
 
-## Phase 4: User Story 2 - Finance & Attendance (Priority: P2)
+## Phase N: Polish & Cross-Cutting Concerns
 
-**Goal**: Parents notified of absences and fee vouchers
-
-**Independent Test**: Generate a fee voucher, verify parent/student receives email
-
-### Implementation for User Story 2
-
-- [x] T013 [US2] Integrate absence alerts in `markAttendance` (manualRecordAttendance) in `controllers/admin.controller.ts`
-- [x] T014 [US2] Integrate fee generation alerts in `generateFee` (generateFeeVoucher) in `controllers/admin.controller.ts`
-- [x] T015 [US2] Integrate payment confirmation alerts in `confirmPayment` (N/A - fee generation handles parents already) in `controllers/admin.controller.ts`
-
----
-
-## Phase 5: User Story 3 - Admin & Messaging (Priority: P3)
-
-**Goal**: Admin notified of requests; users notified of offline messages
-
-**Independent Test**: Send a message to an offline user, verify they receive email notification
-
-### Implementation for User Story 3
-
-- [x] T016 [US3] Integrate enrollment request alerts in `enrollCourse` in `controllers/student.controller.ts`
-- [x] T017 [US3] Integrate offline message alerts in `sendMessage` in `controllers/chat.controller.ts`
-
----
-
-## Phase N: Polish & Performance
-
-- [x] T018 Ensure all service calls are properly awaited or backgrounded for UX
-- [x] T019 [P] Update `profile.html` (all roles) to ensure "Email Notifications" toggle is clear
-- [x] T020 Final validation of all trigger points
+- [x] T011 [P] Standardize tone and formatting across all 9 README files.
+- [x] T012 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
+- [x] T013 Final review of project structure diagrams in root README.
 
 ---
 
 ## Dependencies & Execution Order
 
-- **Foundational (Phase 2)** must be complete before any user story to provide templates.
-- **US1 (Academic)** is the highest priority as it covers the most frequent user interactions.
-- **US2 and US3** can follow.
+- **Phase 1** is complete.
+- **Phase 2** tasks can mostly run in parallel as they affect different files.
+- **Polish phase** follows completion of all individual file updates.
 
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-Academic alerts (Assignments/Materials) are the core value prop. We will deliver these first to prove the template and service integration works at scale.
-
----
-
-## Notes
-- Use `NotificationService.send()` which already handles preference checking.
-- Background large batch notifications (e.g. whole class) to prevent controller timeout.
+Updating all 9 files constitutes the MVP as it ensures zero documentation debt across the project layers.

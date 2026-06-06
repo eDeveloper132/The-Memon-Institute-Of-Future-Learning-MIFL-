@@ -1,34 +1,32 @@
-# Specification: Comprehensive Email Notification System
+# Specification: Comprehensive Documentation Update
 
 ## Background
-MIFL currently has a `NotificationService` that supports in-app, socket, and email channels. However, email notifications are only triggered in a few places (like role transitions). To make the system more engaging and professional, we need to systematically integrate email notifications into all critical user journeys.
+MIFL has evolved significantly with new features like real-time notifications, a comprehensive email system, and strict constitutional quality gates. The existing README files are outdated and do not reflect the current architectural state, development workflow, or full feature set.
 
 ## User Stories
-- **As a Student**, I want to receive an email when a new assignment is posted, when a quiz is available, or when my fee voucher is generated.
-- **As a Parent**, I want to receive an email when my child is marked absent, when their results are published, or when a fee is due.
-- **As a Teacher**, I want to receive an email when a student submits an assignment or when a new class is assigned to me.
-- **As an Admin**, I want to receive an email for new enrollment requests or high-priority system alerts.
+- **As a Developer**, I want clear, accurate documentation for each module so I can understand the codebase and contribute effectively.
+- **As an Architect**, I want the project structure and design principles to be clearly documented to maintain technical integrity.
+- **As a System Admin**, I want accurate setup and deployment instructions to manage the platform reliably.
 
 ## Requirements
 
 ### Functional
-- **Triggers**: Integrate `NotificationService.send()` into the following events:
-  - **Auth**: Signup (welcome), Password Reset, Email Change. (Already exists but verify templates).
-  - **Academic**: New Assignment, Assignment Graded, New Material, New Quiz, Exam Schedule.
-  - **Attendance**: Absence alerts (to parents).
-  - **Finance**: Fee voucher generated, Payment confirmed.
-  - **Admin**: New Enrollment Request.
-  - **Messaging**: New message notification (when user is offline).
-- **Preferences**: Respect `user.notificationPrefs.email` (already implemented in `NotificationService`, but ensure data is consistent).
-- **Templates**: Use meaningful HTML templates for different types of emails.
+- **Audit**: Review all 9 existing `README.md` files.
+- **Update Content**:
+    - **Main README**: Highlight real-time features, email system, and mandatory `tsc` gate.
+    - **Sub-directory READMEs**: Detail current models, controllers, and services (e.g., mention `NotificationService` in `services/README.md`).
+    - **Security**: Document the refined rate limiting and CSP policies in `middlewares/README.md`.
+- **Consistency**: Ensure a professional, uniform tone and formatting across all files.
+- **Navigation**: Link sub-directory documentation back to the root and each other where relevant.
 
 ### Technical
-- **Centralization**: All email sending must flow through `NotificationService.send()`.
-- **Async Execution**: Ensure notification sending doesn't block API responses (use `await` but consider if some should be backgrounded or if the performance is acceptable).
-- **Templates**: Centralize templates in `services/emailTemplates.ts`.
+- **Markdown Standards**: Use GitHub-flavored Markdown.
+- **Project Structure**: Update the folder tree diagrams to match reality.
+- **Quality Gate**: Explicitly document Principle III (Mandatory Verification Gate) in the contributing section.
 
 ## Acceptance Criteria
-- [ ] Email notifications are sent for all events listed in the Requirements.
-- [ ] Emails contain relevant data (titles, names, links).
-- [ ] User can opt-out of emails via their profile settings.
-- [ ] No duplicate emails for the same event.
+- [ ] All 9 README files are updated with current technical details.
+- [ ] Project structure diagram in root README is 100% accurate.
+- [ ] Setup instructions include current environment variables.
+- [ ] No mention of hard-coded notifications or outdated rate limiter logic remains.
+- [ ] Documentation passes a peer review for clarity and tone.

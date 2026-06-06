@@ -31,7 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- [ ] I. Spec-Driven: Requirement coverage confirmed.
+- [ ] II. Type Safety: Schema/Types defined. No `any` without justification.
+- [ ] III. Verification Gate: `npx tsc` identified as mandatory pre-commit step.
+- [ ] IV. Library-First: Business logic encapsulated in services.
+- [ ] V. Simplicity: Smallest viable change identified.
+- [ ] VI. Proactive: Notification triggers identified.
 
 ## Project Structure
 

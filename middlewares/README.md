@@ -1,25 +1,29 @@
-# Middlewares
+# Security and Middleware Layer
 
-Middlewares are functions that execute during the request-response lifecycle. They provide a powerful way to handle cross-cutting concerns such as security, authentication, and request throttling.
+Middleware in MIFL provides essential protection against common web vulnerabilities and enforces role-based access control (RBAC) across the entire platform.
 
-## Core Middlewares
+## 🛡 Security Middleware (`security.ts`)
 
-### 1. Security Middleware (`security.ts`)
-Enhances application security by setting various HTTP headers and sanitizing inputs.
-- **Helmet:** Sets security-related HTTP headers to protect against common web vulnerabilities.
-- **NoSQL Injection:** Uses `express-mongo-sanitize` to prevent malicious MongoDB queries.
-- **HPP:** Protects against HTTP Parameter Pollution.
+Leverages **Helmet.js** to set critical security headers, including:
+- **X-Content-Type-Options**: `nosniff`.
+- **X-Frame-Options**: `DENY`.
+- **Content-Security-Policy (CSP)**: A strict policy that forbids inline scripts. Frontend pages must use `addEventListener` and external modules in the `public` directory to comply.
 
-### 2. Rate Limiting (`rateLimiter.ts`)
-Prevents abuse and DoS attacks by limiting the number of requests a client can make within a certain timeframe.
-- **General Limiter:** Applied globally to all routes.
-- **Auth Limiter:** Stricter limits applied to authentication endpoints (Login, Signup) to prevent brute-force attacks.
+## 🚦 Targeted Rate Limiting (`rateLimiter.ts`)
 
-### 3. Authentication (`auth.ts`)
-Manages user sessions and access control.
-- **`authenticate`:** Validates the JWT provided in the request (handles both cookies and Authorization headers).
-- **`authorize`:** Restricts access based on user roles (Admin, Teacher, Student, Parent, etc.).
+MIFL uses a specialized rate limiting strategy to balance security with developer/staff productivity:
 
-## Usage
+- **Targeted Audience:** Rate limiting is explicitly applied **only to users with the `student` role**.
+- **Exempt Users:** Admin, Teacher, and Parent roles are exempt from rate limiting to allow for high-frequency administrative tasks.
+- **Limit:** 200 requests per 15-minute window per IP.
+- **Mechanism:** Leverages `express-rate-limit` with custom `skip` logic based on JWT role decoding.
 
-Middlewares are applied globally in `index.ts` or locally within specific route definitions in the `routes/` directory.
+## 🔐 Authentication & Authorization (`auth.ts`)
+
+- **`authenticate`**: Verifies the JWT token from the `token` cookie or `Authorization` header.
+- **`authorize(...roles)`**: Restricts access to specific endpoints based on the authenticated user's role.
+
+## 📂 File Uploads (`upload.ts`)
+
+- **Engine:** Multer.
+- **Usage:** Handles temporary storage for chat attachments and profile pictures before processing or external storage.

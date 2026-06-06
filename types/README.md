@@ -1,20 +1,22 @@
-# Type Definitions
+# Global TypeScript Definitions
 
-This directory contains global TypeScript type definitions, interfaces, and enums used throughout the project that are not tied to a specific database model.
+This directory and the `schemas/types/` directory define the structure and contract for all data within the MIFL ecosystem.
 
-## Contents
+## 🏛 Structure
 
-- **Global Utility Types:** Common types used across multiple modules (e.g., standard API response formats, custom error types).
-- **Express Extensions:** Type augmentations for Express `Request` objects (e.g., adding the `user` property after authentication).
-- **Environment Types:** Definitions for `process.env` to ensure type safety for environment variables.
+- **`types/` (Global)**: Contains definitions that span multiple modules or represent external service shapes (e.g. `Express.User` expansion).
+- **`schemas/types/` (Domain)**: Strictly tied to Mongoose entities. Every model in `schemas/models/` must have a corresponding interface here (e.g., `user.type.ts`).
 
-## Comparison with `schemas/types/`
+## ⚖️ Strict Type Policy
 
-- **`types/` (here):** Global infrastructure, utility types, and environment definitions.
-- **`schemas/types/`:** Strictly definitions that mirror the MongoDB/Mongoose database structure.
+- **No `any`**: In compliance with the **MIFL Constitution (v1.1.0)**, the use of `any` is strictly prohibited.
+- **Interfaces over Classes**: Prefer TypeScript `interface` or `type` for defining data contracts to ensure lightweight, performant type checking.
+- **Optionality**: Use optional properties (`field?: type`) only when a field is truly non-essential in all contexts.
 
-## Best Practices
+## 🛠 Compilation Gate
 
-- Use PascalCase for Interfaces and Types (e.g., `IUserRequest`).
-- Keep these files focused on structure and avoid including implementation logic.
-- Export everything clearly to be easily imported in other modules.
+Before any commit, run:
+```bash
+npx tsc
+```
+This command must return **zero errors**. The system is configured with `strict: true` and `noImplicitAny: true` to prevent technical debt.

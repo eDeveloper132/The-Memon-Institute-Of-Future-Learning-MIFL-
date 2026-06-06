@@ -1,55 +1,52 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: 1.0.0 → 1.1.0
+- List of modified principles:
+    - [PRINCIPLE_1_NAME] → I. Spec-Driven Development (SDD)
+    - [PRINCIPLE_2_NAME] → II. Strict Type Safety
+    - [PRINCIPLE_3_NAME] → III. Mandatory Verification Gate
+    - [PRINCIPLE_4_NAME] → IV. Library-First Architecture
+    - [PRINCIPLE_5_NAME] → V. Simplicity & YAGNI
+    - [PRINCIPLE_6_NAME] → VI. Real-time & Proactive Communication
+- Added sections: Quality Standards, Development Workflow
+- Templates requiring updates:
+    - ✅ updated: .specify/templates/plan-template.md
+    - ✅ updated: .specify/templates/tasks-template.md
+    - ✅ updated: .gemini/commands/sp.implement.toml
+    - ✅ updated: .gemini/commands/sp.git.commit_pr.toml
+    - ✅ updated: README.md
+- Follow-up TODOs: None
+-->
+
+# MIFL Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Spec-Driven Development (SDD)
+All features MUST start with a specification in `/specs/`. Implementation MUST follow the Plan -> Tasks -> Implement flow to ensure alignment with user intent and architectural integrity.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Strict Type Safety
+All code MUST be written in TypeScript with strict mode enabled. The use of `any` is strictly prohibited unless explicitly justified in code comments and documented in the implementation plan. Interfaces and types MUST be used for all data structures.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Mandatory Verification Gate
+After the implementation of any task or set of tasks, the `npx tsc` command MUST be executed to check for type errors. Changes MUST NOT be committed or pushed to the GitHub `main` branch if any errors are found.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Library-First Architecture
+Business logic MUST be encapsulated in standalone services or shared libraries rather than within controllers. Controllers SHOULD only handle request parsing and response orchestration.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Simplicity & YAGNI
+Favor the simplest viable solution that satisfies the current specification. Do not implement features or architectural complexity for hypothetical future needs.
 
-### [PRINCIPLE_6_NAME]
+### VI. Real-time & Proactive Communication
+The system SHOULD leverage Socket.IO for real-time updates and the Email Notification System for persistent user engagement. Proactive communication is a first-class citizen of the user experience.
 
+## Quality Standards
+All API responses MUST follow a standard JSON structure. Frontend components MUST be reusable, modular, and free of inline JavaScript to comply with strict Content Security Policies (CSP).
 
-[PRINCIPLE__DESCRIPTION]
-
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
-
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Development Workflow
+The standard development cycle is: Research -> Strategy -> Execution (Plan-Act-Validate). Every task completion MUST be recorded in a Prompt History Record (PHR) to maintain a transparent and audit-able history.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This constitution supersedes all other development practices at MIFL. Amendments to this document require a MINOR version bump and must be propagated to all dependent templates. Violations of Principle III (Mandatory Verification Gate) require immediate remediation.
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
-
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.1.0 | **Ratified**: 2026-06-06 | **Last Amended**: 2026-06-06

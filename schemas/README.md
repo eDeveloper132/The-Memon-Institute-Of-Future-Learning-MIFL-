@@ -1,41 +1,32 @@
-# Schemas and Models
+# Data Layer (Schemas & Models)
 
-This directory defines the data architecture of the application using Mongoose schemas and TypeScript interfaces.
+MIFL uses **Mongoose** with strict **TypeScript** interfaces to ensure data integrity and high performance through optimized MongoDB indexing.
 
-## Structure
+## 🗄 Core Entities
 
-- `models/`: Contains the Mongoose models which are used to interact with the MongoDB database.
-- `types/`: Contains TypeScript interfaces that correspond to the database schemas, ensuring type safety throughout the application.
+- **`User`**: Centralized account model with role-based attributes (Student, Teacher, Parent, Admin).
+- **`Class`**: Represents a physical or virtual grade-level grouping.
+- **`Course`**: Academic subjects containing multiple batches.
+- **`Assignment`**: Trackable tasks with submissions and grading.
+- **`Attendance`**: Daily records indexed by student and date.
+- **`Notification`**: Persistent alerts used for dashboard and bell feeds.
+- **`Notice`**: Targeted announcements for specific audiences or classes.
+- **`Message`**: Real-time chat history records.
 
-## Models (`models/`)
+## 🔗 Key Relationships
 
-### 1. User Model (`user.model.ts`)
-The core model for all users (Students, Teachers, Admins, Parents, Staff).
-- **Key Fields:** `name`, `email`, `password` (hashed), `phoneNumber`, `role` (enum), `status`.
-- **Features:** Automated password hashing, email verification status, and pending email management.
+- **Parent ↔ Student**: Linked via a `parent` field in the User model or `children` array.
+- **Teacher ↔ Class**: Linked via `classTeacher` for oversight.
+- **Course ↔ Batch**: One course contains multiple batches, which in turn contain student references.
 
-### 2. Attendance Model (`attendance.model.ts`)
-Tracks the attendance of students in classes.
-- **Key Fields:** `student` (ref), `class` (ref), `course` (ref), `date`, `status` (present, absent, late, excused).
+## ⚡️ Performance Indexing
 
-### 3. Class Model (`class.model.ts`)
-Represents a physical or virtual classroom group.
-- **Key Fields:** `name`, `gradeLevel`, `section`, `classTeacher` (ref), `students` (array of refs), `academicYear`.
+MIFL implements several critical indexes for real-time responsiveness:
+- **Notifications**: Indexed by `recipient` and `readAt` for instant alert counts.
+- **Notices**: Indexed by `audience` and `expiryDate` for efficient dashboard filtering.
+- **Attendance**: Compound index on `student` and `date`.
 
-### 4. Course Model (`course.model.ts`)
-Represents an academic course offered.
-- **Key Fields:** `title`, `code` (unique), `department` (ref), `teacher` (ref), `credits`.
+## 🛡 Type Safety
 
-### 5. Department Model (`department.model.ts`)
-Groups courses and staff by academic department.
-- **Key Fields:** `name`, `code` (unique), `headOfDepartment` (ref).
-
-### 6. Exam & Grade Models (`exam.model.ts`)
-Handles assessment tracking, including marks and feedback.
-
-### 7. Fee Model (`fee.model.ts`)
-Manages financial transactions, tuition, and payment statuses.
-
-## TypeScript Types (`types/`)
-
-Each model has a corresponding interface in the `types/` directory (e.g., `user.type.ts`, `class.type.ts`) to ensure strict typing across the services and controllers.
+Each model in `models/` has a corresponding interface in `types/`.
+> **MANDATORY:** Never use `any` when defining schema fields or method parameters. Always reference the appropriate `IEntity` interface.

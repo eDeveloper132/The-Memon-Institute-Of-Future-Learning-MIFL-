@@ -1,24 +1,28 @@
-# Services
+# Shared Service Layer (Libraries)
 
-Services contain the core business logic of the application. By isolating logic into services, we ensure that the codebase remains modular, testable, and independent of the transport layer (HTTP/Express).
+The service layer contains standalone libraries and business logic utilities that are reused across multiple controllers. Following **Principle IV (Library-First)**, all complex logic must reside here.
 
-## Available Services
+## 🚀 Key Services
 
-### Mail Service (`mail.service.ts`)
-A wrapper around Nodemailer for handling all outgoing communications.
-- **Transporters:** Configured to use SMTP with environment-based credentials.
-- **Functionality:** 
-    - `sendMail`: Generic method for sending HTML/Text emails.
-    - `sendWelcomeEmail`: Sent upon registration.
-    - Special templates for verification links, password resets, and email change confirmations.
+### `NotificationService.ts`
+The proactive engagement engine of MIFL.
+- **Channels:** Database (in-app), Socket.IO (real-time), and Email (Nodemailer).
+- **Templates:** Uses professional HTML layouts defined in `emailTemplates.ts`.
+- **Preference Aware:** Respects user `notificationPrefs` (opt-in/out).
 
-## Responsibility
+### `MailService.ts`
+A thin wrapper around **Nodemailer** for standardizing SMTP delivery.
+- Handles connection pooling and secure credential injection.
 
-1.  **Data Processing:** Perform complex calculations or data transformations.
-2.  **Model Interaction:** Use Mongoose models to create, read, update, and delete data.
-3.  **Third-Party Integration:** Handle interactions with external APIs or services (like Nodemailer).
-4.  **Error Handling:** Throw meaningful errors that can be caught and handled by controllers.
+### `RoleService.ts`
+Manages role transition logic and logging.
+- Automatically records `RoleChangeLog` entries when user permissions are updated.
 
-## Design Philosophy
+### `Grading.service.ts`
+Contains algorithmic logic for calculating GPA and performance metrics.
 
-Controllers should be "thin," meaning they only handle request/response logic. Services should be "fat," containing the actual logic that makes the application function.
+## 🧱 Design Guidelines
+
+- **Stateless:** Services should not store internal request state; they should receive all necessary data via parameters.
+- **Independently Testable:** Each service in this directory has a corresponding `.test.ts` file in the root `tests/` folder.
+- **Async First:** Almost all service methods return `Promise<T>` to ensure non-blocking I/O.

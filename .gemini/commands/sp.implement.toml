@@ -129,6 +129,7 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **IMPORTANT** For completed tasks, make sure to mark the task off as [X] in the tasks file.
 
 9. Completion validation:
+   - **MANDATORY**: Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE).
    - Verify all required tasks are completed
    - Check that implemented features match the original specification
    - Validate that tests pass and coverage meets requirements

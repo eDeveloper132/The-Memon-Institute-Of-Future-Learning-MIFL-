@@ -1,43 +1,39 @@
-# Research: Trigger Audit for Email Notifications
+# Research: Documentation Audit Findings
 
-## Decision: Targeted Integration Points
-We will integrate `NotificationService.send()` at the exact moment an entity is created or a status changes in the controllers.
+## Decision: Unified Documentation Strategy
+We will move away from placeholder-heavy READMEs to high-signal, technical documentation that reflects the current TypeScript implementation and the v1.1.0 constitutional principles.
 
-## Rationale
-- **Context Availability**: Controllers have immediate access to the ID of the created entity and the authenticated user.
-- **Reliability**: Triggering after a successful database `save()` or `create()` ensures notifications are only sent for real events.
+## Audit Mapping
 
-## Trigger Mapping
+| File | Current State | Missing/Outdated Items |
+|------|---------------|------------------------|
+| **Root README.md** | Basic | Missing Real-time details, Email System info, `tsc` Quality Gate. |
+| **config/README.md** | Minimal | Missing details on `mailService` config and environment variables for Sanity. |
+| **controllers/README.md** | Generic | Needs to mention standard trigger patterns for notifications and async backgrounding. |
+| **middlewares/README.md** | Basic | Missing details on role-based rate limiting (students only) and CSP-aware security middleware. |
+| **public/README.md** | Placeholder | Missing Custom Web Component list and CSP compliance rules (no inline scripts). |
+| **routes/README.md** | Outdated | Doesn't reflect current route structure for notifications, enrollments, and teacher oversight. |
+| **schemas/README.md** | Basic | Missing indexes for real-time performance and relationship mapping. |
+| **services/README.md** | Sparse | Missing `NotificationService`, `RoleService`, and `MailService` architecture. |
+| **types/README.md** | Very Sparse | Needs to explain centralized data-related types in `schemas/types/`. |
 
-| Category | Controller | Method | Recipient | Title Template |
-|----------|------------|--------|-----------|----------------|
-| **Academic** | Teacher | `postAssignment` | All Students in Class | New Assignment: {{title}} |
-| **Academic** | Teacher | `gradeAssignment` | Student | Assignment Graded: {{title}} |
-| **Academic** | Teacher | `postMaterial` | All Students in Class | New Study Material: {{title}} |
-| **Academic** | Teacher | `createQuiz` | All Students in Class | New Quiz Available: {{title}} |
-| **Academic** | Teacher | `createExam` | All Students in Class | Exam Scheduled: {{title}} |
-| **Attendance**| Admin | `markAttendance` | Parents of Absentees | Absence Alert: {{childName}} |
-| **Finance** | Admin | `generateFee` | Student (and Parent) | Fee Voucher Generated |
-| **Admin** | Student | `enrollCourse` | Admins | New Enrollment Request |
-| **Messaging** | Chat | `sendMessage` | Recipient (if offline) | New Message from {{sender}} |
+## Key Findings
 
-## Findings
+### 1. The "Single Source of Truth" Problem
+Many READMEs refer to features that have since been refactored (e.g., global rate limiting).
+- **Decision**: Update all docs to reflect **targeted** mechanisms (e.g., Student-only rate limits).
 
-### 1. Template Strategy
-Templates will be defined in `services/emailTemplates.ts` as functions returning HTML strings.
-Example: `getAssignmentEmail(assignmentTitle, dueDate)`.
+### 2. UI Component Visibility
+The `public/README.md` is almost empty but the `ui-components.ts` is now a major part of the project.
+- **Decision**: List all custom elements (`ui-navbar`, `ui-card`, etc.) in the public docs.
 
-### 2. Batch Notifications
-For events like "New Assignment" (sent to 30+ students), `NotificationService.send` should be called in a `Promise.all` or a loop.
-- **Recommendation**: Background these calls using `setImmediate` or similar to avoid delaying the API response to the teacher.
-
-### 3. Parent Notifications
-Parents currently lack a direct "recipient" field in many academic entities. We will need to fetch the student's parent ID before sending.
+### 3. Verification Gate Prominence
+The new `npx tsc` mandate from the Constitution must be visible in the Root README to ensure compliance.
 
 ## Alternatives Considered
 
-### Mongoose Middleware (`post('save')`)
-- **Rejected because**: It's harder to get the context of *who* performed the action and often leads to circular dependency issues with services.
+### Consolidating all docs into root README
+- **Rejected because**: The project is modular. Keeping per-directory READMEs helps developers focus on specific layers (e.g., schemas vs controllers).
 
-### Event Emitter (Pub/Sub)
-- **Rejected because**: For the current scale, direct service calls in controllers are more readable and easier to debug.
+### Using a specialized documentation tool (Docusaurus/JSDoc)
+- **Rejected because**: YAGNI. Simple, well-maintained Markdown files in the repo are sufficient for the current team size and provide the fastest access.

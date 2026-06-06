@@ -1,23 +1,32 @@
-# Public Assets
+# Frontend Prototypes & UI Components
 
-This directory contains the static frontend assets for the application, including HTML prototypes and client-side scripts. The frontend is built using **Native Web Components** and styled with **Tailwind CSS**.
+The `public` directory contains static HTML prototypes and modular Web Components. The system follows a **Custom Elements** architecture that ensures reactivity and high performance without the weight of a traditional framework.
 
-## Structure
+## 🧱 Custom UI Components (`ui-components.ts`)
 
-- `auth/`: HTML pages for authentication workflows.
-    - `login.html`, `signup.html`, `forgotPassword.html`, etc.
-- `protected/`: Pages accessible only to authenticated users (Dashboard, etc.).
-- `components/`: Client-side TypeScript components.
-    - `auth-components.ts`: UI elements specific to authentication.
-    - `ui-components.ts`: General-purpose UI components (Navbar, Cards, Toasts).
+MIFL uses modern Web Components (custom elements) to ensure UI consistency and strict CSP compliance.
 
-## Tech Stack
+| Component | Usage | Key Attributes |
+|-----------|-------|----------------|
+| `<ui-navbar>` | Top navigation bar with real-time bell and profile links. | `title` |
+| `<ui-card>` | Dashboard statistic or info summary card. | `title`, `value`, `color`, `icon` |
+| `<ui-spinner>` | Animated loading indicator for async data fetching. | `text` |
+| `<ui-modal>` | Standardized dialog window for forms and alerts. | `id`, `title` |
 
-- **HTML5:** Semantic structure.
-- **Tailwind CSS:** Utility-first styling (loaded via CDN or compiled).
-- **TypeScript:** Compiled to modern JavaScript for component logic.
-- **Web Components:** Reusable, encapsulated UI elements (e.g., `<ui-navbar>`, `<ui-card>`).
+## 🛡 CSP Compliance
 
-## Usage
+The frontend is built to satisfy a strict **Content Security Policy**:
+- **No Inline Scripts:** All logic must reside in script blocks with `type="module"` or external `.js` files.
+- **No Inline Handlers:** Do not use `onclick=""` or `onchange=""`. Always use `addEventListener` in the script block.
 
-The Express server serves these files statically. Protected routes are guarded by the `authenticate` middleware, which redirects unauthenticated users to the login page.
+## 📁 Directory Structure
+
+- **`/auth/`**: Login, Signup, and Password Recovery pages.
+- **`/protected/`**: Role-specific dashboards and feature pages.
+- **`/uploads/`**: Local cache for recently uploaded files (e.g. chat).
+- **`/components/`**: Modular logic for UI elements and auth-related state.
+
+## 🎨 Styling
+
+- **Utility First:** Styled with **Tailwind CSS** via CDN for rapid prototyping.
+- **Professional Palette:** Primary colors use Blue-600 for trust and accessibility.

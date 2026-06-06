@@ -155,6 +155,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
+- [ ] TXXX Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
 - [ ] TXXX Run quickstart.md validation
 
 ---
@@ -245,6 +246,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
+- **MANDATORY**: Run `npx tsc` after every task or logical group. ZERO errors allowed for commit/push.
 - Verify tests fail before implementing
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently

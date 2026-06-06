@@ -1,24 +1,32 @@
-# Routes
+# API Route Architecture
 
-This directory contains the Express router definitions, mapping URL endpoints to their respective controller methods.
+This directory defines the public and protected API surface of the MIFL platform. Routes are modularized by functional area and follow RESTful principles.
 
-## Current Route Groups
+## 🛣 Route Modules
 
-### Authentication (`auth.routes.ts`)
-- **Base Path:** `/api/auth`
-- **Key API Endpoints:**
-    - `POST /signup`: Register a new user.
-    - `POST /login`: Authenticate a user and set cookie.
-    - `POST /logout`: Clear session cookie.
-    - `POST /forgot-password`: Initiate password recovery.
-    - `POST /reset-password/:token`: Update password.
-    - `GET /verify-email/:token`: Verify account email.
-    - `POST /request-email-change`: Start email change workflow.
-    - `GET /confirm-email-change/:token`: Finalize email change.
-    - `GET /me`: Get current authenticated user profile.
-- **View Routes:**
-    - `GET /login`, `GET /signup`, `GET /forgot-password`, etc.
+- **`auth.routes.ts`**: Public endpoints for registration, login, and security verification.
+- **`admin.routes.ts`**: Privileged endpoints for staff management, financial generation, and student auditing.
+- **`teacher.routes.ts`**: Endpoints for curriculum management, assignments, and attendance marking.
+- **`student.routes.ts`**: Endpoints for enrollment, quiz participation, and personal record retrieval.
+- **`parent.routes.ts`**: Endpoints for tracking children's attendance and academic progress.
+- **`notification.routes.ts`**: Centralized routes for alert management and preferences.
+- **`enrollment.routes.ts`**: Specific logic for course application workflows.
+- **`chat.routes.ts`**: Real-time messaging and group management endpoints.
 
-## Middleware Integration
+## 🔏 Standard Middleware Chain
 
-Routes are protected or enhanced using middlewares found in the `middlewares/` directory. For example, authentication routes use rate limiting to prevent brute-force attacks, and protected routes use the `authenticate` middleware to ensure only logged-in users can access them.
+Most routes follow a standard protection pattern:
+```typescript
+router.get('/data', authenticate, authorize('admin', 'teacher'), controller.getData);
+```
+
+## 📋 Response Format
+
+All successful responses return a JSON object with a status code of 200/201. Errors return a standard error object:
+```json
+{ "message": "Clear description of what went wrong" }
+```
+
+## 🚀 Performance Note
+- All routes are optimized for Vercel Serverless execution.
+- Heavy data aggregation (like dashboard stats) is cached or indexed at the schema layer.

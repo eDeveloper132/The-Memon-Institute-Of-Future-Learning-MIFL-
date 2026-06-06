@@ -1,23 +1,47 @@
-# Controllers
+# Business Logic Layer (Controllers)
 
-Controllers act as the bridge between the API routes and the business logic (services). They are responsible for handling incoming HTTP requests, validating inputs, and returning the appropriate HTTP responses.
+Controllers in MIFL act as the orchestrators between the API routes and the service layer. They are responsible for parsing user input, enforcing role-based logic, and triggering proactive notifications.
 
-## Current Controllers
+## 🏛 Core Responsibility
 
-### Auth Controller (`auth.controller.ts`)
-Handles all authentication-related logic, including:
-- **Registration (Signup):** Creates new users and sends verification emails.
-- **Login:** Authenticates users and sets JWT cookies.
-- **Logout:** Clears authentication cookies.
-- **Password Management:** Forgot and Reset password workflows.
-- **Email Verification:** Verifies new accounts via tokenized links.
-- **3-Step Double Verification Email Change:**
-    1. Confirm intent via current email.
-    2. Verify access to new email.
-    3. Finalize swap in database.
+Each controller file corresponds to a user role or a specific feature domain:
 
-## Design Patterns
+- **`admin.controller.ts`**: Manages users, stats, bulk fee generation, and attendance oversight.
+- **`teacher.controller.ts`**: Handles academic cycles (assignments, quizzes, materials, grading) and class-specific notices.
+- **`student.controller.ts`**: Manages enrollment requests, profile updates, and quiz attempts.
+- **`auth.controller.ts`**: Handles secure registration, login, and the 3-step email verification flow.
+- **`notification.controller.ts`**: Manages the retrieval and "read" status of user alerts.
+- **`chat.controller.ts`**: Orchestrates real-time messaging and group management.
 
-- **Separation of Concerns:** Controllers do not contain complex business logic; they delegate to services (like `mailService`) or interact directly with models for simple CRUD.
-- **Request Validation:** Controllers ensure that the incoming request body, parameters, and queries are correctly formatted before processing.
-- **Response Consistency:** All controllers follow a standard response format for success and error cases.
+## 🔔 Proactive Notification Triggers
+
+A defining pattern in MIFL controllers is the use of `NotificationService.send()` at critical event points.
+
+### Standard Trigger Pattern
+```typescript
+// Example: Creating an assignment
+const assignment = await Assignment.create(req.body);
+
+// 1. Instant Dashboard update
+await NotificationService.broadcast({ ... });
+
+// 2. Proactive Email Engagement (Backgrounded for performance)
+setImmediate(async () => {
+    await NotificationService.send({
+        recipient: studentId,
+        type: 'ACADEMIC',
+        title: 'New Assignment',
+        ...
+    });
+});
+```
+
+### Key Trigger Points
+- **Academic:** New material upload, assignment posted, quiz available, grading completed.
+- **Attendance:** Student absence (triggers email to Parent).
+- **Finance:** Fee voucher generation (triggers email to Student and Parent).
+- **Admin:** New enrollment request (triggers email to Admins).
+- **Messaging:** New message received while user is offline.
+
+## ⚖️ Performance Standards
+- Long-running tasks (like batch email notifications to 50+ students) **MUST** be backgrounded using `setImmediate` or similar asynchronous patterns to ensure the API responds to the user in < 200ms.
