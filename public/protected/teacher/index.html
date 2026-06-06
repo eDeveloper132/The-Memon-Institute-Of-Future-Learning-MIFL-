@@ -35,20 +35,33 @@
             </div>
 
             <!-- Quick Links -->
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-900">Recent Notifications</h3>
+                    <button id="markAllReadDash" class="text-xs text-blue-600 hover:underline font-bold">Clear All</button>
+                </div>
+                <div id="notificationsList" class="space-y-4 overflow-y-auto flex-1 max-h-[300px] pr-2 custom-scrollbar">
+                    <div class="flex flex-col items-center justify-center py-10 text-gray-300 italic">
+                        <i class="fa-solid fa-bell fa-bounce mb-2"></i>
+                        <p class="text-xs text-gray-400">Loading alerts...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
                 <h3 class="text-xl font-bold text-gray-900 mb-4">Quick Actions</h3>
                 <div class="grid grid-cols-3 gap-4">
-                    <a href="/protected/teacher/attendance.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                    <a href="/protected/teacher/attendance.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group text-center">
                         <i class="fa-solid fa-clipboard-user text-blue-500 text-2xl mb-2"></i>
-                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Mark Attendance</p>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600 text-sm">Mark Attendance</p>
                     </a>
-                    <a href="/protected/teacher/assignments.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                    <a href="/protected/teacher/assignments.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group text-center">
                         <i class="fa-solid fa-file-signature text-orange-500 text-2xl mb-2"></i>
-                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Post Assignment</p>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600 text-sm">Post Assignment</p>
                     </a>
-                    <a href="/protected/messages.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group">
+                    <a href="/protected/messages.html" class="p-4 bg-gray-50 rounded-lg hover:bg-blue-50 transition group text-center">
                         <i class="fa-solid fa-comments text-indigo-500 text-2xl mb-2"></i>
-                        <p class="font-bold text-gray-700 group-hover:text-blue-600">Messages</p>
+                        <p class="font-bold text-gray-700 group-hover:text-blue-600 text-sm">Messages</p>
                     </a>
                 </div>
             </div>
@@ -56,6 +69,8 @@
     </main>
 
     <script type="module">
+        import { showToast } from '/components/ui-components.js';
+
         async function fetchStats() {
             try {
                 const response = await fetch('/api/teacher/stats');
@@ -67,18 +82,71 @@
                         const card = document.getElementById(id);
                         if (card) {
                             card.setAttribute('value', val);
-                            // Force re-render if component doesn't observe attributes
-                            card.connectedCallback(); 
                         }
                     };
 
                     updateCard('classesCard', stats.classesCount);
                     updateCard('gradingCard', stats.pendingGrading);
                     updateCard('studentsCard', stats.totalStudents);
-                    updateCard('feedbackCard', "2"); // Placeholder for Institutes
+                    updateCard('feedbackCard', "2"); // Placeholder
                 }
             } catch (err) {
                 console.error('Failed to fetch stats:', err);
+            }
+        }
+
+        async function fetchNotifications() {
+            const list = document.getElementById('notificationsList');
+            try {
+                const response = await fetch('/api/notifications?status=unread');
+                if (!response.ok) throw new Error('Failed to fetch');
+                const { notifications } = await response.json();
+
+                if (notifications.length === 0) {
+                    list.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-12 text-gray-300 border-2 border-dashed border-gray-50 rounded-2xl">
+                            <i class="fa-solid fa-check-circle text-2xl mb-2 text-green-200"></i>
+                            <p class="text-xs font-bold uppercase tracking-widest text-gray-400">All caught up</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const typeStyles = {
+                    SYSTEM: { bg: 'bg-blue-50', border: 'border-blue-400', icon: 'fa-info-circle', iconColor: 'text-blue-600' },
+                    FEE: { bg: 'bg-yellow-50', border: 'border-yellow-400', icon: 'fa-triangle-exclamation', iconColor: 'text-yellow-600' },
+                    ENROLLMENT: { bg: 'bg-green-50', border: 'border-green-400', icon: 'fa-user-plus', iconColor: 'text-green-600' },
+                    ACADEMIC: { bg: 'bg-indigo-50', border: 'border-indigo-400', icon: 'fa-book', iconColor: 'text-indigo-600' },
+                    MESSAGE: { bg: 'bg-gray-50', border: 'border-gray-400', icon: 'fa-comment', iconColor: 'text-gray-600' }
+                };
+
+                list.innerHTML = notifications.map(n => {
+                    const style = typeStyles[n.type] || typeStyles.SYSTEM;
+                    return `
+                        <div class="flex items-start p-3 ${style.bg} rounded-xl border-l-4 ${style.border} group relative hover:shadow-sm transition-all">
+                            <i class="fa-solid ${style.icon} ${style.iconColor} mt-1 mr-3 text-sm"></i>
+                            <div class="flex-1 pr-6">
+                                <h4 class="text-xs font-bold text-gray-800 leading-tight">${n.title}</h4>
+                                <p class="text-[10px] text-gray-600 mt-0.5 line-clamp-2">${n.content}</p>
+                                <p class="text-[8px] text-gray-400 font-bold mt-1 uppercase">${new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                            </div>
+                            <button data-id="${n._id}" class="mark-read-btn absolute top-2 right-2 text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition">
+                                <i class="fa-solid fa-circle-check"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                list.querySelectorAll('.mark-read-btn').forEach(btn => {
+                    btn.onclick = async () => {
+                        try {
+                            const res = await fetch(`/api/notifications/${btn.dataset.id}/read`, { method: 'PATCH' });
+                            if (res.ok) fetchNotifications();
+                        } catch (err) { console.error(err); }
+                    };
+                });
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-red-500 py-6 text-[10px]">Error loading alerts</p>';
             }
         }
 
@@ -114,7 +182,12 @@
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
+                
+                if (window.initSocket) {
+                    await window.initSocket(user);
+                    document.addEventListener('newNotification', () => fetchNotifications());
+                }
+
                 if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
                 
                 document.getElementById('displayFirstName').textContent = user.name.split(' ')[0];
@@ -123,21 +196,32 @@
                     const navbar = document.querySelector('ui-navbar');
                     if (navbar && navbar.renderLinks) {
                         navbar.renderLinks(user);
+                        navbar.userData = user;
                     }
                 });
                 
                 fetchStats();
                 fetchSchedule();
+                fetchNotifications();
             } catch (err) {
                 window.location.href = '/api/auth/login';
             }
         }
+
+        document.getElementById('markAllReadDash').onclick = async () => {
+            try {
+                const res = await fetch('/api/notifications/read-all', { method: 'PATCH' });
+                if (res.ok) fetchNotifications();
+            } catch (err) { console.error(err); }
+        };
+
         document.addEventListener('click', async (e) => {
             if (e.target.closest('#logoutBtn')) {
                 await fetch('/api/auth/logout', { method: 'POST' });
                 window.location.href = '/api/auth/login';
             }
         });
+
         fetchProfile();
     </script>
 </body>
