@@ -334,6 +334,29 @@ export const createAssignment = async (req: any, res: Response) => {
             data: { assignmentId: assignment._id, batchId: batch || null, classId }
         });
 
+        // Background email sending to all students in the class
+        if (classId) {
+            setImmediate(async () => {
+                try {
+                    const targetClass = await Class.findById(classId).populate('students', '_id email name');
+                    if (targetClass && targetClass.students.length > 0) {
+                        for (const student of targetClass.students as any[]) {
+                            await NotificationService.send({
+                                recipient: student._id,
+                                type: 'ACADEMIC',
+                                title: 'New Assignment',
+                                content: `A new assignment "${assignment.title}" has been posted.`,
+                                data: { title: assignment.title, course: assignment.course?.title, dueDate: assignment.dueDate },
+                                priority: 'medium'
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Teacher Controller] Background assignment notification error:', err);
+                }
+            });
+        }
+
         res.status(201).json({ message: 'Assignment created successfully', assignment });
     } catch (error) {
         console.error('[Teacher Controller] createAssignment error:', error);
@@ -453,6 +476,30 @@ export const uploadMaterial = async (req: any, res: Response) => {
             ...req.body,
             teacher: req.user.id
         });
+
+        // Background email sending
+        if (req.body.class) {
+            setImmediate(async () => {
+                try {
+                    const targetClass = await Class.findById(req.body.class).populate('students', '_id email name');
+                    if (targetClass && targetClass.students.length > 0) {
+                        for (const student of targetClass.students as any[]) {
+                            await NotificationService.send({
+                                recipient: student._id,
+                                type: 'ACADEMIC',
+                                title: 'New Study Material',
+                                content: `New study material "${material.title}" has been uploaded for your class.`,
+                                data: { title: material.title, course: material.course ? (await Course.findById(material.course))?.title : 'Your Course' },
+                                priority: 'low'
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Teacher Controller] Background material notification error:', err);
+                }
+            });
+        }
+
         res.status(201).json({ message: 'Material uploaded', material });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -477,6 +524,30 @@ export const createQuiz = async (req: any, res: Response) => {
             ...req.body,
             teacher: req.user.id
         });
+
+        // Background email sending
+        if (req.body.class) {
+            setImmediate(async () => {
+                try {
+                    const targetClass = await Class.findById(req.body.class).populate('students', '_id email name');
+                    if (targetClass && targetClass.students.length > 0) {
+                        for (const student of targetClass.students as any[]) {
+                            await NotificationService.send({
+                                recipient: student._id,
+                                type: 'ACADEMIC',
+                                title: 'New Quiz Available',
+                                content: `A new quiz "${quiz.title}" has been posted.`,
+                                data: { title: quiz.title, course: quiz.course ? (await Course.findById(quiz.course))?.title : 'Your Course' },
+                                priority: 'medium'
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Teacher Controller] Background quiz notification error:', err);
+                }
+            });
+        }
+
         res.status(201).json({ message: 'Quiz created', quiz });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
@@ -501,6 +572,30 @@ export const createExam = async (req: any, res: Response) => {
         if (!course) return res.status(403).json({ message: 'Not authorized for this course' });
 
         const exam = await Exam.create(req.body);
+
+        // Background email sending for Exam Schedule
+        if (req.body.class) {
+            setImmediate(async () => {
+                try {
+                    const targetClass = await Class.findById(req.body.class).populate('students', '_id email name');
+                    if (targetClass && targetClass.students.length > 0) {
+                        for (const student of targetClass.students as any[]) {
+                            await NotificationService.send({
+                                recipient: student._id,
+                                type: 'ACADEMIC',
+                                title: 'Exam Scheduled',
+                                content: `A new exam "${exam.title}" has been scheduled for your class. Date: ${new Date(exam.date).toLocaleDateString()}`,
+                                data: { title: exam.title, course: course.title, dueDate: exam.date },
+                                priority: 'urgent'
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Teacher Controller] Background exam notification error:', err);
+                }
+            });
+        }
+
         res.status(201).json({ message: 'Exam created', exam });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });

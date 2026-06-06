@@ -419,6 +419,27 @@ export const manualRecordAttendance = async (req: Request, res: Response) => {
         
         const record = await Attendance.create(attendanceData);
 
+        // Notify Parent of Absence
+        if (status === 'absent') {
+            setImmediate(async () => {
+                try {
+                    const student: any = await User.findById(userId).select('name parent');
+                    if (student?.parent) {
+                        await NotificationService.send({
+                            recipient: student.parent,
+                            type: 'SYSTEM',
+                            title: 'Absence Alert',
+                            content: `Your child ${student.name} has been marked absent today (${new Date().toLocaleDateString()}).`,
+                            data: { childName: student.name, date: new Date().toISOString() },
+                            priority: 'high'
+                        });
+                    }
+                } catch (err) {
+                    console.error('[Admin Controller] manualRecordAttendance notification error:', err);
+                }
+            });
+        }
+
         res.status(201).json({ message: 'Attendance recorded', record });
     } catch (error) {
         console.error('[Admin Controller] manualRecordAttendance error:', error);
@@ -472,19 +493,66 @@ export const generateFeeVoucher = async (req: Request, res: Response) => {
                 data: { type, amount, dueDate }
             });
 
+            // Background email sending for bulk vouchers
+            setImmediate(async () => {
+                try {
+                    for (const student of students) {
+                        await NotificationService.send({
+                            recipient: student._id,
+                            type: 'FEE',
+                            title: 'New Fee Voucher',
+                            content: `A new fee voucher for ${type} (Amount: ${amount}) has been generated.`,
+                            data: { description: type, amount, dueDate },
+                            priority: 'high'
+                        });
+                        
+                        // Also notify parent
+                        const parent = await User.findOne({ children: student._id });
+                        if (parent) {
+                            await NotificationService.send({
+                                recipient: parent._id,
+                                type: 'FEE',
+                                title: 'Child Fee Voucher',
+                                content: `A new fee voucher for ${student.name} (${type} - ${amount}) has been generated.`,
+                                data: { description: `${student.name} - ${type}`, amount, dueDate },
+                                priority: 'high'
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('[Admin Controller] Bulk fee notification error:', err);
+                }
+            });
+
             return res.status(201).json({ message: `Vouchers generated for ${students.length} students` });
         }
 
         const fee = await Fee.create({ student: studentId, amount, type, dueDate, status: 'unpaid', remarks });
+
+        // Fetch student for name and parent lookup
+        const student: any = await User.findById(studentId).select('name');
 
         await NotificationService.send({
             recipient: new mongoose.Types.ObjectId(studentId) as any,
             type: 'FEE',
             title: 'New Fee Voucher Generated',
             content: `A new fee voucher for ${type} (Amount: ${amount}) has been generated. Due date: ${new Date(dueDate).toLocaleDateString()}`,
-            data: { feeId: fee._id, amount, dueDate },
+            data: { description: type, amount, dueDate },
             priority: 'high'
         });
+
+        // Notify parent if linked
+        const parent = await User.findOne({ children: studentId });
+        if (parent) {
+            await NotificationService.send({
+                recipient: parent._id,
+                type: 'FEE',
+                title: 'Child Fee Voucher Generated',
+                content: `A new fee voucher for ${student?.name || 'your child'} (${type} - PKR ${amount}) has been generated.`,
+                data: { description: `${student?.name || 'Child'} - ${type}`, amount, dueDate },
+                priority: 'high'
+            });
+        }
 
         res.status(201).json({ message: 'Voucher generated', fee });
     } catch (error) {

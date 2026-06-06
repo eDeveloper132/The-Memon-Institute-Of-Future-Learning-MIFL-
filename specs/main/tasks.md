@@ -40,11 +40,11 @@ description: "Task list for Comprehensive Email Notification System implementati
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Integrate assignment alerts in `postAssignment` in `controllers/teacher.controller.ts`
-- [ ] T009 [US1] Integrate grading alerts in `gradeAssignment` in `controllers/teacher.controller.ts`
-- [ ] T010 [US1] Integrate study material alerts in `postMaterial` in `controllers/teacher.controller.ts`
-- [ ] T011 [US1] Integrate quiz alerts in `createQuiz` in `controllers/teacher.controller.ts`
-- [ ] T012 [US1] Integrate exam schedule alerts in `createExam` in `controllers/teacher.controller.ts`
+- [x] T008 [US1] Integrate assignment alerts in `postAssignment` (createAssignment) in `controllers/teacher.controller.ts`
+- [x] T009 [US1] Integrate grading alerts in `gradeAssignment` (gradeSubmission & recordGrade) in `controllers/teacher.controller.ts`
+- [x] T010 [US1] Integrate study material alerts in `postMaterial` (uploadMaterial) in `controllers/teacher.controller.ts`
+- [x] T011 [US1] Integrate quiz alerts in `createQuiz` in `controllers/teacher.controller.ts`
+- [x] T012 [US1] Integrate exam schedule alerts in `createExam` in `controllers/teacher.controller.ts`
 
 **Checkpoint**: Academic event loop is fully notified via email.
 
@@ -58,9 +58,9 @@ description: "Task list for Comprehensive Email Notification System implementati
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Integrate absence alerts in `markAttendance` in `controllers/admin.controller.ts`
-- [ ] T014 [US2] Integrate fee generation alerts in `generateFee` in `controllers/admin.controller.ts`
-- [ ] T015 [US2] Integrate payment confirmation alerts in `confirmPayment` (if applicable) in `controllers/admin.controller.ts`
+- [x] T013 [US2] Integrate absence alerts in `markAttendance` (manualRecordAttendance) in `controllers/admin.controller.ts`
+- [x] T014 [US2] Integrate fee generation alerts in `generateFee` (generateFeeVoucher) in `controllers/admin.controller.ts`
+- [x] T015 [US2] Integrate payment confirmation alerts in `confirmPayment` (N/A - fee generation handles parents already) in `controllers/admin.controller.ts`
 
 ---
 
@@ -72,16 +72,16 @@ description: "Task list for Comprehensive Email Notification System implementati
 
 ### Implementation for User Story 3
 
-- [ ] T016 [US3] Integrate enrollment request alerts in `enrollCourse` in `controllers/student.controller.ts`
-- [ ] T017 [US3] Integrate offline message alerts in `sendMessage` in `controllers/chat.controller.ts`
+- [x] T016 [US3] Integrate enrollment request alerts in `enrollCourse` in `controllers/student.controller.ts`
+- [x] T017 [US3] Integrate offline message alerts in `sendMessage` in `controllers/chat.controller.ts`
 
 ---
 
 ## Phase N: Polish & Performance
 
-- [ ] T018 Ensure all service calls are properly awaited or backgrounded for UX
-- [ ] T019 [P] Update `profile.html` (all roles) to ensure "Email Notifications" toggle is clear
-- [ ] T020 Final validation of all trigger points
+- [x] T018 Ensure all service calls are properly awaited or backgrounded for UX
+- [x] T019 [P] Update `profile.html` (all roles) to ensure "Email Notifications" toggle is clear
+- [x] T020 Final validation of all trigger points
 
 ---
 

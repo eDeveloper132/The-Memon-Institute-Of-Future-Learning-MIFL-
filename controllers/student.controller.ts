@@ -56,6 +56,27 @@ export const enrollCourse = async (req: any, res: Response) => {
 
         course.enrolledStudents.push(req.user.id);
         await course.save();
+
+        // Notify Admins of new enrollment
+        setImmediate(async () => {
+            try {
+                const admins = await User.find({ role: 'admin' }).select('_id');
+                const student: any = await User.findById(req.user.id).select('name');
+                for (const admin of admins) {
+                    await NotificationService.send({
+                        recipient: admin._id,
+                        type: 'SYSTEM',
+                        title: 'New Course Enrollment',
+                        content: `Student ${student?.name || 'Unknown'} has enrolled in ${course.title}.`,
+                        data: { courseId: course._id, studentId: req.user.id },
+                        priority: 'medium'
+                    });
+                }
+            } catch (err) {
+                console.error('[Student Controller] Enrollment notification error:', err);
+            }
+        });
+
         res.status(200).json({ message: 'Enrolled successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });

@@ -373,6 +373,29 @@ export const sendMessage = async (req: any, res: Response) => {
         }
 
         res.status(201).json({ message: newMessage });
+
+        // Notify via NotificationService (handles offline email if configured)
+        if (receiver) {
+            setImmediate(async () => {
+                try {
+                    // Check if user is online in the socket room
+                    const isOnline = req.io?.sockets.adapter.rooms.get(receiver)?.size > 0;
+                    
+                    if (!isOnline) {
+                        await NotificationService.send({
+                            recipient: new mongoose.Types.ObjectId(receiver) as any,
+                            type: 'MESSAGE',
+                            title: 'New Offline Message',
+                            content: content.length > 50 ? content.substring(0, 50) + '...' : content,
+                            data: { senderName: (newMessage?.sender as any)?.name || 'Someone', preview: content },
+                            priority: 'medium'
+                        });
+                    }
+                } catch (err) {
+                    console.error('[Chat Controller] Offline notification error:', err);
+                }
+            });
+        }
     } catch (error) {
         console.error(chalk.red('[Chat] sendMessage error:'), error);
         res.status(500).json({ message: 'Internal server error' });
