@@ -82,9 +82,13 @@
                 if (res.ok) {
                     const { requests } = await res.json();
                     renderRequests(requests);
+                } else {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Failed to fetch');
                 }
             } catch (err) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-20 text-red-500 font-bold">Failed to load requests.</td></tr>';
+                console.error('[Enrollments] Fetch error:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-20 text-red-500 font-bold">Failed to load requests: ${err.message}</td></tr>`;
             }
         };
 
@@ -99,25 +103,33 @@
             }
 
             noRequests.classList.add('hidden');
-            tbody.innerHTML = requests.map(r => `
+            tbody.innerHTML = requests.map(r => {
+                // Defensive checks for populated data
+                const studentName = r.student?.name || 'Deleted User';
+                const studentId = r.student?.studentId || 'ID N/A';
+                const targetName = r.targetId?.name || r.targetId?.title || 'Unknown Target';
+                const targetType = r.targetType || 'N/A';
+                const appliedAt = r.appliedAt ? new Date(r.appliedAt).toLocaleString() : 'N/A';
+
+                return `
                 <tr class="hover:bg-gray-50 transition group">
                     <td class="px-8 py-6">
-                        <p class="font-bold text-gray-900">${r.student.name}</p>
-                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">${r.student.studentId || 'ID N/A'}</p>
+                        <p class="font-bold text-gray-900">${studentName}</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">${studentId}</p>
                     </td>
                     <td class="px-8 py-6">
-                        <span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${r.targetType === 'Class' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}">
-                            ${r.targetType}
+                        <span class="px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${targetType === 'Class' ? 'bg-indigo-100 text-indigo-700' : 'bg-blue-100 text-blue-700'}">
+                            ${targetType}
                         </span>
                     </td>
                     <td class="px-8 py-6">
-                        <p class="font-bold text-gray-700">${r.targetId?.name || r.targetId?.title || 'Unknown'}</p>
+                        <p class="font-bold text-gray-700">${targetName}</p>
                     </td>
                     <td class="px-8 py-6">
-                        <p class="font-black text-gray-900">PKR ${r.feeAtTimeOfApplication}</p>
+                        <p class="font-black text-gray-900">PKR ${r.feeAtTimeOfApplication || 0}</p>
                     </td>
                     <td class="px-8 py-6">
-                        <p class="text-xs text-gray-500 font-medium">${new Date(r.appliedAt).toLocaleString()}</p>
+                        <p class="text-xs text-gray-500 font-medium">${appliedAt}</p>
                     </td>
                     <td class="px-8 py-6 text-right">
                         <div class="flex justify-end gap-2">
@@ -130,7 +142,7 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         window.processRequest = async (id, status) => {

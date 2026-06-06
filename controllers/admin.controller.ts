@@ -622,9 +622,12 @@ export const getEnrollmentRequests = async (req: Request, res: Response) => {
             .populate('student', 'name email studentId')
             .populate('targetId')
             .sort({ appliedAt: -1 });
+        
+        console.log(chalk.blue(`[Admin] Fetched ${requests.length} pending enrollment requests.`));
         res.status(200).json({ requests });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error' });
+    } catch (error: any) {
+        console.error(chalk.red('[Admin Controller] getEnrollmentRequests error:'), error);
+        res.status(500).json({ message: 'Internal server error', details: error.message });
     }
 };
 
