@@ -1,31 +1,34 @@
-# Specification: Dynamic Notification Center for Dashboards
+# Specification: Comprehensive Email Notification System
 
 ## Background
-The current dashboards (especially the Admin dashboard) contain hard-coded notification items that do not reflect the actual state of the system. We have already implemented a centralized notification system (`NotificationService` and `Notification` model), but it is primarily used for the navbar bell. We need to expose these notifications directly on the dashboard pages and make them dynamic.
+MIFL currently has a `NotificationService` that supports in-app, socket, and email channels. However, email notifications are only triggered in a few places (like role transitions). To make the system more engaging and professional, we need to systematically integrate email notifications into all critical user journeys.
 
 ## User Stories
-- **As an Admin**, I want to see real-time system-wide notifications (e.g., pending fees, new registrations) on my dashboard so I can take immediate action.
-- **As a Teacher**, I want to see notifications relevant to my classes or faculty updates on my dashboard.
-- **As a Student/Parent**, I want to see a unified view of important announcements and personal notifications on my main dashboard.
+- **As a Student**, I want to receive an email when a new assignment is posted, when a quiz is available, or when my fee voucher is generated.
+- **As a Parent**, I want to receive an email when my child is marked absent, when their results are published, or when a fee is due.
+- **As a Teacher**, I want to receive an email when a student submits an assignment or when a new class is assigned to me.
+- **As an Admin**, I want to receive an email for new enrollment requests or high-priority system alerts.
 
 ## Requirements
 
 ### Functional
-- Replace hard-coded notification blocks in `admin/index.html` with a dynamic list fetched from the API.
-- Implement similar dynamic notification sections for Teacher, Student, and Parent dashboards if they don't already have one or if they are currently static.
-- Use the existing `Notification` model and `NotificationService`.
-- Support real-time updates via Socket.IO for these dashboard sections.
-- Display different types of notifications with appropriate icons and colors (e.g., warnings for fees, info for registrations).
+- **Triggers**: Integrate `NotificationService.send()` into the following events:
+  - **Auth**: Signup (welcome), Password Reset, Email Change. (Already exists but verify templates).
+  - **Academic**: New Assignment, Assignment Graded, New Material, New Quiz, Exam Schedule.
+  - **Attendance**: Absence alerts (to parents).
+  - **Finance**: Fee voucher generated, Payment confirmed.
+  - **Admin**: New Enrollment Request.
+  - **Messaging**: New message notification (when user is offline).
+- **Preferences**: Respect `user.notificationPrefs.email` (already implemented in `NotificationService`, but ensure data is consistent).
+- **Templates**: Use meaningful HTML templates for different types of emails.
 
 ### Technical
-- API endpoint: Use or extend `/api/notifications`.
-- Frontend: Refactor HTML dashboards to include a target container for notifications.
-- Frontend: Add JavaScript to fetch and render notifications on page load.
-- Frontend: Listen for `newNotification` events to update the dashboard list in real-time.
+- **Centralization**: All email sending must flow through `NotificationService.send()`.
+- **Async Execution**: Ensure notification sending doesn't block API responses (use `await` but consider if some should be backgrounded or if the performance is acceptable).
+- **Templates**: Centralize templates in `services/emailTemplates.ts`.
 
 ## Acceptance Criteria
-- [ ] Admin dashboard "System Notifications" section is populated from the database.
-- [ ] Teacher dashboard includes a "Recent Notifications" section.
-- [ ] Notifications disappear or move to "read" state when interacted with (if applicable).
-- [ ] Real-time notifications appear on the dashboard without page refresh.
-- [ ] No hard-coded placeholder notifications remain in any dashboard HTML.
+- [ ] Email notifications are sent for all events listed in the Requirements.
+- [ ] Emails contain relevant data (titles, names, links).
+- [ ] User can opt-out of emails via their profile settings.
+- [ ] No duplicate emails for the same event.

@@ -1,11 +1,11 @@
 ---
-description: "Task list for Dynamic Notification Center implementation"
+description: "Task list for Comprehensive Email Notification System implementation"
 ---
 
-# Tasks: Dynamic Notification Center for Dashboards
+# Tasks: Comprehensive Email Notification System
 
 **Input**: Design documents from `/specs/main/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
+**Prerequisites**: plan.md, spec.md, research.md
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -15,86 +15,89 @@ description: "Task list for Dynamic Notification Center implementation"
 
 ## Phase 1: Setup
 
-**Purpose**: Initial prep (already partially completed by /sp.plan)
+**Purpose**: Initial project preparation
 
 - [x] T001 Initialize design artifacts in specs/main/
-- [x] T002 [P] Verify Socket.IO script presence in public/protected/index.html (already there)
+- [x] T002 Create `services/emailTemplates.ts` with basic branding and structure
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Phase 2: Foundational (Templates & Core Service)
 
-**Purpose**: Ensure API endpoints and Socket logic are ready for dashboard integration
+**Purpose**: Centralize all email content logic
 
-- [x] T003 [P] Verify GET /api/notifications behavior in controllers/notification.controller.ts
-- [x] T004 Ensure NotificationService.broadcast triggers correct frontend event names in services/notification.service.ts
+- [x] T003 Implement `getAcademicEmail(type, data)` in `services/emailTemplates.ts`
+- [x] T004 Implement `getAttendanceEmail(childName, date)` in `services/emailTemplates.ts`
+- [x] T005 Implement `getFinanceEmail(type, data)` in `services/emailTemplates.ts`
+- [x] T006 Implement `getAdminAlertEmail(type, data)` in `services/emailTemplates.ts`
+- [x] T007 Implement `getMessagingEmail(senderName, preview)` in `services/emailTemplates.ts`
 
 ---
 
-## Phase 3: User Story 1 - Admin Dynamic Feed (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Academic Notifications (Priority: P1) 🎯 MVP
 
-**Goal**: Replace hard-coded notifications in Admin Dashboard with real data
+**Goal**: Students and Parents receive emails for new materials, assignments, and results
 
-**Independent Test**: Login as Admin, create a notification, see it appear on the dashboard feed
+**Independent Test**: Post a new assignment as Teacher, verify students receive emails
 
 ### Implementation for User Story 1
 
-- [x] T005 [US1] Remove static placeholder items from public/protected/admin/index.html
-- [x] T006 [US1] Add a target container with ID 'systemNotificationsList' in public/protected/admin/index.html
-- [x] T007 [US1] Implement fetchNotifications() function in script block of public/protected/admin/index.html
-- [x] T008 [US1] Map notification types to Tailwind styles and FontAwesome icons (per research.md) in public/protected/admin/index.html
-- [x] T009 [US1] Add newNotification event listener to update the feed in real-time in public/protected/admin/index.html
+- [ ] T008 [US1] Integrate assignment alerts in `postAssignment` in `controllers/teacher.controller.ts`
+- [ ] T009 [US1] Integrate grading alerts in `gradeAssignment` in `controllers/teacher.controller.ts`
+- [ ] T010 [US1] Integrate study material alerts in `postMaterial` in `controllers/teacher.controller.ts`
+- [ ] T011 [US1] Integrate quiz alerts in `createQuiz` in `controllers/teacher.controller.ts`
+- [ ] T012 [US1] Integrate exam schedule alerts in `createExam` in `controllers/teacher.controller.ts`
 
-**Checkpoint**: Admin dashboard notifications should be fully dynamic and real-time.
+**Checkpoint**: Academic event loop is fully notified via email.
 
 ---
 
-## Phase 4: User Story 2 - Teacher Dynamic Feed (Priority: P2)
+## Phase 4: User Story 2 - Finance & Attendance (Priority: P2)
 
-**Goal**: Add a notification feed to the Teacher Dashboard
+**Goal**: Parents notified of absences and fee vouchers
 
-**Independent Test**: Login as Teacher, receive a notification, verify it shows in the "Recent Notifications" section
+**Independent Test**: Generate a fee voucher, verify parent/student receives email
 
 ### Implementation for User Story 2
 
-- [x] T010 [US2] Add a "Recent Notifications" section container in public/protected/teacher/index.html
-- [x] T011 [US2] Implement loadNotifications() logic in public/protected/teacher/index.html
-- [x] T012 [US2] Integrate Socket.IO listener for dashboard-specific updates in public/protected/teacher/index.html
+- [ ] T013 [US2] Integrate absence alerts in `markAttendance` in `controllers/admin.controller.ts`
+- [ ] T014 [US2] Integrate fee generation alerts in `generateFee` in `controllers/admin.controller.ts`
+- [ ] T015 [US2] Integrate payment confirmation alerts in `confirmPayment` (if applicable) in `controllers/admin.controller.ts`
 
 ---
 
-## Phase 5: User Story 3 - Student/Parent Feed Sync (Priority: P3)
+## Phase 5: User Story 3 - Admin & Messaging (Priority: P3)
 
-**Goal**: Ensure Student/Parent portals also display dynamic alerts
+**Goal**: Admin notified of requests; users notified of offline messages
 
-**Independent Test**: Login as Student/Parent, verify the "Latest Notices" or alerts section uses the dynamic service
+**Independent Test**: Send a message to an offline user, verify they receive email notification
 
 ### Implementation for User Story 3
 
-- [x] T013 [P] [US3] Review and update public/protected/student/index.html to use unified notification rendering
-- [x] T014 [P] [US3] Review and update public/protected/parent/index.html to include a dynamic notification component
+- [ ] T016 [US3] Integrate enrollment request alerts in `enrollCourse` in `controllers/student.controller.ts`
+- [ ] T017 [US3] Integrate offline message alerts in `sendMessage` in `controllers/chat.controller.ts`
 
 ---
 
-## Phase N: Polish & Cross-Cutting Concerns
+## Phase N: Polish & Performance
 
-- [x] T015 [P] Standardize "No notifications" empty state across all dashboards
-- [x] T016 Add "Mark as Read" functionality directly from dashboard alert items
-- [ ] T017 Final run of quickstart.md validation steps
+- [ ] T018 Ensure all service calls are properly awaited or backgrounded for UX
+- [ ] T019 [P] Update `profile.html` (all roles) to ensure "Email Notifications" toggle is clear
+- [ ] T020 Final validation of all trigger points
 
 ---
 
 ## Dependencies & Execution Order
 
-- **Phase 1 & 2** are completed first to stabilize the API/Socket foundation.
-- **US1 (Admin)** is the MVP and should be completed and validated before US2/US3.
-- **US2 and US3** can proceed in parallel once the rendering patterns from US1 are established.
+- **Foundational (Phase 2)** must be complete before any user story to provide templates.
+- **US1 (Academic)** is the highest priority as it covers the most frequent user interactions.
+- **US2 and US3** can follow.
 
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-The focus is on the Admin dashboard as it has the most prominent hard-coded technical debt. Once US1 is verified, the pattern will be copied to other dashboards.
+Academic alerts (Assignments/Materials) are the core value prop. We will deliver these first to prove the template and service integration works at scale.
 
 ---
 
 ## Notes
-- Use `requestAnimationFrame` or `CustomEvent` listeners to avoid race conditions with the navbar component.
-- Icons should follow the mapping: SYSTEM (info-circle), FEE (triangle-exclamation), ACADEMIC (book).
+- Use `NotificationService.send()` which already handles preference checking.
+- Background large batch notifications (e.g. whole class) to prevent controller timeout.

@@ -1,6 +1,7 @@
 import { Notification } from '../schemas/models/notification.model.js';
 import { User } from '../schemas/models/user.model.js';
 import { mailService } from './mail.service.js';
+import { emailTemplates } from './emailTemplates.js';
 import { getIO } from '../socket.js';
 import type { INotification, NotificationChannel } from '../schemas/types/notification.type.js';
 import chalk from 'chalk';
@@ -17,7 +18,7 @@ export class NotificationService {
         }
 
         // 1. Fetch recipient and their preferences
-        const user = await User.findById(recipient).select('notificationPrefs email');
+        const user = await User.findById(recipient).select('notificationPrefs email name');
         if (!user) {
             throw new Error('Recipient user not found');
         }
@@ -67,10 +68,23 @@ export class NotificationService {
         // 4. Send Email if preferred
         if (prefs.email && user.email) {
             try {
+                let html = `<p>${content}</p>`;
+                
+                // Use specialized templates if available
+                if (type === 'ACADEMIC') {
+                    html = emailTemplates.academicUpdate(title, extraData || { title: content });
+                } else if (type === 'FEE') {
+                    html = emailTemplates.financeAlert(title, extraData || { description: content, amount: 0 });
+                } else if (type === 'SYSTEM' && priority === 'urgent') {
+                    html = emailTemplates.adminAlert(title, content);
+                } else if (type === 'MESSAGE') {
+                    html = emailTemplates.offlineMessage(extraData?.senderName || 'Someone', content);
+                }
+
                 await mailService.sendMail({
                     to: user.email,
                     subject: `[MIFL] ${title}`,
-                    html: `<p>${content}</p>`
+                    html
                 });
                 channelsUsed.push('email');
             } catch (error) {

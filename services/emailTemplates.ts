@@ -18,6 +18,8 @@ const baseStyles = `
     .button { display: inline-block; padding: 14px 28px; background-color: ${primaryColor}; color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; transition: background-color 0.3s; }
     .button:hover { background-color: ${secondaryColor}; }
     .info-box { background-color: #f0f9ff; border-left: 4px solid ${primaryColor}; padding: 15px; margin: 20px 0; font-size: 14px; }
+    .field-label { font-weight: bold; color: ${lightTextColor}; font-size: 12px; text-transform: uppercase; margin-top: 10px; display: block; }
+    .field-value { font-weight: bold; color: ${textColor}; font-size: 16px; margin-bottom: 5px; }
 `;
 
 export const emailTemplates = {
@@ -87,25 +89,37 @@ export const emailTemplates = {
     `,
 
     /**
-     * Email Change - Intent Confirmation (Current Email)
+     * Academic Updates (Assignments, Materials, etc.)
      */
-    emailChangeIntent: (url: string) => `
+    academicUpdate: (type: string, data: any) => `
         <!DOCTYPE html>
         <html>
         <head><style>${baseStyles}</style></head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>Account Security</h1>
+                    <h1>MIFL Academic</h1>
                 </div>
                 <div class="content">
-                    <h2 style="color: ${primaryColor};">Confirm Email Change Request</h2>
-                    <p>A request has been made to change the email address associated with your MIFL account.</p>
-                    <p>To protect your account, we need you to confirm this intent from your current email address:</p>
+                    <h2 style="color: ${primaryColor};">${type}</h2>
+                    <p>Hello, a new academic update has been posted in your portal.</p>
+                    
+                    <span class="field-label">Title</span>
+                    <div class="field-value">${data.title}</div>
+                    
+                    ${data.course ? `
+                        <span class="field-label">Course</span>
+                        <div class="field-value">${data.course}</div>
+                    ` : ''}
+
+                    ${data.dueDate ? `
+                        <span class="field-label">Due Date</span>
+                        <div class="field-value">${new Date(data.dueDate).toLocaleDateString()}</div>
+                    ` : ''}
+
                     <div style="text-align: center;">
-                        <a href="${url}" class="button">Confirm Change Request</a>
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/protected/index.html" class="button">View in Dashboard</a>
                     </div>
-                    <p>If you did not initiate this change, please change your password immediately.</p>
                 </div>
                 <div class="footer">
                     &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
@@ -116,24 +130,125 @@ export const emailTemplates = {
     `,
 
     /**
-     * Email Change - Verification (New Email)
+     * Attendance Alert
      */
-    emailChangeVerify: (url: string) => `
+    attendanceAlert: (childName: string, date: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head><style>${baseStyles}</style></head>
+        <body>
+            <div class="container">
+                <div class="header" style="background-color: #ef4444;">
+                    <h1>MIFL Attendance</h1>
+                </div>
+                <div class="content">
+                    <h2 style="color: #ef4444;">Absence Alert</h2>
+                    <p>This is to inform you that <strong>${childName}</strong> was marked <strong>Absent</strong> for the session on <strong>${new Date(date).toLocaleDateString()}</strong>.</p>
+                    
+                    <p>If you have any questions or have already provided a justification, please ignore this alert.</p>
+
+                    <div style="text-align: center;">
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/protected/parent/index.html" class="button" style="background-color: #ef4444;">View Records</a>
+                    </div>
+                </div>
+                <div class="footer">
+                    &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+    `,
+
+    /**
+     * Finance Alert (Fees)
+     */
+    financeAlert: (type: string, data: any) => `
+        <!DOCTYPE html>
+        <html>
+        <head><style>${baseStyles}</style></head>
+        <body>
+            <div class="container">
+                <div class="header" style="background-color: #f59e0b;">
+                    <h1>MIFL Finance</h1>
+                </div>
+                <div class="content">
+                    <h2 style="color: #f59e0b;">${type}</h2>
+                    <p>A new financial transaction or update has been recorded on your account.</p>
+                    
+                    <span class="field-label">Description</span>
+                    <div class="field-value">${data.description}</div>
+                    
+                    <span class="field-label">Amount</span>
+                    <div class="field-value">PKR ${data.amount.toLocaleString()}</div>
+
+                    ${data.dueDate ? `
+                        <span class="field-label">Due Date</span>
+                        <div class="field-value" style="color: #ef4444;">${new Date(data.dueDate).toLocaleDateString()}</div>
+                    ` : ''}
+
+                    <div style="text-align: center;">
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/protected/index.html" class="button" style="background-color: #f59e0b;">Manage Billing</a>
+                    </div>
+                </div>
+                <div class="footer">
+                    &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+    `,
+
+    /**
+     * Offline Message Notification
+     */
+    offlineMessage: (senderName: string, preview: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head><style>${baseStyles}</style></head>
+        <body>
+            <div class="container">
+                <div class="header" style="background-color: #8b5cf6;">
+                    <h1>MIFL Chat</h1>
+                </div>
+                <div class="content">
+                    <h2 style="color: #8b5cf6;">New Message</h2>
+                    <p>You received a new message from <strong>${senderName}</strong> while you were offline.</p>
+                    
+                    <div class="info-box" style="border-left-color: #8b5cf6; background-color: #f5f3ff; font-style: italic;">
+                        "${preview}"
+                    </div>
+
+                    <div style="text-align: center;">
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/protected/messages.html" class="button" style="background-color: #8b5cf6;">Reply Now</a>
+                    </div>
+                </div>
+                <div class="footer">
+                    &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+    `,
+
+    /**
+     * Admin System Alert
+     */
+    adminAlert: (title: string, content: string) => `
         <!DOCTYPE html>
         <html>
         <head><style>${baseStyles}</style></head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>Email Verification</h1>
+                    <h1>MIFL Admin</h1>
                 </div>
                 <div class="content">
-                    <h2 style="color: ${primaryColor};">Verify Your New Email</h2>
-                    <p>You're almost there! Please verify this new email address to complete the update for your MIFL account.</p>
+                    <h2 style="color: ${primaryColor};">System Alert</h2>
+                    <p><strong>${title}</strong></p>
+                    <p>${content}</p>
                     <div style="text-align: center;">
-                        <a href="${url}" class="button">Verify New Email</a>
+                        <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/protected/admin/index.html" class="button">Go to Admin Panel</a>
                     </div>
-                    <p>Once verified, this will become your primary login email.</p>
                 </div>
                 <div class="footer">
                     &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.

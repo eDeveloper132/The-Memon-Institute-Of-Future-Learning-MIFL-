@@ -1,41 +1,43 @@
-# Research: Dynamic Notifications for Dashboards
+# Research: Trigger Audit for Email Notifications
 
-## Decision: Unified Dashboard Feed
-We will use the existing `Notification` model and `getNotifications` endpoint to populate dashboard feeds. Instead of creating a separate "Action Items" system, we will encourage the backend to generate `SYSTEM` or `FEE` type notifications when certain thresholds are met or events occur.
+## Decision: Targeted Integration Points
+We will integrate `NotificationService.send()` at the exact moment an entity is created or a status changes in the controllers.
 
 ## Rationale
-- **Consistency**: The navbar bell and the dashboard feed will stay in sync.
-- **Real-time**: We can leverage existing Socket.IO listeners.
-- **Simplicity**: No new models or complex aggregation logic for now.
+- **Context Availability**: Controllers have immediate access to the ID of the created entity and the authenticated user.
+- **Reliability**: Triggering after a successful database `save()` or `create()` ensures notifications are only sent for real events.
+
+## Trigger Mapping
+
+| Category | Controller | Method | Recipient | Title Template |
+|----------|------------|--------|-----------|----------------|
+| **Academic** | Teacher | `postAssignment` | All Students in Class | New Assignment: {{title}} |
+| **Academic** | Teacher | `gradeAssignment` | Student | Assignment Graded: {{title}} |
+| **Academic** | Teacher | `postMaterial` | All Students in Class | New Study Material: {{title}} |
+| **Academic** | Teacher | `createQuiz` | All Students in Class | New Quiz Available: {{title}} |
+| **Academic** | Teacher | `createExam` | All Students in Class | Exam Scheduled: {{title}} |
+| **Attendance**| Admin | `markAttendance` | Parents of Absentees | Absence Alert: {{childName}} |
+| **Finance** | Admin | `generateFee` | Student (and Parent) | Fee Voucher Generated |
+| **Admin** | Student | `enrollCourse` | Admins | New Enrollment Request |
+| **Messaging** | Chat | `sendMessage` | Recipient (if offline) | New Message from {{sender}} |
 
 ## Findings
 
-### 1. Notification Types to UI Mapping
-We will map `INotification['type']` to Tailwind classes and icons:
-- `SYSTEM`: `bg-blue-50 border-blue-400`, `fa-info-circle`
-- `FEE`: `bg-yellow-50 border-yellow-400`, `fa-triangle-exclamation`
-- `ENROLLMENT`: `bg-green-50 border-green-400`, `fa-user-plus`
-- `ACADEMIC`: `bg-indigo-50 border-indigo-400`, `fa-book`
-- `MESSAGE`: `bg-gray-50 border-gray-400`, `fa-comment`
+### 1. Template Strategy
+Templates will be defined in `services/emailTemplates.ts` as functions returning HTML strings.
+Example: `getAssignmentEmail(assignmentTitle, dueDate)`.
 
-### 2. API Role-Based System Alerts
-The Admin needs to see notifications that might not be assigned to them as a "recipient" but are "System-wide".
-- **Current state**: `getNotifications` only returns notifications where `recipient === userId`.
-- **Proposed change**: For Admins, we should allow fetching notifications where `type === 'SYSTEM'` regardless of recipient, OR ensure system-wide alerts are sent to all Admin users.
-- **Decision**: For now, we will ensure that system-wide alerts (like fee warnings) are created with Admin users as recipients.
+### 2. Batch Notifications
+For events like "New Assignment" (sent to 30+ students), `NotificationService.send` should be called in a `Promise.all` or a loop.
+- **Recommendation**: Background these calls using `setImmediate` or similar to avoid delaying the API response to the teacher.
 
-### 3. Frontend Implementation Pattern
-Each dashboard will have a dedicated `loadNotifications()` function that:
-1. Fetches from `/api/notifications`.
-2. Filters or formats the list for the dashboard view.
-3. Listens for the `newNotification` CustomEvent (already dispatched by `ui-components.ts`'s socket listener).
+### 3. Parent Notifications
+Parents currently lack a direct "recipient" field in many academic entities. We will need to fetch the student's parent ID before sending.
 
 ## Alternatives Considered
 
-### Option A: Derive from Stats
-Instead of using the Notification system, we could add "alerts" to the `/api/admin/stats` response.
-- **Rejected because**: It makes the stats endpoint bloated and misses the real-time push capability of the dedicated notification service.
+### Mongoose Middleware (`post('save')`)
+- **Rejected because**: It's harder to get the context of *who* performed the action and often leads to circular dependency issues with services.
 
-### Option B: Separate "System Alerts" Collection
-Create a `SystemAlert` model for things like "Server maintenance" or "Database backup failed".
-- **Rejected because**: YAGNI. The `Notification` model with a `type: 'SYSTEM'` and a null or Admin-role recipient (or broadcast) covers this well enough for the current scale.
+### Event Emitter (Pub/Sub)
+- **Rejected because**: For the current scale, direct service calls in controllers are more readable and easier to debug.
