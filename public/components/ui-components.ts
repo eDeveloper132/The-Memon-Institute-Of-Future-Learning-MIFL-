@@ -253,7 +253,7 @@ class UINavbar extends HTMLElement {
 
     renderLinks(user: string | any): void {
         const role = typeof user === 'string' ? user : user.role;
-        this.userData = typeof user === 'string' ? { role } : user;
+        this._userData = typeof user === 'string' ? { role } : user;
 
         const navLinks = this.querySelector('#navLinks');
         const mobileNavLinks = this.querySelector('#mobileNavLinks');
