@@ -1,50 +1,58 @@
-# Implementation Plan: Comprehensive Documentation Update
+# Implementation Plan: Update Course Modals
 
 **Branch**: `main` | **Date**: 2026-06-06 | **Spec**: `/specs/main/spec.md`
 **Input**: Feature specification from `/specs/main/spec.md`
 
 ## Summary
-Systematically update all 9 README.md files across the project to align with the current architectural state (v1.1.0 Constitution). This includes documenting the new notification system, email integrations, and strict type-safety enforcement.
+Refactor the "Register New Course" and "Edit Course" modals in the Admin Dashboard to support decimal credit hours and improve overall functionality and error handling.
 
 ## Technical Context
 
-**Language/Version**: Markdown
-**Primary Scope**: 9 Files (`/`, `/config`, `/controllers`, `/middlewares`, `/public`, `/routes`, `/schemas`, `/services`, `/types`)
-**Constraints**: Must accurately reflect current TypeScript codebase and constitutional principles.
+**Language/Version**: TypeScript (Node.js 18+)
+**Primary Dependencies**: Express, Mongoose, Tailwind CSS
+**Storage**: MongoDB
+**Testing**: Manual verification, npx tsc
+**Target Platform**: Web
+**Project Type**: Web Application
+**Performance Goals**: N/A
+**Constraints**: Strict CSP (no inline handlers), Principle III (tsc gate)
+**Scale/Scope**: Admin Course Management
 
 ## Constitution Check
 
-- [x] I. Spec-Driven: Plan generated based on documentation audit.
-- [x] II. Type Safety: N/A (Documentation).
-- [x] III. Verification Gate: `npx tsc` identified as mandatory in docs.
-- [x] IV. Library-First: Services documented as core business logic hubs.
-- [x] V. Simplicity: Clear, concise documentation style.
-- [x] VI. Proactive: Notification system prominently featured.
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+- [x] I. Spec-Driven: Requirement coverage confirmed in `spec.md`.
+- [x] II. Type Safety: Using existing `ICourse` types.
+- [x] III. Verification Gate: `npx tsc` will be run after implementation.
+- [x] IV. Library-First: Logic remains in controllers/services.
+- [x] V. Simplicity: Targeted changes to `courses.html`.
+- [x] VI. Proactive: UI feedback via toasts.
 
 ## Project Structure
 
-### Documentation
+### Documentation (this feature)
 
 ```text
 specs/main/
 ├── plan.md              # This file
-├── research.md          # Audit findings and mapping
-└── tasks.md             # Update tasks per file
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
+└── tasks.md             # Phase 2 output
 ```
 
-### Source Code
+### Source Code (repository root)
 
 ```text
-/                        # Root README update
-config/README.md         # DB and Env documentation
-controllers/README.md    # Logic flow and notification triggers
-middlewares/README.md    # Security, RBAC, and rate limiting
-public/README.md         # UI components and CSP compliance
-routes/README.md         # API surface mapping
-schemas/README.md        # Data models and indexing
-services/README.md       # Service layer (Notification, Mail, etc.)
-types/README.md          # Global type definitions
+public/protected/admin/
+└── courses.html         # Main UI for course management
+
+controllers/
+└── admin.controller.ts   # Backend CRUD logic for courses
 ```
+
+**Structure Decision**: Modifying the existing admin courses page and verifying the backend controller.
 
 ## Complexity Tracking
 

@@ -1,20 +1,11 @@
-# Data Model: Notifications
+# Data Model: Course Credits
 
-## Entity: Notification
-Represents a real-time or persistent alert sent to a user.
+## Entity: Course
+The `Course` entity already exists. We are confirming the behavior of the `credits` field.
 
 | Field | Type | Description | Validation |
 |-------|------|-------------|------------|
-| `recipient` | ObjectId (User) | The user who receives the notification | Required, indexed |
-| `type` | String | Category of the notification | Enum: SYSTEM, ENROLLMENT, ACADEMIC, FEE, MESSAGE |
-| `title` | String | Short headline | Required |
-| `content` | String | Detailed message body | Required |
-| `data` | Mixed | Metadata (e.g., entity IDs, links) | Optional |
-| `priority` | String | Urgency level | Enum: low, medium, high, urgent |
-| `channels` | Array<String> | Delivery methods used | Enum: db, socket, email |
-| `readAt` | Date | When the user viewed the notification | Optional |
-| `expiresAt` | Date | Automatic cleanup timestamp | Optional |
+| `credits` | Number | Academic weight of the course | Required, allows decimals |
 
-## Relationships
-- **Notification -> User**: Belongs to a recipient.
-- **Notification -> Author**: (Implicit) Could be system-generated or triggered by another user's action.
+## State Transitions
+N/A - This change only affects the numeric value of an existing field.

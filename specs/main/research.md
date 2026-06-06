@@ -1,39 +1,32 @@
-# Research: Documentation Audit Findings
+# Research: Course Modal Updates
 
-## Decision: Unified Documentation Strategy
-We will move away from placeholder-heavy READMEs to high-signal, technical documentation that reflects the current TypeScript implementation and the v1.1.0 constitutional principles.
+## Decision: Use `step="0.1"` for Credits
+We will update the `credits` input in `courses.html` to include `step="0.1"`.
 
-## Audit Mapping
+## Rationale
+- HTML5 `type="number"` inputs default to a step of `1`. Adding `step="0.1"` allows for one decimal place precision (e.g. 1.5, 3.5), which covers the user requirement. `step="any"` is also an option but `0.1` is more controlled for academic credits.
 
-| File | Current State | Missing/Outdated Items |
-|------|---------------|------------------------|
-| **Root README.md** | Basic | Missing Real-time details, Email System info, `tsc` Quality Gate. |
-| **config/README.md** | Minimal | Missing details on `mailService` config and environment variables for Sanity. |
-| **controllers/README.md** | Generic | Needs to mention standard trigger patterns for notifications and async backgrounding. |
-| **middlewares/README.md** | Basic | Missing details on role-based rate limiting (students only) and CSP-aware security middleware. |
-| **public/README.md** | Placeholder | Missing Custom Web Component list and CSP compliance rules (no inline scripts). |
-| **routes/README.md** | Outdated | Doesn't reflect current route structure for notifications, enrollments, and teacher oversight. |
-| **schemas/README.md** | Basic | Missing indexes for real-time performance and relationship mapping. |
-| **services/README.md** | Sparse | Missing `NotificationService`, `RoleService`, and `MailService` architecture. |
-| **types/README.md** | Very Sparse | Needs to explain centralized data-related types in `schemas/types/`. |
+## Findings
 
-## Key Findings
+### 1. Form Data Casting
+The `courseForm.onsubmit` currently uses:
+```javascript
+const data = Object.fromEntries(new FormData(courseForm));
+```
+`FormData` values are always strings. When sent to the backend via `fetch` with `JSON.stringify(data)`, they remain strings.
 
-### 1. The "Single Source of Truth" Problem
-Many READMEs refer to features that have since been refactored (e.g., global rate limiting).
-- **Decision**: Update all docs to reflect **targeted** mechanisms (e.g., Student-only rate limits).
+Mongoose's `Number` type casting in `Course.create(req.body)` and `findByIdAndUpdate` handles numeric strings correctly, including decimals.
 
-### 2. UI Component Visibility
-The `public/README.md` is almost empty but the `ui-components.ts` is now a major part of the project.
-- **Decision**: List all custom elements (`ui-navbar`, `ui-card`, etc.) in the public docs.
+### 2. UI Consistency
+The modal already switches between "Register New Course" and "Edit Course" based on the `isEdit` flag. I will ensure that the "Credits" field is accurately displayed in the `renderCourses` cards as well.
 
-### 3. Verification Gate Prominence
-The new `npx tsc` mandate from the Constitution must be visible in the Root README to ensure compliance.
+### 3. Error Handling
+I will add more specific error logging and user feedback (via existing `showToast`) if the API call fails.
 
 ## Alternatives Considered
 
-### Consolidating all docs into root README
-- **Rejected because**: The project is modular. Keeping per-directory READMEs helps developers focus on specific layers (e.g., schemas vs controllers).
+### Server-side Validation for Integers
+- **Rejected because**: The requirement explicitly asks for decimal form.
 
-### Using a specialized documentation tool (Docusaurus/JSDoc)
-- **Rejected because**: YAGNI. Simple, well-maintained Markdown files in the repo are sufficient for the current team size and provide the fastest access.
+### Floating point precision issues
+- **Decision**: For values like 1.5 or 3.5, standard floating point `Number` in JavaScript/MongoDB is sufficient and won't suffer from common precision issues like 0.1 + 0.2.

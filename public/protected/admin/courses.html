@@ -99,16 +99,16 @@
                 <input type="hidden" name="id">
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1 font-black uppercase tracking-tight text-[10px]">Course Title</label>
-                    <input type="text" name="title" placeholder="e.g. Advanced Physics" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" name="title" placeholder="e.g. Advanced Physics" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition focus:border-blue-500">
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1 font-black uppercase tracking-tight text-[10px]">Course Code</label>
-                    <input type="text" name="code" placeholder="e.g. PHYS202" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" name="code" placeholder="e.g. PHYS202" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 transition focus:border-blue-500">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1 font-black uppercase tracking-tight text-[10px]">Credits</label>
-                        <input type="number" name="credits" value="3" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="number" name="credits" value="3" step="0.1" min="0" required class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1 font-black uppercase tracking-tight text-[10px]">Department</label>
@@ -269,7 +269,7 @@
                                 ${c.code}
                             </span>
                             <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                                ${c.credits} Credits
+                                ${Number(c.credits).toFixed(1)} Credits
                             </span>
                         </div>
                         <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
@@ -515,20 +515,34 @@
             const data = Object.fromEntries(new FormData(courseForm));
             const id = data.id;
             delete data.id;
+            
+            // Ensure numeric fields are correctly cast
+            data.credits = Number(data.credits);
+            data.enrollmentFee = Number(data.enrollmentFee);
+
             const url = id ? `/api/admin/courses/${id}` : '/api/admin/courses';
             const method = id ? 'PATCH' : 'POST';
 
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
 
-            if (res.ok) {
-                showToast(id ? 'Updated!' : 'Created!');
-                modalElements.main.classList.add('hidden');
-                fetchCourses();
-            } else { showToast('Error saving course', 'error'); }
+                const result = await res.json();
+
+                if (res.ok) {
+                    showToast(id ? 'Course updated successfully!' : 'Course registered successfully!');
+                    modalElements.main.classList.add('hidden');
+                    fetchCourses();
+                } else { 
+                    showToast(result.message || 'Error saving course', 'error'); 
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Network error, please try again', 'error');
+            }
         };
 
         init();

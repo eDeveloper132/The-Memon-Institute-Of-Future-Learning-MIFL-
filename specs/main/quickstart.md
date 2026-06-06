@@ -1,16 +1,22 @@
-# Quickstart: Dynamic Notifications
+# Quickstart: Testing Course Modal Updates
 
 ## Setup
-1. Ensure the backend is running: `npm run start` or `npm run serve`.
-2. Login as an Admin or Teacher.
-3. Open the main Dashboard (`/protected/admin/index.html` or `/protected/teacher/index.html`).
+1. Log in as an Admin.
+2. Navigate to the Courses management page.
 
-## Testing Dynamic Feed
-1. Use a tool like Postman or a temporary script to create a notification for the logged-in user.
-2. Observe if the notification appears in the dashboard section (e.g., "System Notifications").
-3. Trigger a `newNotification` socket event and verify real-time injection.
+## Test Case 1: Register Course with Decimal Credits
+1. Click "Register New Course".
+2. Enter course details.
+3. In the "Credits" field, enter `2.5`.
+4. Click "Save Course".
+5. Verify that the new course appears in the list with `2.5 Credits`.
 
-## Verification
-- [ ] No hard-coded text like "12 students have pending fee payments" is visible in the HTML source.
-- [ ] The dashboard shows "No notifications" if the list is empty.
-- [ ] Clicking a notification (if implemented) marks it as read and potentially removes it from the "unread" dashboard view.
+## Test Case 2: Edit Existing Course Credits
+1. Click the "Edit" icon on an existing course.
+2. Change the "Credits" value to `3.7`.
+3. Click "Update Course".
+4. Verify that the course card updates to show `3.7 Credits`.
+
+## Test Case 3: Validation
+1. Try to enter a non-numeric value or leave a required field empty.
+2. Verify that the browser's built-in validation or the custom error handling prevents submission.

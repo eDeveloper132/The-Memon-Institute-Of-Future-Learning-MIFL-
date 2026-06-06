@@ -1,32 +1,31 @@
-# Specification: Comprehensive Documentation Update
+# Feature Specification: Update Course Modals
 
 ## Background
-MIFL has evolved significantly with new features like real-time notifications, a comprehensive email system, and strict constitutional quality gates. The existing README files are outdated and do not reflect the current architectural state, development workflow, or full feature set.
+The current "Register New Course" and "Edit Course" modals in the Admin Dashboard have some functional limitations. Specifically, the credit hours input only allows integer values, and the general UX for adding/editing courses could be improved.
 
 ## User Stories
-- **As a Developer**, I want clear, accurate documentation for each module so I can understand the codebase and contribute effectively.
-- **As an Architect**, I want the project structure and design principles to be clearly documented to maintain technical integrity.
-- **As a System Admin**, I want accurate setup and deployment instructions to manage the platform reliably.
+- **As an Admin**, I want to be able to register new courses with decimal credit hours (e.g. 1.5, 3.5) so that the system accurately reflects the academic structure.
+- **As an Admin**, I want a smooth and reliable experience when editing existing courses.
 
 ## Requirements
 
 ### Functional
-- **Audit**: Review all 9 existing `README.md` files.
-- **Update Content**:
-    - **Main README**: Highlight real-time features, email system, and mandatory `tsc` gate.
-    - **Sub-directory READMEs**: Detail current models, controllers, and services (e.g., mention `NotificationService` in `services/README.md`).
-    - **Security**: Document the refined rate limiting and CSP policies in `middlewares/README.md`.
-- **Consistency**: Ensure a professional, uniform tone and formatting across all files.
-- **Navigation**: Link sub-directory documentation back to the root and each other where relevant.
+- **Decimal Credits**: Update the `credits` input field in the course modal to accept decimal values.
+- **Form Validation**: Ensure that all required fields are validated on the client side and server side.
+- **Dynamic Updates**: Ensure that the course list updates immediately after a successful create or edit operation.
+- **Consistent UI**: The modal should clearly indicate whether the user is adding a new course or editing an existing one (already partially implemented with header color changes).
 
 ### Technical
-- **Markdown Standards**: Use GitHub-flavored Markdown.
-- **Project Structure**: Update the folder tree diagrams to match reality.
-- **Quality Gate**: Explicitly document Principle III (Mandatory Verification Gate) in the contributing section.
+- **HTML/CSS**: Update `public/protected/admin/courses.html` to add `step="any"` or `step="0.1"` to the `credits` input.
+- **JavaScript**:
+    - Ensure `FormData` values are correctly handled.
+    - Improve error handling for API calls in `courses.html`.
+- **Backend**:
+    - Verify that `controllers/admin.controller.ts` correctly handles decimal values for `credits`.
+    - Ensure Mongoose schema casting doesn't lose precision.
 
 ## Acceptance Criteria
-- [ ] All 9 README files are updated with current technical details.
-- [ ] Project structure diagram in root README is 100% accurate.
-- [ ] Setup instructions include current environment variables.
-- [ ] No mention of hard-coded notifications or outdated rate limiter logic remains.
-- [ ] Documentation passes a peer review for clarity and tone.
+- [ ] Admin can enter `1.5` in the Credits field and save successfully.
+- [ ] Course modal correctly populates all fields when editing.
+- [ ] UI feedback (toasts) is provided for both success and failure states.
+- [ ] No regressions in course deletion or other course management features.

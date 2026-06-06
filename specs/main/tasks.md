@@ -1,11 +1,11 @@
 ---
-description: "Task list for Comprehensive Documentation Update implementation"
+description: "Task list for Update Course Modals implementation"
 ---
 
-# Tasks: Comprehensive Documentation Update
+# Tasks: Update Course Modals
 
 **Input**: Design documents from `/specs/main/`
-**Prerequisites**: plan.md, spec.md, research.md
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/courses.md
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -16,42 +16,60 @@ description: "Task list for Comprehensive Documentation Update implementation"
 ## Phase 1: Setup
 
 - [x] T001 Initialize design artifacts in specs/main/
+- [x] T002 [P] Verify `Course` model schema in `schemas/models/course.model.ts` allows decimal numbers for `credits`
 
-## Phase 2: Core Documentation Updates (Priority: P1) 🎯 MVP
+## Phase 2: Foundational (Backend)
 
-**Goal**: Update all README files to reflect the current state of the project.
+- [x] T003 Verify `crudCourses.create` and `crudCourses.update` in `controllers/admin.controller.ts` correctly handle incoming numeric data
 
-**Independent Test**: Read every README and verify information matches the current TypeScript codebase.
+---
 
-### Implementation for Phase 2
+## Phase 3: User Story 1 - Register Course with Decimal Credits (Priority: P1) 🎯 MVP
 
-- [x] T002 [US1] Update root `README.md` with new features (real-time, email), modern stack details, and Principle III (npx tsc) gate.
-- [x] T003 [P] [US1] Update `config/README.md` to include `mailService` and environment variables.
-- [x] T004 [P] [US1] Update `controllers/README.md` to document notification trigger patterns.
-- [x] T005 [P] [US1] Update `middlewares/README.md` to reflect student-only rate limiting and CSP-aware security.
-- [x] T006 [P] [US1] Update `public/README.md` with the full list of custom Web Components.
-- [x] T007 [P] [US1] Update `routes/README.md` to map current API endpoints.
-- [x] T008 [P] [US1] Update `schemas/README.md` with relationship and indexing details.
-- [x] T009 [P] [US1] Update `services/README.md` to document `NotificationService` and `RoleService`.
-- [x] T010 [P] [US1] Update `types/README.md` to explain global and schema-level types.
+**Goal**: Enable admins to register courses with fractional credit hours.
+
+**Independent Test**: Register a course with `1.5` credits and verify it appears correctly in the list.
+
+### Implementation for User Story 1
+
+- [x] T004 [US1] Update `credits` input in `public/protected/admin/courses.html` to add `step="0.1"` and `min="0"`.
+- [x] T005 [US1] Update `credits` card rendering in `renderCourses` function in `public/protected/admin/courses.html` to handle decimal display.
+- [x] T006 [US1] Enhance `showToast` feedback in `courseForm.onsubmit` in `public/protected/admin/courses.html` to provide specific error messages from the API.
+
+**Checkpoint**: User Story 1 (Registering) should be functional with decimal credits.
+
+---
+
+## Phase 4: User Story 2 - Edit Course UX & Decimals (Priority: P2)
+
+**Goal**: Ensure smooth editing of courses with decimal credit support.
+
+**Independent Test**: Edit an existing course, change credits to `2.5`, and verify the update persists.
+
+### Implementation for User Story 2
+
+- [x] T007 [US2] Update `openCourseModal` logic in `public/protected/admin/courses.html` to ensure `credits` field is populated with the raw numeric value (avoiding string conversion issues if any).
+- [x] T008 [US2] Verify `id` population and `PATCH` method assignment in `courseForm.onsubmit` in `public/protected/admin/courses.html`.
+
+**Checkpoint**: User Story 2 (Editing) should be functional with decimal credits and consistent UI state.
 
 ---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [x] T011 [P] Standardize tone and formatting across all 9 README files.
-- [x] T012 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
-- [x] T013 Final review of project structure diagrams in root README.
+- [x] T009 [P] Standardize input focus styles in `courseModal` in `public/protected/admin/courses.html` to match the rest of the dashboard.
+- [x] T010 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
+- [x] T011 Run quickstart.md validation for both Create and Edit flows.
 
 ---
 
 ## Dependencies & Execution Order
 
-- **Phase 1** is complete.
-- **Phase 2** tasks can mostly run in parallel as they affect different files.
-- **Polish phase** follows completion of all individual file updates.
+- **Phase 1 & 2** are foundational and should be checked first.
+- **US1** and **US2** both depend on the HTML updates in `courses.html`.
+- **Phase N** follows completion of all functional updates.
 
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-Updating all 9 files constitutes the MVP as it ensures zero documentation debt across the project layers.
+Enabling decimal support in the registration flow is the primary MVP. Once T004-T006 are done, the core requirement is satisfied.
