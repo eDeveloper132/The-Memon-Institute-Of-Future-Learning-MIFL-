@@ -37,7 +37,23 @@
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" title="Enter your address here" placeholder="Enter your address"></textarea>
             </div>
 
-            <auth-input type="password" label="Password" name="password" placeholder="••••••••" required></auth-input>
+            <auth-input type="password" label="Password" name="password" placeholder="••••••••" required toggle-password></auth-input>
+
+            <div id="passwordRequirements" class="bg-gray-100 p-4 rounded-xl space-y-2 text-[11px] font-medium transition-all duration-300">
+                <p class="text-gray-500 font-bold uppercase tracking-widest text-[9px] mb-2">Password Requirements</p>
+                <div class="flex items-center gap-2" id="req-length">
+                    <i class="fa-solid fa-circle-dot text-[8px]"></i> At least 8 characters
+                </div>
+                <div class="flex items-center gap-2" id="req-upper">
+                    <i class="fa-solid fa-circle-dot text-[8px]"></i> One uppercase letter
+                </div>
+                <div class="flex items-center gap-2" id="req-number">
+                    <i class="fa-solid fa-circle-dot text-[8px]"></i> One number
+                </div>
+                <div class="flex items-center gap-2" id="req-special">
+                    <i class="fa-solid fa-circle-dot text-[8px]"></i> One special character (@$!%*?&)
+                </div>
+            </div>
 
             <auth-button type="submit">Register</auth-button>
         </form>
@@ -51,13 +67,54 @@
     <script type="module">
         const form = document.getElementById('signupForm');
         const submitBtn = form.querySelector('auth-button');
+        const passwordInput = form.querySelector('auth-input[name="password"]');
+        
+        const requirements = {
+            length: { re: /.{8,}/, el: document.getElementById('req-length') },
+            upper: { re: /[A-Z]/, el: document.getElementById('req-upper') },
+            number: { re: /[0-9]/, el: document.getElementById('req-number') },
+            special: { re: /[@$!%*?&]/, el: document.getElementById('req-special') }
+        };
+
+        const validatePassword = (val) => {
+            let allValid = true;
+            for (const key in requirements) {
+                const isValid = requirements[key].re.test(val);
+                const el = requirements[key].el;
+                const icon = el.querySelector('i');
+                
+                if (isValid) {
+                    el.classList.add('text-green-600');
+                    el.classList.remove('text-gray-500');
+                    icon.classList.replace('fa-circle-dot', 'fa-circle-check');
+                } else {
+                    el.classList.remove('text-green-600');
+                    el.classList.add('text-gray-500');
+                    icon.classList.replace('fa-circle-check', 'fa-circle-dot');
+                    allValid = false;
+                }
+            }
+            return allValid;
+        };
+
+        // Listen for input on the underlying input element
+        passwordInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            validatePassword(val);
+        });
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            submitBtn.loading = true;
             
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
+
+            if (!validatePassword(data.password)) {
+                showToast('Please fulfill all password requirements', 'error');
+                return;
+            }
+
+            submitBtn.loading = true;
             
             try {
                 const response = await fetch('/api/auth/signup', {

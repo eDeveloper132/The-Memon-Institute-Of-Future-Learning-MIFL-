@@ -33,6 +33,7 @@ class AuthInput extends HTMLElement {
     const icon = this.getAttribute("icon") || "";
     const required = this.hasAttribute("required") ? "required" : "";
     const value = this.getAttribute("value") || "";
+    const togglePassword = this.hasAttribute("toggle-password") && type === "password";
 
     this.innerHTML = `
       <div class="mb-4">
@@ -48,12 +49,33 @@ class AuthInput extends HTMLElement {
             ${required}
             name="${name}"
             value="${value}"
-            class="block w-full ${icon ? "pl-10" : "px-3"} pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            class="block w-full ${icon ? "pl-10" : "px-3"} ${togglePassword ? "pr-10" : "pr-3"} py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             placeholder="${placeholder}"
           >
+          ${togglePassword ? `
+            <button type="button" class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-600 transition">
+              <i class="fa-solid fa-eye"></i>
+            </button>` : ""
+          }
         </div>
       </div>
     `;
+
+    if (togglePassword) {
+      const btn = this.querySelector('.password-toggle');
+      const input = this.querySelector('input');
+      const iconEl = btn?.querySelector('i');
+
+      btn?.addEventListener('click', () => {
+        if (input?.type === 'password') {
+          input.type = 'text';
+          iconEl?.classList.replace('fa-eye', 'fa-eye-slash');
+        } else if (input) {
+          input.type = 'password';
+          iconEl?.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+      });
+    }
   }
 }
 
