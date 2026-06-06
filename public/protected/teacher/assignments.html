@@ -254,6 +254,12 @@
         targetBatchBtn.onclick = () => setTargetMode('batch');
 
         async function fetchTargetingData() {
+            targetClassSelect.innerHTML = '<option value="">Loading classes...</option>';
+            classCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
+            targetCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
+            targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>';
+            targetBatchSelect.disabled = true;
+
             try {
                 const [classRes, courseRes] = await Promise.all([
                     fetch('/api/teacher/classes'),
@@ -262,21 +268,36 @@
 
                 if (classRes.ok) {
                     const { classes } = await classRes.json();
-                    targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
-                        classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
+                    if (classes.length === 0) {
+                        targetClassSelect.innerHTML = '<option value="">No classes found</option>';
+                    } else {
+                        targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
+                            classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
+                    }
+                } else {
+                    targetClassSelect.innerHTML = '<option value="">Failed to load classes</option>';
                 }
 
                 if (courseRes.ok) {
                     const { courses } = await courseRes.json();
                     allCourses = courses;
-                    const courseOptions = '<option value="">Choose a course...</option>' + 
-                        courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-                    
-                    classCourseSelect.innerHTML = courseOptions;
-                    targetCourseSelect.innerHTML = courseOptions;
+                    if (courses.length === 0) {
+                        classCourseSelect.innerHTML = '<option value="">No courses assigned</option>';
+                        targetCourseSelect.innerHTML = '<option value="">No courses assigned</option>';
+                    } else {
+                        const courseOptions = '<option value="">Choose a course...</option>' + 
+                            courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                        
+                        classCourseSelect.innerHTML = courseOptions;
+                        targetCourseSelect.innerHTML = courseOptions;
+                    }
+                } else {
+                    classCourseSelect.innerHTML = '<option value="">Failed to load courses</option>';
+                    targetCourseSelect.innerHTML = '<option value="">Failed to load courses</option>';
                 }
             } catch (err) {
                 console.error('Failed to load targeting data:', err);
+                showToast('Error loading targeting data', 'error');
             }
         }
 

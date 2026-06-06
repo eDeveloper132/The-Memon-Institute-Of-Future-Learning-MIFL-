@@ -131,10 +131,31 @@ export const getTeacherCourses = async (req: any, res: Response) => {
 export const getTeacherClasses = async (req: any, res: Response) => {
     try {
         const teacherId = req.user.id;
-        const classes = await Class.find({ classTeacher: teacherId })
+        
+        // 1. Find classes where they are the primary class teacher
+        const classesAsHead = await Class.find({ classTeacher: teacherId })
             .select('name section gradeLevel students classOutline classCurriculumSections classCurriculumLocked');
-        res.status(200).json({ classes });
+        
+        // 2. Find all students taught by this teacher in any course
+        const courses = await Course.find({ teacher: teacherId }).select('enrolledStudents');
+        const enrolledStudentIds = courses.reduce((acc: any[], c: any) => [...acc, ...c.enrolledStudents], []);
+        
+        // 3. Find the classes of those students
+        const students = await User.find({ _id: { $in: enrolledStudentIds }, currentClass: { $exists: true } }).select('currentClass');
+        const classIdsFromCourses = students.map(s => s.currentClass?.toString());
+        
+        // 4. Merge and fetch full class details
+        const allRelevantClassIds = new Set([
+            ...classesAsHead.map(c => c._id.toString()),
+            ...classIdsFromCourses.filter(id => !!id) as string[]
+        ]);
+        
+        const allClasses = await Class.find({ _id: { $in: Array.from(allRelevantClassIds) } })
+            .select('name section gradeLevel students classOutline classCurriculumSections classCurriculumLocked');
+
+        res.status(200).json({ classes: allClasses });
     } catch (error: any) {
+        console.error(chalk.red('[Teacher Controller] getTeacherClasses error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
