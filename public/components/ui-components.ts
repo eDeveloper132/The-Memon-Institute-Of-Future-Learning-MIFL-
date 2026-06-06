@@ -409,6 +409,41 @@ class UISpinner extends HTMLElement {
 }
 
 if (!customElements.get('ui-navbar')) customElements.define('ui-navbar', UINavbar);
+
+/**
+ * Public Navbar for Login, Signup, and Info Center
+ */
+class UIPublicNavbar extends HTMLElement {
+    connectedCallback(): void {
+        const title = this.getAttribute('title') || 'MIFL';
+        this.innerHTML = `
+            <nav class="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-[1000]">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-16 items-center">
+                        <div class="flex items-center gap-8">
+                            <a href="/" class="text-2xl font-bold text-blue-600 flex items-center gap-2">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <span>${title}</span>
+                            </a>
+                            <div class="hidden md:flex items-center space-x-4">
+                                <a href="/unprotected/information_center/information-center.html" class="text-gray-600 hover:text-blue-600 font-medium transition flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-info"></i> Information Center
+                                </a>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <a href="/api/auth/login" class="text-gray-600 hover:text-blue-600 font-bold text-sm transition">Sign In</a>
+                            <a href="/api/auth/signup" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition shadow-lg shadow-blue-100">Get Started</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        `;
+    }
+}
+
+if (!customElements.get('ui-public-navbar')) customElements.define('ui-public-navbar', UIPublicNavbar);
+
 if (!customElements.get('ui-card')) customElements.define('ui-card', UICard);
 if (!customElements.get('ui-spinner')) customElements.define('ui-spinner', UISpinner);
 

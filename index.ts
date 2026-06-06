@@ -17,6 +17,7 @@ import parentRoutes from "./routes/parent.routes.js";
 import chatRoutes from "./routes/chat.routes.js";
 import enrollmentRoutes from "./routes/enrollment.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import publicRoutes from "./routes/public.routes.js";
 import { authenticate } from "./middlewares/auth.js";
 
 import { setupSocket } from "./socket.js";
@@ -59,6 +60,7 @@ app.use((req, res, next) => {
      });
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes);
 app.use(express.static(path.join(process.cwd(), "public")));
 
 

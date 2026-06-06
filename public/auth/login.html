@@ -9,8 +9,11 @@
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
     <script src="/components/auth-components.js?v=1.1" type="module" defer></script>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen">
-    <auth-card>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <ui-public-navbar title="MIFL"></ui-public-navbar>
+
+    <div class="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <auth-card>
         <auth-header title="Welcome Back" subtitle="Please enter your details to sign in"></auth-header>
         
         <form id="loginForm" class="space-y-6">
