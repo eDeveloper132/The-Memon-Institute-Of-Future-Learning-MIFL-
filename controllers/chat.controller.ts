@@ -3,6 +3,8 @@ import { ChatGroup } from '../schemas/models/chatGroup.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { User } from '../schemas/models/user.model.js';
 import { Class } from '../schemas/models/class.model.js';
+import { NotificationService } from '../services/notification.service.js';
+import mongoose from 'mongoose';
 import chalk from 'chalk';
 import { createClient } from '@sanity/client';
 

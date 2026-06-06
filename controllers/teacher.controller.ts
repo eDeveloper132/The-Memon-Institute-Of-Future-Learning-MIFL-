@@ -339,6 +339,7 @@ export const createAssignment = async (req: any, res: Response) => {
             setImmediate(async () => {
                 try {
                     const targetClass = await Class.findById(classId).populate('students', '_id email name');
+                    const courseDoc = await Course.findById(course);
                     if (targetClass && targetClass.students.length > 0) {
                         for (const student of targetClass.students as any[]) {
                             await NotificationService.send({
@@ -346,7 +347,7 @@ export const createAssignment = async (req: any, res: Response) => {
                                 type: 'ACADEMIC',
                                 title: 'New Assignment',
                                 content: `A new assignment "${assignment.title}" has been posted.`,
-                                data: { title: assignment.title, course: assignment.course?.title, dueDate: assignment.dueDate },
+                                data: { title: assignment.title, course: courseDoc?.title || 'Your Course', dueDate: assignment.dueDate },
                                 priority: 'medium'
                             });
                         }

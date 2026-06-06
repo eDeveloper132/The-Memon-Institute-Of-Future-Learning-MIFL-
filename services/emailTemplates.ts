@@ -256,5 +256,64 @@ export const emailTemplates = {
             </div>
         </body>
         </html>
+    `,
+
+    /**
+     * Email Change Intent (Sent to old email)
+     */
+    emailChangeIntent: (url: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head><style>${baseStyles}</style></head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MIFL Security</h1>
+                </div>
+                <div class="content">
+                    <h2 style="color: ${primaryColor};">Email Change Request</h2>
+                    <p>We received a request to change the email address for your MIFL account.</p>
+                    <p>To proceed with this change, please click the button below to verify your current access:</p>
+                    <div style="text-align: center;">
+                        <a href="${url}" class="button">Verify Old Email</a>
+                    </div>
+                    <div class="info-box">
+                        <p>If you did not request this change, please secure your account immediately by changing your password.</p>
+                    </div>
+                </div>
+                <div class="footer">
+                    &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
+    `,
+
+    /**
+     * Email Change Verify (Sent to new email)
+     */
+    emailChangeVerify: (url: string) => `
+        <!DOCTYPE html>
+        <html>
+        <head><style>${baseStyles}</style></head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>MIFL Verification</h1>
+                </div>
+                <div class="content">
+                    <h2 style="color: ${primaryColor};">Verify Your New Email</h2>
+                    <p>You are receiving this because this email was provided as the new address for an MIFL account.</p>
+                    <p>Please click the button below to confirm this address and complete the update:</p>
+                    <div style="text-align: center;">
+                        <a href="${url}" class="button">Confirm New Email</a>
+                    </div>
+                </div>
+                <div class="footer">
+                    &copy; ${new Date().getFullYear()} MIFL System. All rights reserved.
+                </div>
+            </div>
+        </body>
+        </html>
     `
 };

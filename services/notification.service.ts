@@ -68,22 +68,24 @@ export class NotificationService {
         // 4. Send Email if preferred
         if (prefs.email && user.email) {
             try {
-                let html = `<p>${content}</p>`;
+                let html = `<p>${content || ''}</p>`;
+                const safeTitle = title || 'MIFL Notification';
+                const safeContent = content || '';
                 
                 // Use specialized templates if available
                 if (type === 'ACADEMIC') {
-                    html = emailTemplates.academicUpdate(title, extraData || { title: content });
+                    html = emailTemplates.academicUpdate(safeTitle, extraData || { title: safeContent });
                 } else if (type === 'FEE') {
-                    html = emailTemplates.financeAlert(title, extraData || { description: content, amount: 0 });
+                    html = emailTemplates.financeAlert(safeTitle, extraData || { description: safeContent, amount: 0 });
                 } else if (type === 'SYSTEM' && priority === 'urgent') {
-                    html = emailTemplates.adminAlert(title, content);
+                    html = emailTemplates.adminAlert(safeTitle, safeContent);
                 } else if (type === 'MESSAGE') {
-                    html = emailTemplates.offlineMessage(extraData?.senderName || 'Someone', content);
+                    html = emailTemplates.offlineMessage(extraData?.senderName || 'Someone', safeContent);
                 }
 
                 await mailService.sendMail({
                     to: user.email,
-                    subject: `[MIFL] ${title}`,
+                    subject: `[MIFL] ${safeTitle}`,
                     html
                 });
                 channelsUsed.push('email');
