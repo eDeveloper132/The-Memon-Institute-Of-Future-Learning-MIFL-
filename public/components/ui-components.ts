@@ -22,50 +22,52 @@ class UINavbar extends HTMLElement {
     connectedCallback(): void {
         const title = this.getAttribute('title') || 'MIFL';
         this.innerHTML = `
-            <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-[1000]">
-                <div class="flex items-center space-x-8">
-                    <h1 id="navTitle" class="text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">${title}</h1>
-                    <!-- Desktop Links -->
-                    <div id="navLinks" class="hidden lg:flex space-x-1 xl:space-x-2">
-                        <!-- Links injected here -->
-                    </div>
-                </div>
-
-                <div class="flex items-center space-x-4">
-                    <!-- Connection Status -->
-                    <div id="connectionStatus" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-500" title="Checking connection..."></div>
-
-                    <!-- Notification Bell -->
-                    <div class="relative">
-                        <button id="notificationBellBtn" class="text-gray-400 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl relative">
-                            <i class="fa-solid fa-bell text-lg"></i>
-                            <span id="notificationBadge" class="absolute top-1.5 right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center hidden">0</span>
-                        </button>
-                        <!-- Dropdown -->
-                        <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-[1001] max-h-96 flex-col">
-                            <div class="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
-                                <h3 class="font-bold text-gray-700 text-sm">Notifications</h3>
-                                <button id="markAllReadBtn" class="text-xs text-blue-600 hover:underline">Mark all read</button>
-                            </div>
-                            <div id="notificationList" class="overflow-y-auto flex-1 p-2 space-y-1">
-                                <div class="text-center text-sm text-gray-500 py-4 italic">Loading...</div>
-                            </div>
+            <nav class="bg-white shadow-md sticky top-0 z-[1000]">
+                <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-4 xl:space-x-8">
+                        <h1 id="navTitle" class="text-xl xl:text-2xl font-bold text-blue-600 cursor-pointer whitespace-nowrap">${title}</h1>
+                        <!-- Desktop Links -->
+                        <div id="navLinks" class="hidden xl:flex space-x-1">
+                            <!-- Links injected here -->
                         </div>
                     </div>
 
-                    <div class="hidden sm:flex flex-col text-right mr-2">
-                        <span id="userName" class="text-gray-900 font-bold text-sm leading-none">Loading...</span>
-                        <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
-                    </div>
-                    
-                    <button id="logoutBtn" class="hidden sm:flex text-gray-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-xl">
-                        <i class="fa-solid fa-power-off text-lg"></i>
-                    </button>
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <!-- Connection Status -->
+                        <div id="connectionStatus" class="w-2.5 h-2.5 rounded-full bg-gray-300 transition-colors duration-500" title="Checking connection..."></div>
 
-                    <!-- Mobile Menu Toggle -->
-                    <button id="mobileMenuToggle" class="lg:hidden text-gray-600 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl active:scale-95">
-                        <i class="fa-solid fa-bars-staggered text-2xl"></i>
-                    </button>
+                        <!-- Notification Bell -->
+                        <div class="relative">
+                            <button id="notificationBellBtn" class="text-gray-400 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl relative">
+                                <i class="fa-solid fa-bell text-lg"></i>
+                                <span id="notificationBadge" class="absolute top-1.5 right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center hidden">0</span>
+                            </button>
+                            <!-- Dropdown -->
+                            <div id="notificationDropdown" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 hidden z-[1001] max-h-96 flex-col">
+                                <div class="p-3 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                                    <h3 class="font-bold text-gray-700 text-sm">Notifications</h3>
+                                    <button id="markAllReadBtn" class="text-xs text-blue-600 hover:underline">Mark all read</button>
+                                </div>
+                                <div id="notificationList" class="overflow-y-auto flex-1 p-2 space-y-1">
+                                    <div class="text-center text-sm text-gray-500 py-4 italic">Loading...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="hidden md:flex flex-col text-right mr-2">
+                            <span id="userName" class="text-gray-900 font-bold text-sm leading-none truncate max-w-[120px]">Loading...</span>
+                            <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
+                        </div>
+                        
+                        <button id="logoutBtn" class="hidden sm:flex text-gray-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-xl">
+                            <i class="fa-solid fa-power-off text-lg"></i>
+                        </button>
+
+                        <!-- Mobile Menu Toggle -->
+                        <button id="mobileMenuToggle" class="xl:hidden text-gray-600 hover:text-blue-600 transition p-2 hover:bg-blue-50 rounded-xl active:scale-95">
+                            <i class="fa-solid fa-bars-staggered text-2xl"></i>
+                        </button>
+                    </div>
                 </div>
             </nav>
 
@@ -328,10 +330,10 @@ class UINavbar extends HTMLElement {
             navLinks.innerHTML = roleLinks.map(link => {
                 const active = currentPath.includes(link.href);
                 return `
-                    <a href="${link.href}" class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold transition-all duration-200 
+                    <a href="${link.href}" class="flex items-center gap-1 xl:gap-1.5 px-1.5 py-1.5 2xl:px-3 2xl:py-2 rounded-xl text-[10px] 2xl:text-sm font-bold transition-all duration-200 
                         ${active ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:text-blue-600 hover:bg-gray-50'}">
-                        <i class="fa-solid ${link.icon} text-xs opacity-70"></i>
-                        <span>${link.label}</span>
+                        <i class="fa-solid ${link.icon} text-[10px] 2xl:text-xs opacity-70"></i>
+                        <span class="whitespace-nowrap">${link.label}</span>
                     </a>
                 `;
             }).join('');
