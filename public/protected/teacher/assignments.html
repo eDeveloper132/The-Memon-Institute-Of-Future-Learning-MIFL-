@@ -47,9 +47,17 @@
                     <textarea name="description" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none h-24 focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Enter instructions..."></textarea>
                 </div>
 
-                <div class="space-y-4 pt-2 border-t border-gray-100">
+                <div class="space-y-4 pt-4 border-t border-gray-100">
+                    <!-- Global Course Selection (Always Required) -->
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Target Audience</label>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">1. Select Subject / Course</label>
+                        <select id="globalCourseSelect" name="course" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm font-bold text-blue-600">
+                            <option value="">Choose a subject...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-2">2. Target Audience</label>
                         <div class="flex bg-gray-100 p-1 rounded-xl">
                             <button type="button" id="targetClassBtn" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-white text-blue-600 shadow-sm">
                                 Standard Class
@@ -61,45 +69,35 @@
                     </div>
 
                     <!-- Target Selection -->
-                    <div id="targetClassGroup" class="space-y-3">
+                    <div id="targetClassGroup" class="space-y-3 animate-in fade-in duration-300">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Course</label>
-                            <select id="classCourseSelect" name="course_class" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
-                                <option value="">Choose a course...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Class</label>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Targeted Class</label>
                             <select id="targetClassSelect" name="class" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
                                 <option value="">Choose a class...</option>
                             </select>
+                            <p class="text-[10px] text-gray-400 mt-1">This will notify all students in the selected class.</p>
                         </div>
                     </div>
 
-                    <div id="targetBatchGroup" class="hidden space-y-3">
+                    <div id="targetBatchGroup" class="hidden space-y-3 animate-in fade-in duration-300">
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Course</label>
-                            <select id="targetCourseSelect" name="course_batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
-                                <option value="">Choose a course...</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Select Batch</label>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Specific Batch</label>
                             <select id="targetBatchSelect" name="batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm" disabled>
                                 <option value="">Choose a batch...</option>
                             </select>
+                            <p class="text-[10px] text-gray-400 mt-1">Target only a specific group within the course.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 pt-2">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date</label>
                         <input type="date" name="dueDate" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Max Points</label>
-                        <input type="number" name="maxPoints" value="100" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
+                        <input type="number" name="maxPoints" value="100" min="1" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm">
                     </div>
                 </div>
 
@@ -193,9 +191,8 @@
         const targetBatchBtn = document.getElementById('targetBatchBtn');
         const targetClassGroup = document.getElementById('targetClassGroup');
         const targetBatchGroup = document.getElementById('targetBatchGroup');
-        const classCourseSelect = document.getElementById('classCourseSelect');
+        const globalCourseSelect = document.getElementById('globalCourseSelect');
         const targetClassSelect = document.getElementById('targetClassSelect');
-        const targetCourseSelect = document.getElementById('targetCourseSelect');
         const targetBatchSelect = document.getElementById('targetBatchSelect');
 
         // State
@@ -244,19 +241,19 @@
             targetClassGroup.classList.toggle('hidden', mode !== 'class');
             targetBatchGroup.classList.toggle('hidden', mode !== 'batch');
 
-            classCourseSelect.required = (mode === 'class');
             targetClassSelect.required = (mode === 'class');
-            targetCourseSelect.required = (mode === 'batch');
             targetBatchSelect.required = (mode === 'batch');
+
+            // Trigger sync of dependent dropdowns
+            syncDependentDropdowns();
         }
 
         targetClassBtn.onclick = () => setTargetMode('class');
         targetBatchBtn.onclick = () => setTargetMode('batch');
 
         async function fetchTargetingData() {
+            globalCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
             targetClassSelect.innerHTML = '<option value="">Loading classes...</option>';
-            classCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
-            targetCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
             targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>';
             targetBatchSelect.disabled = true;
 
@@ -266,6 +263,17 @@
                     fetch('/api/teacher/courses')
                 ]);
 
+                if (courseRes.ok) {
+                    const { courses } = await courseRes.json();
+                    allCourses = courses;
+                    if (courses.length === 0) {
+                        globalCourseSelect.innerHTML = '<option value="">No courses assigned</option>';
+                    } else {
+                        globalCourseSelect.innerHTML = '<option value="">Choose a subject...</option>' + 
+                            courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                    }
+                }
+
                 if (classRes.ok) {
                     const { classes } = await classRes.json();
                     if (classes.length === 0) {
@@ -274,26 +282,6 @@
                         targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
                             classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
                     }
-                } else {
-                    targetClassSelect.innerHTML = '<option value="">Failed to load classes</option>';
-                }
-
-                if (courseRes.ok) {
-                    const { courses } = await courseRes.json();
-                    allCourses = courses;
-                    if (courses.length === 0) {
-                        classCourseSelect.innerHTML = '<option value="">No courses assigned</option>';
-                        targetCourseSelect.innerHTML = '<option value="">No courses assigned</option>';
-                    } else {
-                        const courseOptions = '<option value="">Choose a course...</option>' + 
-                            courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-                        
-                        classCourseSelect.innerHTML = courseOptions;
-                        targetCourseSelect.innerHTML = courseOptions;
-                    }
-                } else {
-                    classCourseSelect.innerHTML = '<option value="">Failed to load courses</option>';
-                    targetCourseSelect.innerHTML = '<option value="">Failed to load courses</option>';
                 }
             } catch (err) {
                 console.error('Failed to load targeting data:', err);
@@ -301,21 +289,29 @@
             }
         }
 
-        targetCourseSelect.onchange = () => {
-            const courseId = targetCourseSelect.value;
+        globalCourseSelect.onchange = () => syncDependentDropdowns();
+
+        function syncDependentDropdowns() {
+            const courseId = globalCourseSelect.value;
+            
             if (!courseId) {
-                targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>';
+                targetBatchSelect.innerHTML = '<option value="">Select a course first...</option>';
                 targetBatchSelect.disabled = true;
                 return;
             }
 
-            const course = allCourses.find(c => c._id === courseId);
-            if (course && course.batches) {
-                targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>' + 
-                    course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
-                targetBatchSelect.disabled = false;
+            if (activeTargetMode === 'batch') {
+                const course = allCourses.find(c => c._id === courseId);
+                if (course && course.batches && course.batches.length > 0) {
+                    targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>' + 
+                        course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
+                    targetBatchSelect.disabled = false;
+                } else {
+                    targetBatchSelect.innerHTML = '<option value="">No batches found for this course</option>';
+                    targetBatchSelect.disabled = true;
+                }
             }
-        };
+        }
 
         /**
          * ASSIGNMENT CRUD
@@ -570,15 +566,14 @@
             addForm.dueDate.value = new Date(a.dueDate).toISOString().split('T')[0];
             addForm.maxPoints.value = a.maxPoints;
 
+            globalCourseSelect.value = a.course._id || a.course;
+
             if (a.class) {
                 setTargetMode('class');
                 targetClassSelect.value = a.class._id || a.class;
-                classCourseSelect.value = a.course._id || a.course;
             } else if (a.batch) {
                 setTargetMode('batch');
-                targetCourseSelect.value = a.course._id || a.course;
-                const event = new Event('change');
-                targetCourseSelect.dispatchEvent(event);
+                syncDependentDropdowns();
                 targetBatchSelect.value = a.batch;
             }
 
@@ -596,8 +591,8 @@
                     title: formData.get('title'),
                     description: formData.get('description'),
                     dueDate: formData.get('dueDate'),
-                    maxPoints: formData.get('maxPoints'),
-                    course: activeTargetMode === 'class' ? formData.get('course_class') : formData.get('course_batch'),
+                    maxPoints: Number(formData.get('maxPoints')),
+                    course: formData.get('course'),
                     class: activeTargetMode === 'class' ? formData.get('class') : undefined,
                     batch: activeTargetMode === 'batch' ? formData.get('batch') : undefined
                 };
