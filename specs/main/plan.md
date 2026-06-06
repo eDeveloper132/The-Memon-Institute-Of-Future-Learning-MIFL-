@@ -1,10 +1,10 @@
-# Implementation Plan: Update Course Modals
+# Implementation Plan: Unified Dual-Fee Management
 
 **Branch**: `main` | **Date**: 2026-06-06 | **Spec**: `/specs/main/spec.md`
 **Input**: Feature specification from `/specs/main/spec.md`
 
 ## Summary
-Refactor the "Register New Course" and "Edit Course" modals in the Admin Dashboard to support decimal credit hours and improve overall functionality and error handling.
+Refactor the Admin Dashboard (Courses and Classes) to support a dual-fee model (Enrollment Fee + Monthly Fee). This includes updating the Class schema/types, as well as the UI for both management pages.
 
 ## Technical Context
 
@@ -14,45 +14,46 @@ Refactor the "Register New Course" and "Edit Course" modals in the Admin Dashboa
 **Testing**: Manual verification, npx tsc
 **Target Platform**: Web
 **Project Type**: Web Application
-**Performance Goals**: N/A
-**Constraints**: Strict CSP (no inline handlers), Principle III (tsc gate)
-**Scale/Scope**: Admin Course Management
+**Constraints**: Strict CSP, Principle III (tsc gate)
+**Scale/Scope**: Admin Dashboard (Course & Class Management)
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] I. Spec-Driven: Requirement coverage confirmed in `spec.md`.
-- [x] II. Type Safety: Using existing `ICourse` types.
-- [x] III. Verification Gate: `npx tsc` will be run after implementation.
-- [x] IV. Library-First: Logic remains in controllers/services.
-- [x] V. Simplicity: Targeted changes to `courses.html`.
-- [x] VI. Proactive: UI feedback via toasts.
+- [x] I. Spec-Driven: Requirements captured in `spec.md`.
+- [x] II. Type Safety: Schema and interfaces will be updated to include `monthlyFee`.
+- [x] III. Verification Gate: `npx tsc` mandatory after implementation.
+- [x] IV. Library-First: Logic remains in controllers/models.
+- [x] V. Simplicity: Smallest viable change to existing HTML templates.
+- [x] VI. Proactive: Real-time UI updates after saving.
 
 ## Project Structure
 
-### Documentation (this feature)
+### Documentation
 
 ```text
 specs/main/
 ├── plan.md              # This file
-├── research.md          # Phase 0 output
-├── data-model.md        # Phase 1 output
-├── quickstart.md        # Phase 1 output
-└── tasks.md             # Phase 2 output
+├── research.md          # Implementation details
+└── tasks.md             # Actionable tasks
 ```
 
-### Source Code (repository root)
+### Source Code
 
 ```text
+schemas/
+├── types/
+│   ├── class.type.ts    # Add monthlyFee
+│   └── course.type.ts   # Verify monthlyFee (added previously)
+└── models/
+    ├── class.model.ts   # Add monthlyFee
+    └── course.model.ts  # Verify monthlyFee (added previously)
+
 public/protected/admin/
-└── courses.html         # Main UI for course management
-
-controllers/
-└── admin.controller.ts   # Backend CRUD logic for courses
+├── courses.html         # UI updates for dual fees
+└── classes.html         # UI updates for dual fees
 ```
-
-**Structure Decision**: Modifying the existing admin courses page and verifying the backend controller.
 
 ## Complexity Tracking
 

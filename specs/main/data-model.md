@@ -1,11 +1,14 @@
-# Data Model: Course Credits
+# Data Model: Multi-Fee Support
 
-## Entity: Course
-The `Course` entity already exists. We are confirming the behavior of the `credits` field.
-
+## Entity: Class (Updated)
 | Field | Type | Description | Validation |
 |-------|------|-------------|------------|
-| `credits` | Number | Academic weight of the course | Required, allows decimals |
+| `monthlyFee` | Number | Monthly tuition for the class | Required, default: 0 |
 
-## State Transitions
-N/A - This change only affects the numeric value of an existing field.
+## Entity: Course (Verified)
+| Field | Type | Description | Validation |
+|-------|------|-------------|------------|
+| `monthlyFee` | Number | Monthly tuition for the course | Required, default: 0 |
+
+## Entity: User (Parent/Student)
+N/A - This change only affects the management of course/class definitions.

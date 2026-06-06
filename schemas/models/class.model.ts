@@ -39,6 +39,7 @@ const classSchema = new Schema<IClass>(
         classCurriculumLocked: { type: Boolean, default: false },
         academicYear: { type: String, required: true },
         enrollmentFee: { type: Number, default: 0 },
+        monthlyFee: { type: Number, default: 0 }, // NEW: Monthly tuition fee
     },
     { timestamps: true }
 );

@@ -197,7 +197,7 @@
                             class="w-full px-4 py-2 border rounded-lg outline-none">
                     </div>
 
-                    <div class="col-span-2">
+                    <div>
                         <label class="block text-sm font-bold text-gray-700 mb-1">
                             Enrollment Fee (PKR)
                         </label>
@@ -206,6 +206,21 @@
                             name="enrollmentFee"
                             placeholder="e.g. 10000"
                             value="0"
+                            min="0"
+                            required
+                            class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">
+                            Monthly Fee (PKR)
+                        </label>
+                        <input
+                            type="number"
+                            name="monthlyFee"
+                            placeholder="e.g. 5000"
+                            value="0"
+                            min="0"
                             required
                             class="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
@@ -338,6 +353,7 @@
                 addClassForm.elements.section.value = cls.section || '';
                 addClassForm.elements.academicYear.value = cls.academicYear || '';
                 addClassForm.elements.enrollmentFee.value = cls.enrollmentFee || 0;
+                addClassForm.elements.monthlyFee.value = cls.monthlyFee || 0;
                 
                 if (cls.classTeacher) {
                     document.getElementById('selectedTeacherId').value = cls.classTeacher._id || cls.classTeacher;
@@ -456,9 +472,15 @@
                                 ${c.classTeacher?.name || 'Unassigned'}
                             </span>
                         </p>
-                        <div class="text-right">
-                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Enrollment Fee</p>
-                            <button data-action="fee" data-id="${c._id}" data-fee="${c.enrollmentFee || 0}" class="text-lg font-black text-green-600 hover:scale-110 transition">PKR ${c.enrollmentFee || 0}</button>
+                        <div class="flex gap-4 text-right">
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Enrollment</p>
+                                <button data-action="fee" data-id="${c._id}" data-feetype="enrollment" data-fee="${c.enrollmentFee || 0}" class="text-xs font-black text-blue-600 hover:scale-110 transition">PKR ${c.enrollmentFee || 0}</button>
+                            </div>
+                            <div>
+                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Monthly</p>
+                                <button data-action="fee" data-id="${c._id}" data-feetype="monthly" data-fee="${c.monthlyFee || 0}" class="text-xs font-black text-green-600 hover:scale-110 transition">PKR ${c.monthlyFee || 0}</button>
+                            </div>
                         </div>
                     </div>
                     <div class="flex border-t border-gray-50 pt-4 gap-2">
@@ -488,13 +510,13 @@
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
 
-            const { action, id, name, fee, locked } = btn.dataset;
+            const { action, id, name, fee, feetype, locked } = btn.dataset;
             const cls = allClasses.find(c => c._id === id);
 
             if (action === 'view') viewStudents(id, name);
             else if (action === 'batches') manageBatches(id, name);
             else if (action === 'lock') toggleCurriculumLock('class', id, locked === 'true');
-            else if (action === 'fee') window.updateFee('class', id, Number(fee));
+            else if (action === 'fee') window.updateFee('class', id, Number(fee), feetype);
             else if (action === 'edit') openModal(true, cls);
             else if (action === 'delete') deleteClass(id);
         });
@@ -727,20 +749,24 @@
             } catch (err) { showToast('Action failed', 'error'); }
         }
 
-        window.updateFee = async (type, id, currentFee) => {
-            const newFee = prompt(`Update enrollment fee (PKR) for this ${type}:`, currentFee);
+        window.updateFee = async (entityType, id, currentFee, feeType = 'enrollment') => {
+            const label = feeType === 'enrollment' ? 'enrollment fee' : 'monthly fee';
+            const fieldName = feeType === 'enrollment' ? 'enrollmentFee' : 'monthlyFee';
+            
+            const newFee = prompt(`Update ${label} (PKR) for this ${entityType}:`, currentFee);
             if (newFee === null || isNaN(newFee)) return;
 
             try {
-                const res = await fetch(`/api/admin/classes/${id}/fee`, {
+                const url = entityType === 'course' ? `/api/admin/courses/${id}/fee` : `/api/admin/classes/${id}/fee`;
+                const res = await fetch(url, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ enrollmentFee: Number(newFee) })
+                    body: JSON.stringify({ [fieldName]: Number(newFee) })
                 });
 
                 if (res.ok) {
-                    showToast('Fee updated to PKR ' + newFee);
-                    fetchClasses();
+                    showToast('Fee updated successfully');
+                    entityType === 'course' ? fetchCourses() : fetchClasses();
                 } else {
                     showToast('Failed to update fee', 'error');
                 }
@@ -825,6 +851,12 @@
             const data = Object.fromEntries(new FormData(addClassForm));
             const id = data.id;
             delete data.id;
+            
+            // Ensure numeric fields are correctly cast
+            data.gradeLevel = Number(data.gradeLevel);
+            data.enrollmentFee = Number(data.enrollmentFee);
+            data.monthlyFee = Number(data.monthlyFee);
+
             const url = id ? `/api/admin/classes/${id}` : '/api/admin/classes';
             const method = id ? 'PATCH' : 'POST';
 

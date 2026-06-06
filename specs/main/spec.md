@@ -1,31 +1,46 @@
-# Feature Specification: Update Course Modals
+# Specification: Unified Dual-Fee Management for Courses and Classes
 
 ## Background
-The current "Register New Course" and "Edit Course" modals in the Admin Dashboard have some functional limitations. Specifically, the credit hours input only allows integer values, and the general UX for adding/editing courses could be improved.
+The system currently tracks an `enrollmentFee` for both Courses and Classes. However, the business model also requires tracking a `monthlyFee`. Previous updates added `monthlyFee` to the Course model and the Information Center, but the Admin Dashboard (specifically `courses.html` and `classes.html`) still only allows managing `enrollmentFee`.
 
 ## User Stories
-- **As an Admin**, I want to be able to register new courses with decimal credit hours (e.g. 1.5, 3.5) so that the system accurately reflects the academic structure.
-- **As an Admin**, I want a smooth and reliable experience when editing existing courses.
+- **As an Admin**, I want to define both a one-time enrollment fee and a recurring monthly tuition fee when creating or editing a **Course**.
+- **As an Admin**, I want to define both a one-time enrollment fee and a recurring monthly tuition fee when creating or editing a **Class**.
+- **As an Admin**, I want to see both fee types clearly on the course and class management cards.
 
 ## Requirements
 
 ### Functional
-- **Decimal Credits**: Update the `credits` input field in the course modal to accept decimal values.
-- **Form Validation**: Ensure that all required fields are validated on the client side and server side.
-- **Dynamic Updates**: Ensure that the course list updates immediately after a successful create or edit operation.
-- **Consistent UI**: The modal should clearly indicate whether the user is adding a new course or editing an existing one (already partially implemented with header color changes).
+- **Course Management**:
+    - Add a "Monthly Fee" input field to the "Register/Edit Course" modal in `courses.html`.
+    - Display both Enrollment and Monthly fees on the course cards in `courses.html`.
+    - Ensure the `monthlyFee` is persisted to the database upon saving.
+- **Class Management**:
+    - Add a "Monthly Fee" input field to the "Create/Edit Class" modal in `classes.html`.
+    - Display both Enrollment and Monthly fees on the class cards in `classes.html`.
+    - Ensure the `monthlyFee` is persisted to the database upon saving.
 
 ### Technical
-- **HTML/CSS**: Update `public/protected/admin/courses.html` to add `step="any"` or `step="0.1"` to the `credits` input.
-- **JavaScript**:
-    - Ensure `FormData` values are correctly handled.
-    - Improve error handling for API calls in `courses.html`.
-- **Backend**:
-    - Verify that `controllers/admin.controller.ts` correctly handles decimal values for `credits`.
-    - Ensure Mongoose schema casting doesn't lose precision.
+- **Schema & Types**:
+    - Update `IClass` interface in `schemas/types/class.type.ts` to include `monthlyFee: number`.
+    - Update `Class` model in `schemas/models/class.model.ts` to include `monthlyFee: { type: Number, default: 0 }`.
+    - (Note: Course schema already has `monthlyFee`, but needs verification in tasks).
+- **Frontend**:
+    - Update `public/protected/admin/courses.html`:
+        - Add `monthlyFee` input to the form.
+        - Update `renderCourses` to show both fees.
+        - Update `openModal` to populate `monthlyFee`.
+        - Update `onsubmit` to cast `monthlyFee` to Number.
+    - Update `public/protected/admin/classes.html`:
+        - Add `monthlyFee` input to the form.
+        - Update `renderClasses` to show both fees.
+        - Update `openModal` to populate `monthlyFee`.
+        - Update `onsubmit` to cast `monthlyFee` to Number.
 
 ## Acceptance Criteria
-- [ ] Admin can enter `1.5` in the Credits field and save successfully.
-- [ ] Course modal correctly populates all fields when editing.
-- [ ] UI feedback (toasts) is provided for both success and failure states.
-- [ ] No regressions in course deletion or other course management features.
+- [ ] Admin can set `monthlyFee` for a new course.
+- [ ] Admin can edit `monthlyFee` for an existing course.
+- [ ] Admin can set `monthlyFee` for a new class.
+- [ ] Admin can edit `monthlyFee` for an existing class.
+- [ ] Both fees are visible on the dashboard cards for both entities.
+- [ ] Type safety is maintained across the project (`npx tsc` passes).

@@ -20,6 +20,7 @@ export interface IClass extends Document {
     classCurriculumLocked: boolean;
     academicYear: string; // e.g., '2025-2026'
     enrollmentFee: number;
+    monthlyFee: number; // NEW: Monthly tuition fee
     createdAt: Date;
     updatedAt: Date;
 }

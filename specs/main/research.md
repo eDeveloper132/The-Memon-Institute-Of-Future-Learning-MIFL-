@@ -1,32 +1,28 @@
-# Research: Course Modal Updates
+# Research: Dual-Fee Implementation Details
 
-## Decision: Use `step="0.1"` for Credits
-We will update the `credits` input in `courses.html` to include `step="0.1"`.
+## Decision: Direct UI Integration
+We will add `monthlyFee` fields directly to the existing "Course" and "Class" modals and card rendering logic.
 
 ## Rationale
-- HTML5 `type="number"` inputs default to a step of `1`. Adding `step="0.1"` allows for one decimal place precision (e.g. 1.5, 3.5), which covers the user requirement. `step="any"` is also an option but `0.1` is more controlled for academic credits.
+- **Consistency**: Users expect to manage all financial aspects of a course/class in one place.
+- **Simplicity**: Adding one new field to existing forms is the smallest viable change.
 
 ## Findings
 
-### 1. Form Data Casting
-The `courseForm.onsubmit` currently uses:
-```javascript
-const data = Object.fromEntries(new FormData(courseForm));
-```
-`FormData` values are always strings. When sent to the backend via `fetch` with `JSON.stringify(data)`, they remain strings.
+### 1. Schema Completeness
+- `Course` model already has `monthlyFee` (added in a prior session).
+- `Class` model currently lacks `monthlyFee`. This needs to be added to `class.model.ts` and `class.type.ts`.
 
-Mongoose's `Number` type casting in `Course.create(req.body)` and `findByIdAndUpdate` handles numeric strings correctly, including decimals.
+### 2. Frontend Patterns
+- Both `courses.html` and `classes.html` use `FormData` for submission.
+- The `onsubmit` handlers in both files need to explicitly cast `monthlyFee` to `Number` to prevent type mismatches or unexpected behavior, matching the pattern used for `enrollmentFee`.
 
-### 2. UI Consistency
-The modal already switches between "Register New Course" and "Edit Course" based on the `isEdit` flag. I will ensure that the "Credits" field is accurately displayed in the `renderCourses` cards as well.
-
-### 3. Error Handling
-I will add more specific error logging and user feedback (via existing `showToast`) if the API call fails.
+### 3. Display Logic
+- Course cards currently show `enrollmentFee` with a label.
+- Class cards also show `enrollmentFee`.
+- **UI Update**: Both cards will now display a two-column fee section: "Enrollment" and "Monthly".
 
 ## Alternatives Considered
 
-### Server-side Validation for Integers
-- **Rejected because**: The requirement explicitly asks for decimal form.
-
-### Floating point precision issues
-- **Decision**: For values like 1.5 or 3.5, standard floating point `Number` in JavaScript/MongoDB is sufficient and won't suffer from common precision issues like 0.1 + 0.2.
+### Global Fee Service
+- **Rejected because**: For only two fee types, direct model attributes are more maintainable and easier to index.
