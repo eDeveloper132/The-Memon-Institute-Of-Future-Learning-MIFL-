@@ -4,7 +4,20 @@
 
 class UINavbar extends HTMLElement {
     private mobileMenuOpen = false;
-    private userData: any = null;
+    private _userData: any = null;
+    private _rendered = false;
+
+    set userData(value: any) {
+        this._userData = value;
+        if (this._rendered && value) {
+            this.renderLinks(value);
+            this.loadNotifications();
+        }
+    }
+
+    get userData() {
+        return this._userData;
+    }
 
     connectedCallback(): void {
         const title = this.getAttribute('title') || 'MIFL';
@@ -91,8 +104,12 @@ class UINavbar extends HTMLElement {
             </div>
         `;
         
+        this._rendered = true;
         this.setupEventListeners();
-        if (this.userData) this.renderLinks(this.userData);
+        if (this._userData) {
+            this.renderLinks(this._userData);
+            this.loadNotifications();
+        }
     }
 
     private setupEventListeners(): void {
