@@ -23,12 +23,15 @@ export const generalLimiter = rateLimit({
     skip: (req: any) => {
         try {
             const token = req.cookies?.token || req.headers?.authorization?.split(' ')[1];
-            if (!token) return false;
+            // If no token, skip (applying only to authenticated students)
+            if (!token) return true;
+            
             const decoded = jwt.decode(token) as any;
-            // Skip rate limiting for admin and teacher roles
-            return decoded && (decoded.role === 'admin' || decoded.role === 'teacher');
+            // Only apply rate limiting if role is explicitly 'student'
+            // Skip for everyone else (admin, teacher, parent, guest)
+            return !decoded || decoded.role !== 'student';
         } catch {
-            return false;
+            return true; // Skip on error to be safe
         }
     }
 });

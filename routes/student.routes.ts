@@ -15,12 +15,14 @@ import {
     getMyNotices
 } from '../controllers/student.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
+import { generalLimiter } from '../middlewares/rateLimiter.js';
 
 const router = Router();
 
 // Protect all student routes
 router.use(authenticate);
 router.use(authorize('student', 'admin'));
+router.use(generalLimiter);
 
 router.get('/profile', getMyProfile);
 router.patch('/profile', updateMyDetails);

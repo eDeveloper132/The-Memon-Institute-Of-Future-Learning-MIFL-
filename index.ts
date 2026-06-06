@@ -9,7 +9,6 @@ import { connectDB } from "./config/db.js";
 import path from "path";
 
 import { securityMiddleware } from "./middlewares/security.js";
-import { generalLimiter } from "./middlewares/rateLimiter.js";
 import authRoutes from "./routes/auth.routes.js";
 import teacherRoutes from "./routes/teacher.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
@@ -42,7 +41,6 @@ app.get("/api/health", (req, res) => {
 
 // Global Middlewares
 app.use(securityMiddleware);
-app.use(generalLimiter);
 app.use(cors());
 app.use(express.json());
 app.use(cookieParser());

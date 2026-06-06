@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { signup, login, logout, forgotPassword, resetPassword, getMe, verifyEmail, resendVerification, requestEmailChange, initiateNewEmailVerification, confirmEmailChange } from '../controllers/auth.controller.js';
-import { authLimiter } from '../middlewares/rateLimiter.js';
 import { authenticate } from '../middlewares/auth.js';
 import path from 'path';
 
@@ -43,13 +42,13 @@ router.get('/success', (req, res) => {
 router.get('/me', authenticate, getMe);
 router.get('/verify-email/:token', verifyEmail);
 router.get('/confirm-email-change/:token', confirmEmailChange);
-router.post('/resend-verification', authLimiter, resendVerification);
+router.post('/resend-verification', resendVerification);
 router.post('/signup', signup);
-router.post('/login', authLimiter, login);
+router.post('/login', login);
 router.post('/logout', logout);
-router.post('/forgot-password', authLimiter, forgotPassword);
-router.post('/reset-password/:token', authLimiter, resetPassword);
-router.post('/request-email-change', authLimiter, requestEmailChange);
-router.post('/update-email/:token', authLimiter, initiateNewEmailVerification);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password/:token', resetPassword);
+router.post('/request-email-change', requestEmailChange);
+router.post('/update-email/:token', initiateNewEmailVerification);
 
 export default router;
