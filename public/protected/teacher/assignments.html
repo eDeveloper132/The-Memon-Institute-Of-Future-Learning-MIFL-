@@ -271,6 +271,9 @@
                     } else {
                         globalCourseSelect.innerHTML = '<option value="">Choose a subject...</option>' + 
                             courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                        
+                        // If we already have a course selected (e.g. from Edit Mode), sync batches now
+                        syncDependentDropdowns();
                     }
                 }
 
@@ -289,10 +292,14 @@
             }
         }
 
-        globalCourseSelect.onchange = () => syncDependentDropdowns();
+        globalCourseSelect.onchange = () => {
+            console.log('[Assignment Modal] Course changed:', globalCourseSelect.value);
+            syncDependentDropdowns();
+        };
 
         function syncDependentDropdowns() {
             const courseId = globalCourseSelect.value;
+            console.log('[Assignment Modal] Syncing dropdowns for course:', courseId, 'Mode:', activeTargetMode);
             
             if (!courseId) {
                 targetBatchSelect.innerHTML = '<option value="">Select a course first...</option>';
@@ -301,7 +308,9 @@
             }
 
             if (activeTargetMode === 'batch') {
-                const course = allCourses.find(c => c._id === courseId);
+                const course = allCourses.find(c => String(c._id) === String(courseId));
+                console.log('[Assignment Modal] Found course for batches:', course?.title, 'Batches:', course?.batches?.length);
+                
                 if (course && course.batches && course.batches.length > 0) {
                     targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>' + 
                         course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
