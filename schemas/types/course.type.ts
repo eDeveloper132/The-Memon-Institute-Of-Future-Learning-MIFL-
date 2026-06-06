@@ -35,6 +35,7 @@ export interface ICourse extends Document {
     curriculumSections: ICurriculumSection[]; // Updated: Array of curriculum sections
     curriculumLocked: boolean; // Admin lock status
     enrollmentFee: number;
+    monthlyFee: number; // NEW: Monthly tuition fee
     enrolledStudents: Types.ObjectId[]; // Ref to User (Student)
     batches: ICourseBatch[];
     createdAt: Date;

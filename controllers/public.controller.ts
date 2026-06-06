@@ -12,7 +12,7 @@ export const getInformationCenterData = async (req: Request, res: Response) => {
             Course.find()
                 .populate('teacher', 'name')
                 .populate('department', 'name')
-                .select('title code credits department teacher enrollmentFee syllabus outline'),
+                .select('title code credits department teacher enrollmentFee monthlyFee syllabus outline'),
             Department.find().select('name description')
         ]);
 
@@ -21,12 +21,12 @@ export const getInformationCenterData = async (req: Request, res: Response) => {
             departments,
             systemInfo: {
                 name: 'MIFL - Memon Institute Of Future Learning',
-                established: '2024',
+                established: '2026',
                 motto: 'Empowering the future through knowledge and skills.',
                 contact: {
-                    email: 'info@mifl.edu',
-                    phone: '+92 123 4567890',
-                    address: 'Memon Institute, Karachi, Pakistan'
+                    email: 'the.memon.learning.official@gmail.com',
+                    phone: '+923062924538',
+                    address: 'Sonara Heights khoja st nawabad lyari south karahi'
                 }
             }
         });
