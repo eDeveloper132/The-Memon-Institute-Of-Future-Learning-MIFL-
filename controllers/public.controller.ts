@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Course } from '../schemas/models/course.model.js';
 import { Department } from '../schemas/models/department.model.js';
+import { Class } from '../schemas/models/class.model.js';
 import chalk from 'chalk';
 
 /**
@@ -8,17 +9,21 @@ import chalk from 'chalk';
  */
 export const getInformationCenterData = async (req: Request, res: Response) => {
     try {
-        const [courses, departments] = await Promise.all([
+        const [courses, departments, classes] = await Promise.all([
             Course.find()
                 .populate('teacher', 'name')
                 .populate('department', 'name')
                 .select('title code credits department teacher enrollmentFee monthlyFee syllabus outline'),
-            Department.find().select('name description')
+            Department.find().select('name description'),
+            Class.find()
+                .populate('classTeacher', 'name')
+                .select('name gradeLevel section academicYear enrollmentFee monthlyFee')
         ]);
 
         res.status(200).json({
             courses,
             departments,
+            classes,
             systemInfo: {
                 name: 'MIFL - Memon Institute Of Future Learning',
                 established: '2026',

@@ -15,15 +15,58 @@
         <!-- Hero Section -->
         <header class="text-center mb-16">
             <h2 class="text-4xl font-black text-gray-900 mb-4">Information Center</h2>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Explore our departments, courses, and pricing structures. Everything you need to know about joining the Memon Institute Of Future Learning.</p>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">Explore our departments, courses, and classes. Get real-time updates on our current offerings and pricing structures.</p>
         </header>
 
-        <!-- System Info & Contact -->
+        <!-- System Info -->
         <div id="systemInfo" class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
             <div class="col-span-full text-center">
                 <ui-spinner text="Loading system information..."></ui-spinner>
             </div>
         </div>
+
+        <!-- Dynamic Data Section -->
+        <section class="mb-20">
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+                <!-- Tabs & Search Header -->
+                <div class="p-8 bg-white border-b border-gray-100">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex p-1 bg-gray-100 rounded-2xl w-full md:w-auto">
+                            <button id="showCoursesTab" class="flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 bg-white shadow-sm text-blue-600">
+                                <i class="fa-solid fa-book mr-2"></i> Course Catalog
+                            </button>
+                            <button id="showClassesTab" class="flex-1 md:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 text-gray-500 hover:text-blue-600">
+                                <i class="fa-solid fa-chalkboard-user mr-2"></i> Academic Classes
+                            </button>
+                        </div>
+                        
+                        <div class="relative w-full md:w-80">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" id="infoSearch" placeholder="Search by name or code..." 
+                                class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Container -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead id="tableHeader">
+                            <!-- Dynamic Header Injected -->
+                        </thead>
+                        <tbody id="dynamicTableBody">
+                            <!-- Dynamic Content Injected -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-gray-400 italic">
+                    <i class="fa-solid fa-folder-open text-4xl mb-4 opacity-20"></i>
+                    <p>No results found for your search.</p>
+                </div>
+            </div>
+        </section>
 
         <!-- Departments Section -->
         <section class="mb-20">
@@ -34,34 +77,7 @@
                 <h3 class="text-2xl font-bold text-gray-900">Our Departments</h3>
             </div>
             <div id="departmentsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Injected here -->
-            </div>
-        </section>
-
-        <!-- Courses & Pricing Section -->
-        <section class="mb-20">
-            <div class="flex items-center gap-4 mb-8">
-                <div class="w-12 h-12 rounded-2xl bg-green-600 text-white flex items-center justify-center text-xl shadow-lg">
-                    <i class="fa-solid fa-book"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900">Course Catalog & Pricing</h3>
-            </div>
-            <div class="overflow-x-auto bg-white rounded-3xl shadow-sm border border-gray-100">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-100">
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Code</th>
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Course Title</th>
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest">Department</th>
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Credits</th>
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Enrollment Fee</th>
-                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Monthly Fee</th>
-                        </tr>
-                    </thead>
-                    <tbody id="coursesTableBody">
-                        <!-- Injected here -->
-                    </tbody>
-                </table>
+                <!-- Injected -->
             </div>
         </section>
     </main>
@@ -73,88 +89,181 @@
     </footer>
 
     <script type="module">
+        let currentTab = 'courses';
+        let rawData = { courses: [], classes: [], departments: [] };
+        let searchTerm = '';
+
         async function fetchInfo() {
             try {
                 const response = await fetch('/api/public/information-center');
                 if (!response.ok) throw new Error('Failed to fetch data');
-                const data = await response.json();
+                rawData = await response.json();
 
-                renderSystemInfo(data.systemInfo);
-                renderDepartments(data.departments);
-                renderCourses(data.courses);
+                renderSystemInfo(rawData.systemInfo);
+                renderDepartments(rawData.departments);
+                updateDisplay();
             } catch (error) {
                 console.error(error);
-                document.querySelectorAll('.grid, tbody').forEach(el => {
-                    el.innerHTML = '<div class="col-span-full py-10 text-center text-red-500 font-bold">Failed to load information. Please try again later.</div>';
-                });
+                document.getElementById('dynamicTableBody').innerHTML = '<tr><td colspan="6" class="py-10 text-center text-red-500 font-bold">Failed to load information.</td></tr>';
+            }
+        }
+
+        function updateDisplay() {
+            const list = currentTab === 'courses' ? rawData.courses : rawData.classes;
+            const filtered = list.filter(item => {
+                const name = (item.title || item.name || '').toLowerCase();
+                const code = (item.code || item.section || '').toLowerCase();
+                return name.includes(searchTerm.toLowerCase()) || code.includes(searchTerm.toLowerCase());
+            });
+
+            renderHeader();
+            renderBody(filtered);
+        }
+
+        function renderHeader() {
+            const header = document.getElementById('tableHeader');
+            if (currentTab === 'courses') {
+                header.innerHTML = `
+                    <tr class="bg-gray-50 border-b border-gray-100">
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Code</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Course Title</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Department</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Credits</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Enrollment</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Monthly</th>
+                    </tr>
+                `;
+            } else {
+                header.innerHTML = `
+                    <tr class="bg-gray-50 border-b border-gray-100">
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Year</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Class Name</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Section</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Grade</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Enrollment</th>
+                        <th class="px-8 py-5 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Monthly</th>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderBody(data) {
+            const tbody = document.getElementById('dynamicTableBody');
+            const empty = document.getElementById('emptyState');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+                empty.classList.add('flex');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            empty.classList.remove('flex');
+
+            if (currentTab === 'courses') {
+                tbody.innerHTML = data.map(c => `
+                    <tr class="border-b border-gray-50 hover:bg-blue-50/30 transition group">
+                        <td class="px-8 py-5">
+                            <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">${c.code}</span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <p class="font-bold text-gray-900 group-hover:text-blue-600 transition">${c.title}</p>
+                        </td>
+                        <td class="px-8 py-5 text-sm text-gray-500 font-medium">
+                            ${c.department?.name || 'General'}
+                        </td>
+                        <td class="px-8 py-5 text-sm font-black text-gray-700 text-center">
+                            ${c.credits || 0}
+                        </td>
+                        <td class="px-8 py-5 text-right font-black text-blue-600">PKR 500</td>
+                        <td class="px-8 py-5 text-right font-black text-green-600">PKR ${(c.monthlyFee || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = data.map(c => `
+                    <tr class="border-b border-gray-50 hover:bg-blue-50/30 transition group">
+                        <td class="px-8 py-5">
+                            <span class="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200">${c.academicYear}</span>
+                        </td>
+                        <td class="px-8 py-5">
+                            <p class="font-bold text-gray-900 group-hover:text-blue-600 transition">${c.name}</p>
+                        </td>
+                        <td class="px-8 py-5 text-sm text-gray-500 font-bold">
+                            Section ${c.section}
+                        </td>
+                        <td class="px-8 py-5 text-sm font-black text-blue-600 text-center">
+                            Level ${c.gradeLevel}
+                        </td>
+                        <td class="px-8 py-5 text-right font-black text-blue-600">PKR 500</td>
+                        <td class="px-8 py-5 text-right font-black text-green-600">PKR ${(c.monthlyFee || 0).toLocaleString()}</td>
+                    </tr>
+                `).join('');
             }
         }
 
         function renderSystemInfo(info) {
             const container = document.getElementById('systemInfo');
             container.innerHTML = `
-                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-                    <i class="fa-solid fa-building-columns text-3xl text-blue-600 mb-4"></i>
-                    <h4 class="font-bold text-gray-900 mb-2">Established</h4>
-                    <p class="text-gray-500">${info.established}</p>
+                <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <h4 class="font-black text-gray-900 mb-2 uppercase tracking-widest text-xs">Established</h4>
+                    <p class="text-xl font-bold text-gray-600">${info.established}</p>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-                    <i class="fa-solid fa-phone text-3xl text-blue-600 mb-4"></i>
-                    <h4 class="font-bold text-gray-900 mb-2">Contact Us</h4>
-                    <p class="text-gray-500">${info.contact.phone}</p>
-                    <p class="text-gray-500 text-xs">${info.contact.email}</p>
+                <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-16 h-16 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <h4 class="font-black text-gray-900 mb-2 uppercase tracking-widest text-xs">Contact Us</h4>
+                    <p class="text-lg font-bold text-gray-600">${info.contact.phone}</p>
+                    <p class="text-xs text-gray-400 font-medium">${info.contact.email}</p>
                 </div>
-                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-md transition">
-                    <i class="fa-solid fa-location-dot text-3xl text-blue-600 mb-4"></i>
-                    <h4 class="font-bold text-gray-900 mb-2">Location</h4>
-                    <p class="text-gray-500 text-xs">${info.contact.address}</p>
+                <div class="bg-white p-10 rounded-3xl shadow-sm border border-gray-100 text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div class="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <h4 class="font-black text-gray-900 mb-2 uppercase tracking-widest text-xs">Location</h4>
+                    <p class="text-xs text-gray-500 font-bold leading-relaxed px-4">${info.contact.address}</p>
                 </div>
             `;
         }
 
         function renderDepartments(depts) {
             const grid = document.getElementById('departmentsGrid');
-            if (depts.length === 0) {
-                grid.innerHTML = '<p class="col-span-full text-center py-10 text-gray-400 italic">No departments listed yet.</p>';
-                return;
-            }
             grid.innerHTML = depts.map(d => `
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:border-blue-200 transition group">
-                    <h4 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition">${d.name}</h4>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 hover:border-blue-300 transition-all group">
+                    <h4 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition">${d.name}</h4>
                     <p class="text-sm text-gray-500 leading-relaxed">${d.description || 'Providing excellence in education and career development.'}</p>
                 </div>
             `).join('');
         }
 
-        function renderCourses(courses) {
-            const tbody = document.getElementById('coursesTableBody');
-            if (courses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-10 text-gray-400 italic">No courses available at this time.</td></tr>';
-                return;
-            }
-            tbody.innerHTML = courses.map(c => `
-                <tr class="border-b border-gray-50 hover:bg-blue-50/50 transition">
-                    <td class="px-6 py-4">
-                        <span class="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">${c.code}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <p class="font-bold text-gray-900">${c.title}</p>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                        ${c.department?.name || 'General'}
-                    </td>
-                    <td class="px-6 py-4 text-sm font-bold text-gray-700 text-center">
-                        ${c.credits || 0}
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <span class="font-black text-blue-600">PKR 500</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <span class="font-black text-green-600">PKR ${(c.monthlyFee || 0).toLocaleString()}</span>
-                    </td>
-                </tr>
-            `).join('');
-        }
+        // Tab Event Listeners
+        document.getElementById('showCoursesTab').onclick = () => {
+            currentTab = 'courses';
+            document.getElementById('showCoursesTab').classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+            document.getElementById('showCoursesTab').classList.remove('text-gray-500');
+            document.getElementById('showClassesTab').classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+            document.getElementById('showClassesTab').classList.add('text-gray-500');
+            updateDisplay();
+        };
+
+        document.getElementById('showClassesTab').onclick = () => {
+            currentTab = 'classes';
+            document.getElementById('showClassesTab').classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+            document.getElementById('showClassesTab').classList.remove('text-gray-500');
+            document.getElementById('showCoursesTab').classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+            document.getElementById('showCoursesTab').classList.add('text-gray-500');
+            updateDisplay();
+        };
+
+        // Search Listener
+        document.getElementById('infoSearch').oninput = (e) => {
+            searchTerm = e.target.value;
+            updateDisplay();
+        };
 
         fetchInfo();
     </script>
