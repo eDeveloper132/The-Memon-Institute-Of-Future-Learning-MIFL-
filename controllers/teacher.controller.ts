@@ -80,9 +80,9 @@ export const updateCourseCurriculum = async (req: any, res: Response) => {
         await course.save();
 
         res.status(200).json({ message: 'Curriculum updated successfully', course });
-    } catch (error) {
+    } catch (error: any) {
         console.error(chalk.red('[Teacher Controller] updateCourseCurriculum error:'), error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: 'Internal server error', details: error.message });
     }
 };
 
@@ -109,9 +109,9 @@ export const updateClassCurriculum = async (req: any, res: Response) => {
         await selectedClass.save();
 
         res.status(200).json({ message: 'Class curriculum updated successfully', class: selectedClass });
-    } catch (error) {
+    } catch (error: any) {
         console.error(chalk.red('[Teacher Controller] updateClassCurriculum error:'), error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: 'Internal server error', details: error.message });
     }
 };
 
