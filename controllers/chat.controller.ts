@@ -4,18 +4,9 @@ import { Message } from '../schemas/models/message.model.js';
 import { User } from '../schemas/models/user.model.js';
 import { Class } from '../schemas/models/class.model.js';
 import { NotificationService } from '../services/notification.service.js';
+import { sanityService } from '../services/sanity.service.js';
 import mongoose from 'mongoose';
 import chalk from 'chalk';
-import { createClient } from '@sanity/client';
-
-// Initialize Sanity Client
-const sanityClient = createClient({
-    projectId: process.env.SANITY_PROJECT_ID as string,
-    dataset: process.env.SANITY_DATASET as string,
-    token: process.env.SANITY_API_TOKEN as string,
-    useCdn: false,
-    apiVersion: '2023-05-03',
-});
 
 export const createGroup = async (req: any, res: Response) => {
     try {
@@ -268,14 +259,7 @@ export const uploadAttachment = async (req: Request, res: Response) => {
             return res.status(400).json({ message: 'No file uploaded' });
         }
         
-        // Determine Sanity asset type (image or file)
-        const assetType = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
-
-        // Upload to Sanity Assets
-        const asset = await sanityClient.assets.upload(assetType, req.file.buffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype,
-        });
+        const asset = await sanityService.uploadAsset(req.file.buffer, req.file.originalname, req.file.mimetype);
 
         // Return the Sanity asset URL
         res.status(201).json({ url: asset.url });

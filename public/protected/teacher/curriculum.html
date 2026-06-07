@@ -29,6 +29,9 @@
     
     <ui-navbar title="Curriculum Studio"></ui-navbar>
 
+    <!-- Hidden File Input for PDF Uploads -->
+    <input type="file" id="globalPdfInput" accept="application/pdf" class="hidden">
+
     <!-- Overlay for mobile sidebar -->
     <div id="overlay" class="fixed inset-0 bg-black/40 z-[40] hidden backdrop-blur-sm transition-opacity"></div>
 
@@ -172,7 +175,8 @@
             treeSearch: document.getElementById('treeSearch'),
             previewModal: document.getElementById('previewModal'),
             previewBody: document.getElementById('previewBody'),
-            modalPreviewTitle: document.getElementById('modalPreviewTitle')
+            modalPreviewTitle: document.getElementById('modalPreviewTitle'),
+            globalPdfInput: document.getElementById('globalPdfInput')
         };
 
         // --- INIT ---
@@ -382,7 +386,10 @@
                     <div class="lg:w-2/3 space-y-4 border-t lg:border-t-0 lg:border-l border-gray-100 lg:pl-6 pt-4 lg:pt-0">
                         <textarea class="mod-desc w-full p-4 bg-white border border-gray-50 rounded-2xl text-sm font-medium text-gray-600 outline-none focus:ring-1 focus:ring-blue-500 h-24 shadow-inner" placeholder="Pedagogical details..." ${!canEdit ? 'readonly' : ''}>${mod.description}</textarea>
                         <div class="mod-res flex flex-wrap gap-4"></div>
-                        ${canEdit ? '<button class="add-res-btn text-[9px] font-black text-blue-600 hover:underline">+ Link Resource</button>' : ''}
+                        <div class="flex gap-4">
+                            ${canEdit ? '<button class="add-res-btn text-[9px] font-black text-blue-600 hover:underline">+ Link Resource</button>' : ''}
+                            ${canEdit ? '<button class="upload-pdf-btn text-[9px] font-black text-indigo-600 hover:underline"><i class="fa-solid fa-file-pdf mr-1"></i> Upload PDF to Sanity</button>' : ''}
+                        </div>
                     </div>
                 </div>
                 <div class="ghost-controls absolute -right-3 top-4 flex flex-col gap-2 ${!canEdit ? 'hidden' : ''}">
@@ -427,6 +434,40 @@
                 div.querySelector('.add-obj-btn').onclick = () => { mod.learningObjectives.push(''); renderObjs(); };
                 div.querySelector('.add-res-btn').onclick = () => { mod.resources.push({ title: '', url: '' }); renderRes(); };
                 
+                div.querySelector('.upload-pdf-btn').onclick = () => {
+                    const fileInput = els.globalPdfInput;
+                    fileInput.onchange = async () => {
+                        const file = fileInput.files[0];
+                        if (!file) return;
+
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        try {
+                            showToast('Uploading PDF...', 'info');
+                            const res = await fetch('/api/teacher/materials/upload', {
+                                method: 'POST',
+                                body: formData
+                            });
+
+                            if (res.ok) {
+                                const asset = await res.json();
+                                mod.resources.push({ title: file.name, url: asset.url });
+                                renderRes();
+                                showToast('PDF uploaded and linked!', 'success');
+                            } else {
+                                showToast('Upload failed', 'error');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            showToast('Connection error', 'error');
+                        } finally {
+                            fileInput.value = ''; // Reset
+                        }
+                    };
+                    fileInput.click();
+                };
+
                 div.addEventListener('input', (e) => {
                     const el = e.target;
                     if (el.dataset.oidx !== undefined) mod.learningObjectives[el.dataset.oidx] = el.value;

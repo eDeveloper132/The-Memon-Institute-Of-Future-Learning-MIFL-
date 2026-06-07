@@ -10,6 +10,7 @@ import { Material } from '../schemas/models/material.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
 import { NotificationService } from '../services/notification.service.js';
+import { sanityService } from '../services/sanity.service.js';
 import mongoose from 'mongoose';
 import chalk from 'chalk';
 
@@ -204,6 +205,28 @@ export const getStudentSummary = async (req: any, res: Response) => {
         });
     } catch (error) {
         console.error(error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * Material & Asset Management
+ */
+export const uploadMaterialAsset = async (req: any, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        const asset = await sanityService.uploadAsset(req.file.buffer, req.file.originalname, req.file.mimetype);
+
+        res.status(201).json({ 
+            url: asset.url,
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] uploadMaterialAsset error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

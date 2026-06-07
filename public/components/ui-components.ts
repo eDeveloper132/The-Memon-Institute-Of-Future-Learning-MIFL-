@@ -303,6 +303,7 @@ class UINavbar extends HTMLElement {
             student: [
                 { label: 'Dashboard', href: '/protected/index.html', icon: 'fa-house' },
                 { label: 'Attendance', href: '/protected/student/registration-attendance.html', icon: 'fa-user-check' },
+                { label: 'Roadmap', href: '/protected/student/curriculum.html', icon: 'fa-map-location-dot' },
                 { label: 'Fees', href: '/protected/student/vouchers.html', icon: 'fa-money-bill-wave' },
                 { label: 'Results', href: '/protected/student/results.html', icon: 'fa-graduation-cap' },
                 { label: 'Profile', href: '/protected/student/details.html', icon: 'fa-user-gear' },

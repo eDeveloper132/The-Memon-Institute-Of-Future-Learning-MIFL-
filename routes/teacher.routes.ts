@@ -14,6 +14,7 @@ import {
     getSubmissionsForAssignment,
     getStudentSummary,
     uploadMaterial,
+    uploadMaterialAsset,
     getMaterials,
     updateCourseCurriculum,
     updateClassCurriculum,
@@ -28,6 +29,7 @@ import {
     getTeacherChatHistory, getTeacherConversations, sendTeacherMessage
 } from '../controllers/teacher.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
+import { chatUpload } from '../middlewares/upload.js';
 
 const router = Router();
 
@@ -65,6 +67,7 @@ router.patch('/assignments/grade/:submissionId', gradeSubmission);
  */
 router.get('/materials', getMaterials);
 router.post('/materials', uploadMaterial);
+router.post('/materials/upload', chatUpload.single('file'), uploadMaterialAsset);
 router.patch('/courses/:id/curriculum', updateCourseCurriculum);
 router.patch('/classes/:id/curriculum', updateClassCurriculum);
 

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Roadmap - MIFL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+        .roadmap-item.active { background-color: #eff6ff; border-left: 4px solid #2563eb; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col font-sans">
+    
+    <ui-navbar title="Course Roadmap"></ui-navbar>
+
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="w-80 border-r border-gray-100 bg-white hidden lg:flex flex-col shrink-0">
+            <div class="p-6 border-b border-gray-50">
+                <h2 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Your Courses</h2>
+                <select id="entitySelect" class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-blue-600 outline-none">
+                    <option value="">Choose a Roadmap...</option>
+                </select>
+            </div>
+            <div id="treeContainer" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                <div class="p-10 text-center text-gray-300 italic text-xs">Select a roadmap to see milestones</div>
+            </div>
+        </aside>
+
+        <!-- Main Roadmap View -->
+        <main class="flex-1 overflow-y-auto custom-scrollbar bg-white">
+            <div id="roadmapContent" class="max-w-4xl mx-auto py-12 px-8 hidden">
+                <div class="mb-12">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="px-3 py-1 bg-blue-50 text-blue-600 text-[9px] font-black uppercase rounded-full border border-blue-100">Live Roadmap</span>
+                    </div>
+                    <h2 id="roadmapTitle" class="text-4xl font-black text-gray-900 mb-4 tracking-tight">Select Course</h2>
+                    <div id="roadmapOutline" class="p-8 bg-indigo-50/50 rounded-[2rem] border border-indigo-100 text-gray-600 leading-relaxed font-medium italic"></div>
+                </div>
+
+                <div id="sectionsList" class="space-y-16">
+                    <!-- Sections Injected Here -->
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="h-full flex flex-col items-center justify-center text-center p-12">
+                <div class="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 text-4xl mb-6">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                </div>
+                <h3 class="text-2xl font-black text-gray-900 mb-2">Your Academic Journey</h3>
+                <p class="text-gray-400 max-w-sm font-medium">Select one of your enrolled courses or your class roadmap from the sidebar to view detailed milestones and resources.</p>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        let currentUser = null;
+        let myClass = null;
+        let myCourses = [];
+        let activeRoadmap = null;
+
+        async function init() {
+            try {
+                const res = await fetch('/api/student/profile');
+                if (!res.ok) { window.location.href = '/api/auth/login'; return; }
+                const { user } = await res.json();
+                currentUser = user;
+
+                if (window.initSocket) window.initSocket(user);
+                customElements.whenDefined('ui-navbar').then(() => {
+                    document.querySelector('ui-navbar').renderLinks(user);
+                });
+
+                await loadData();
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadData() {
+            const [classRes, courseRes] = await Promise.all([
+                fetch('/api/student/profile'), // Re-fetch to get populated class if needed
+                fetch('/api/student/assignments') // Used to identify enrolled courses
+            ]);
+
+            // For now, let's fetch all available courses and filter by student enrollment
+            const allCoursesRes = await fetch('/api/enrollment/available');
+            const { courses: allAvailable } = await allCoursesRes.json();
+            
+            // In a real scenario, we'd have a specific /api/student/my-enrolled-courses
+            // Simplified: Fetch all courses and filter for those containing this student
+            const fullCoursesRes = await fetch('/api/admin/courses'); // Temporary shortcut
+            const { courses: allFull } = await fullCoursesRes.json();
+            
+            myCourses = allFull.filter(c => 
+                c.enrolledStudents.includes(currentUser._id) || 
+                c.batches.some(b => b.students.some(s => (s._id || s) === currentUser._id))
+            );
+
+            const select = document.getElementById('entitySelect');
+            if (currentUser.currentClass) {
+                // Fetch full class details for roadmap
+                const clsRes = await fetch('/api/admin/classes');
+                const { classes } = await clsRes.json();
+                myClass = classes.find(c => c._id === (currentUser.currentClass._id || currentUser.currentClass));
+                
+                if (myClass) {
+                    const opt = document.createElement('option');
+                    opt.value = `class:${myClass._id}`;
+                    opt.textContent = `[Class] ${myClass.name}`;
+                    select.appendChild(opt);
+                }
+            }
+
+            myCourses.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = `course:${c._id}`;
+                opt.textContent = `[Course] ${c.title}`;
+                select.appendChild(opt);
+            });
+
+            select.onchange = (e) => {
+                const [type, id] = e.target.value.split(':');
+                if (type === 'class') renderRoadmap(myClass, 'class');
+                else renderRoadmap(myCourses.find(c => c._id === id), 'course');
+            };
+        }
+
+        function renderRoadmap(data, type) {
+            if (!data) return;
+            activeRoadmap = { data, type };
+            
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('roadmapContent').classList.remove('hidden');
+            
+            document.getElementById('roadmapTitle').textContent = type === 'course' ? data.title : data.name;
+            document.getElementById('roadmapOutline').textContent = type === 'course' ? (data.outline || 'Explore the journey ahead.') : (data.classOutline || 'General class milestones.');
+
+            const sections = type === 'course' ? (data.curriculumSections || []) : (data.classCurriculumSections || []);
+            const sectionsList = document.getElementById('sectionsList');
+            const treeContainer = document.getElementById('treeContainer');
+
+            // Render Sidebar Tree
+            treeContainer.innerHTML = sections.map((s, i) => `
+                <div class="mb-1">
+                    <button class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left hover:bg-gray-50 transition-all group" onclick="document.getElementById('sec-${i}').scrollIntoView({behavior:'smooth'})">
+                        <span class="w-5 h-5 rounded-lg bg-gray-100 flex items-center justify-center text-[9px] font-black text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all">${i + 1}</span>
+                        <span class="text-xs font-bold truncate flex-1">${s.title}</span>
+                    </button>
+                </div>
+            `).join('');
+
+            // Render Main List
+            sectionsList.innerHTML = sections.map((s, i) => `
+                <div id="sec-${i}" class="space-y-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl font-black shadow-xl">
+                            ${i + 1}
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-900">${s.title}</h3>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-6 pl-16">
+                        ${s.modules.map((m, mi) => `
+                            <div class="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-500 group">
+                                <div class="flex justify-between items-start mb-4">
+                                    <div>
+                                        <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">${m.duration || 'Flexible Timing'}</p>
+                                        <h4 class="text-xl font-bold text-gray-900">${m.title}</h4>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:text-blue-500 transition-colors">
+                                        <i class="fa-solid fa-check-circle"></i>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-sm text-gray-500 leading-relaxed mb-6">${m.description}</p>
+
+                                ${m.learningObjectives?.length ? `
+                                    <div class="mb-6 space-y-2">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Key Outcomes</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            ${m.learningObjectives.map(obj => `<span class="px-3 py-1 bg-gray-50 text-gray-600 text-[10px] font-bold rounded-lg border border-gray-100">${obj}</span>`).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+
+                                ${m.resources?.length ? `
+                                    <div class="pt-6 border-t border-gray-50">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-3">Downloadable Resources</p>
+                                        <div class="flex flex-wrap gap-3">
+                                            ${m.resources.map(res => `
+                                                <a href="${res.url}" target="_blank" download class="flex items-center gap-3 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm group/btn">
+                                                    <i class="${getFileIcon(res.url)} text-sm"></i>
+                                                    <span class="text-xs font-bold">${res.title}</span>
+                                                    <i class="fa-solid fa-download text-[10px] opacity-0 group-hover/btn:opacity-100 transition-opacity"></i>
+                                                </a>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFileIcon(url = '') {
+            const ext = url.split('.').pop().toLowerCase().split('?')[0];
+            switch (ext) {
+                case 'pdf': return 'fa-solid fa-file-pdf';
+                case 'doc':
+                case 'docx': return 'fa-solid fa-file-word';
+                case 'zip':
+                case 'rar': return 'fa-solid fa-file-zipper';
+                case 'jpg':
+                case 'jpeg':
+                case 'png': return 'fa-solid fa-file-image';
+                default: return 'fa-solid fa-file-lines';
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
