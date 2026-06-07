@@ -1,11 +1,11 @@
 ---
-description: "Task list for Dual Fee support in admin dashboards"
+description: "Task list for Curriculum Studio Redesign implementation"
 ---
 
-# Tasks: Unified Dual-Fee Management
+# Tasks: Curriculum Studio Redesign
 
 **Input**: Design documents from `/specs/main/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md
+**Prerequisites**: plan.md, spec.md, research.md
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -16,73 +16,75 @@ description: "Task list for Dual Fee support in admin dashboards"
 ## Phase 1: Setup
 
 - [x] T001 Initialize design artifacts in specs/main/
+- [x] T002 Backup current `public/protected/teacher/curriculum.html` for safety
 
-## Phase 2: Foundational (Backend & Types)
+## Phase 2: Foundational (Infrastructure & Data Sync)
 
-**Purpose**: Update the core data layer to support dual fees for classes.
+**Purpose**: Stabilize the data-flow patterns needed for the new UI
 
-- [x] T002 Update `IClass` interface to include `monthlyFee: number` in `schemas/types/class.type.ts`
-- [x] T003 Update `Class` Mongoose schema to include `monthlyFee: { type: Number, default: 0 }` in `schemas/models/class.model.ts`
-- [x] T004 Verify `monthlyFee` exists in `ICourse` in `schemas/types/course.type.ts` (already added previously)
-- [x] T005 Verify `monthlyFee` exists in `Course` model in `schemas/models/course.model.ts` (already added previously)
+- [x] T003 Verify `workingState` JSON structure for curriculum synchronization in `public/protected/teacher/curriculum.html`
+- [x] T004 [P] Update `scrapeCurriculum` function to handle the new DOM hierarchy in `public/protected/teacher/curriculum.html`
 
 ---
 
-## Phase 3: User Story 1 - Course Fee Management (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Sidebar Navigation (Priority: P1) 🎯 MVP
 
-**Goal**: Manage both Enrollment and Monthly fees for courses in the Admin Dashboard.
+**Goal**: Implement the dual-pane IDE layout with real-time sidebar navigation
 
-**Independent Test**: Add/Edit a course, set both fees, and see them displayed correctly on the course card.
+**Independent Test**: Load the page, see a sidebar with the "Table of Contents," and click an item to scroll to it.
 
 ### Implementation for User Story 1
 
-- [x] T006 [US1] Add "Monthly Fee (PKR)" input field to the Course Modal in `public/protected/admin/courses.html`
-- [x] T007 [US1] Update `openModal` function in `public/protected/admin/courses.html` to populate `monthlyFee` during edits.
-- [x] T008 [US1] Update `courseForm.onsubmit` in `public/protected/admin/courses.html` to include and cast `monthlyFee` to Number.
-- [x] T009 [US1] Refactor `renderCourses` card template in `public/protected/admin/courses.html` to show a two-column fee display (Enrollment vs Monthly).
+- [x] T005 [US1] Refactor `curriculum.html` body to use a 2-pane flex/grid layout (Sidebar + Main Editor)
+- [x] T006 [US1] Implement `renderSidebar()` to dynamically generate the navigation tree from the curriculum data
+- [x] T007 [US1] Integrate `scrollIntoView` anchoring for smooth jumps between sidebar items and sections
+- [x] T008 [US1] Add a collapsible toggle for the sidebar to support small screens/focus mode
 
-**Checkpoint**: Course management now fully supports dual fees.
+**Checkpoint**: Navigation foundation is ready. User can browse the curriculum via the sidebar.
 
 ---
 
-## Phase 4: User Story 2 - Class Fee Management (Priority: P2)
+## Phase 4: User Story 2 - Focus Module Editor (Priority: P2)
 
-**Goal**: Manage both Enrollment and Monthly fees for academic classes in the Admin Dashboard.
+**Goal**: Transform bulky module cards into a compact, row-based editing interface
 
-**Independent Test**: Create/Edit a class, set both fees, and see them displayed correctly on the class card.
+**Independent Test**: Edit a module's title, duration, and pedagogical description using the new tight layout.
 
 ### Implementation for User Story 2
 
-- [x] T010 [US2] Add "Monthly Fee (PKR)" input field to the Class Modal in `public/protected/admin/classes.html`
-- [x] T011 [US2] Update `openModal` function in `public/protected/admin/classes.html` to populate `monthlyFee` during edits.
-- [x] T012 [US2] Update `addClassForm.onsubmit` in `public/protected/admin/classes.html` to include and cast `monthlyFee` to Number.
-- [x] T013 [US2] Refactor `renderClasses` card template in `public/protected/admin/classes.html` to show a two-column fee display (Enrollment vs Monthly).
+- [x] T009 [US2] Redesign `createModuleElement` for high-density editing (row-based inputs)
+- [x] T010 [US2] Implement inline lists for "Learning Outcomes" and "Digital Resources" to reduce vertical height
+- [x] T011 [US2] Add "Ghost" controls (hover effects) for reordering and deleting modules to reduce visual noise
+- [x] T012 [US2] Ensure all input changes are synced back to the `workingState` object instantly
 
-**Checkpoint**: Class management now fully supports dual fees.
+**Checkpoint**: The editor is now significantly easier to use for data entry.
 
 ---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [x] T014 [P] Update `window.updateFee` prompt logic in `courses.html` and `classes.html` if needed for quick-updates (or maintain single-fee prompt if per-field update not required).
+- [x] T013 [P] Implement a real-time search filter for the sidebar navigation tree
+- [x] T014 [P] Refine Tailwind transitions and animations for a "premium" software feel
 - [x] T015 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
-- [x] T016 Final validation of `quickstart.md` scenarios for both pages.
+- [x] T016 Final validation of "Deploy Syllabus" functionality with the new UI state
 
 ---
 
 ## Dependencies & Execution Order
 
-- **Phase 2** is a mandatory prerequisite for all UI work (T002-T003 specifically).
-- **US1 (Courses)** and **US2 (Classes)** can proceed in parallel once Phase 2 is complete.
-- **Phase N** follows completion of all functional updates.
+### Phase Dependencies
+
+- **Phase 1 & 2** are completed first to stabilize data handling.
+- **US1 (Sidebar)** is the MVP and must be completed to enable efficient navigation.
+- **US2 (Editor)** refines the data entry experience after navigation is established.
 
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-Updating the Course management UI is the first priority as it proves the UI pattern for dual fees.
+Navigation is the biggest pain point. We will deliver the sidebar and smooth-scrolling first, keeping the existing card structures inside the new layout.
 
 ---
 
 ## Notes
-- Ensure all numeric inputs have `min="0"` and appropriate `step` values.
-- Card layouts should use a flexible grid or flexbox to handle the extra fee label without breaking responsiveness.
+- Use `requestAnimationFrame` for DOM updates if rendering 50+ modules.
+- Ensure strict CSP compliance by avoiding inline event handlers in generated HTML.

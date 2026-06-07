@@ -1,28 +1,29 @@
-# Research: Dual-Fee Implementation Details
+# Research: Navigation Patterns for Curriculum Editors
 
-## Decision: Direct UI Integration
-We will add `monthlyFee` fields directly to the existing "Course" and "Class" modals and card rendering logic.
+## Decision: Dual-Pane Navigation
+We will use a fixed-width left sidebar (320px) for the hierarchy and an elastic main area for the editor.
 
 ## Rationale
-- **Consistency**: Users expect to manage all financial aspects of a course/class in one place.
-- **Simplicity**: Adding one new field to existing forms is the smallest viable change.
+- **Hierarchy Visibility**: Sitemaps/Table of Contents are essential for documents with nested data (Sections -> Modules -> Outcomes).
+- **Familiarity**: This layout mimics modern editors like VS Code or Notion, reducing the learning curve for teachers.
 
 ## Findings
 
-### 1. Schema Completeness
-- `Course` model already has `monthlyFee` (added in a prior session).
-- `Class` model currently lacks `monthlyFee`. This needs to be added to `class.model.ts` and `class.type.ts`.
+### 1. The "Anchor" vs "Focus" Problem
+- **Approach**: Clicking a sidebar item will use `scrollIntoView({ behavior: 'smooth' })` on the main editor.
+- **Why**: Keeping all data in one scrollable area prevents the "Where did my data go?" feeling of multi-page forms.
 
-### 2. Frontend Patterns
-- Both `courses.html` and `classes.html` use `FormData` for submission.
-- The `onsubmit` handlers in both files need to explicitly cast `monthlyFee` to `Number` to prevent type mismatches or unexpected behavior, matching the pattern used for `enrollmentFee`.
+### 2. Compact Module Editing
+- **Old**: Bulky white cards with 40px margins.
+- **New**: Tight, row-based layout with "ghost" icons that appear on hover for dragging/deleting.
 
-### 3. Display Logic
-- Course cards currently show `enrollmentFee` with a label.
-- Class cards also show `enrollmentFee`.
-- **UI Update**: Both cards will now display a two-column fee section: "Enrollment" and "Monthly".
+### 3. State Syncing
+- **Decision**: We will keep a JSON representation of the curriculum in memory (`workingState`) and re-render only the affected branches of the DOM tree where possible, or use a highly optimized full re-render if performance allows.
 
 ## Alternatives Considered
 
-### Global Fee Service
-- **Rejected because**: For only two fee types, direct model attributes are more maintainable and easier to index.
+### Modal-based editing for modules
+- **Rejected because**: Slows down the workflow. Teachers want to scan and edit multiple modules simultaneously.
+
+### "Infinite" Scroll with Lazy Loading
+- **Rejected because**: Syllabi are typically < 100 modules. Lazy loading adds complexity that isn't needed for this scale (YAGNI).

@@ -1,46 +1,31 @@
-# Specification: Unified Dual-Fee Management for Courses and Classes
+# Specification: Curriculum Studio Redesign
 
 ## Background
-The system currently tracks an `enrollmentFee` for both Courses and Classes. However, the business model also requires tracking a `monthlyFee`. Previous updates added `monthlyFee` to the Course model and the Information Center, but the Admin Dashboard (specifically `courses.html` and `classes.html`) still only allows managing `enrollmentFee`.
+The current "Academic Studio" is feature-rich but visually dense. Teachers find it difficult to navigate through long syllabi and manage nested modules. We need to transition to a more modern, intuitive "Editor" layout.
 
 ## User Stories
-- **As an Admin**, I want to define both a one-time enrollment fee and a recurring monthly tuition fee when creating or editing a **Course**.
-- **As an Admin**, I want to define both a one-time enrollment fee and a recurring monthly tuition fee when creating or editing a **Class**.
-- **As an Admin**, I want to see both fee types clearly on the course and class management cards.
+- **As a Teacher**, I want a clear overview of my entire curriculum at all times so I can jump between weeks/sections easily.
+- **As a Teacher**, I want a "distraction-free" editing experience for specific modules.
+- **As a Teacher**, I want a simpler way to add learning outcomes and resources without navigating through complex card structures.
 
 ## Requirements
 
 ### Functional
-- **Course Management**:
-    - Add a "Monthly Fee" input field to the "Register/Edit Course" modal in `courses.html`.
-    - Display both Enrollment and Monthly fees on the course cards in `courses.html`.
-    - Ensure the `monthlyFee` is persisted to the database upon saving.
-- **Class Management**:
-    - Add a "Monthly Fee" input field to the "Create/Edit Class" modal in `classes.html`.
-    - Display both Enrollment and Monthly fees on the class cards in `classes.html`.
-    - Ensure the `monthlyFee` is persisted to the database upon saving.
+- **Sidebar Navigation**: A persistent sidebar (or collapsible panel) showing the "Table of Contents" (Sections -> Modules).
+- **Focus Mode**: When selecting a section in the sidebar, the main editor scrolls to or only displays that specific part.
+- **Streamlined Inputs**: Replace bulky card layouts with a more compact, row-based module editor.
+- **Breadcrumbs**: Clear indication of what course/class is being edited.
+- **Integrated Search**: Ability to find specific topics within the curriculum.
 
 ### Technical
-- **Schema & Types**:
-    - Update `IClass` interface in `schemas/types/class.type.ts` to include `monthlyFee: number`.
-    - Update `Class` model in `schemas/models/class.model.ts` to include `monthlyFee: { type: Number, default: 0 }`.
-    - (Note: Course schema already has `monthlyFee`, but needs verification in tasks).
-- **Frontend**:
-    - Update `public/protected/admin/courses.html`:
-        - Add `monthlyFee` input to the form.
-        - Update `renderCourses` to show both fees.
-        - Update `openModal` to populate `monthlyFee`.
-        - Update `onsubmit` to cast `monthlyFee` to Number.
-    - Update `public/protected/admin/classes.html`:
-        - Add `monthlyFee` input to the form.
-        - Update `renderClasses` to show both fees.
-        - Update `openModal` to populate `monthlyFee`.
-        - Update `onsubmit` to cast `monthlyFee` to Number.
+- **Layout**: Use a `flex` or `grid` layout with a scrollable sidebar.
+- **Performance**: Optimized DOM rendering to handle 50+ modules without lag.
+- **Logic**: Maintain parity with the existing `curriculumLocked` and `curriculumSections` data structure.
+- **Component Reuse**: Leverage existing `ui-navbar` and `ui-spinner`.
 
 ## Acceptance Criteria
-- [ ] Admin can set `monthlyFee` for a new course.
-- [ ] Admin can edit `monthlyFee` for an existing course.
-- [ ] Admin can set `monthlyFee` for a new class.
-- [ ] Admin can edit `monthlyFee` for an existing class.
-- [ ] Both fees are visible on the dashboard cards for both entities.
-- [ ] Type safety is maintained across the project (`npx tsc` passes).
+- [ ] Sidebar correctly reflects the current sections and modules.
+- [ ] Clicking a sidebar item scrolls the main view or updates the focus.
+- [ ] Adding/Removing modules is intuitive and requires fewer clicks.
+- [ ] UI remains fully responsive (sidebar collapses on mobile).
+- [ ] No loss of data integrity during the migration to the new UI.
