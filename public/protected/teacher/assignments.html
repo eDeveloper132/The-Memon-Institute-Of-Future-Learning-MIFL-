@@ -48,7 +48,7 @@
                 </div>
 
                 <div class="space-y-4 pt-4 border-t border-gray-100">
-                    <!-- Global Course Selection (Always Required) -->
+                    <!-- STEP 1: Global Course Selection -->
                     <div>
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-1">1. Select Subject / Course</label>
                         <select id="globalCourseSelect" name="course" required class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm font-bold text-blue-600">
@@ -56,9 +56,10 @@
                         </select>
                     </div>
 
-                    <div>
+                    <!-- STEP 2: Target Selection (Hidden until course is chosen) -->
+                    <div id="audienceSection" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
                         <label class="block text-xs font-bold text-gray-700 uppercase mb-2">2. Target Audience</label>
-                        <div class="flex bg-gray-100 p-1 rounded-xl">
+                        <div class="flex bg-gray-100 p-1 rounded-xl mb-4">
                             <button type="button" id="targetClassBtn" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-white text-blue-600 shadow-sm">
                                 Standard Class
                             </button>
@@ -66,26 +67,20 @@
                                 Course Batch
                             </button>
                         </div>
-                    </div>
 
-                    <!-- Target Selection -->
-                    <div id="targetClassGroup" class="space-y-3 animate-in fade-in duration-300">
-                        <div>
+                        <!-- Target Options -->
+                        <div id="targetClassGroup" class="space-y-3">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Targeted Class</label>
                             <select id="targetClassSelect" name="class" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
                                 <option value="">Choose a class...</option>
                             </select>
-                            <p class="text-[10px] text-gray-400 mt-1">This will notify all students in the selected class.</p>
                         </div>
-                    </div>
 
-                    <div id="targetBatchGroup" class="hidden space-y-3 animate-in fade-in duration-300">
-                        <div>
+                        <div id="targetBatchGroup" class="hidden space-y-3">
                             <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Select Specific Batch</label>
-                            <select id="targetBatchSelect" name="batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm" disabled>
+                            <select id="targetBatchSelect" name="batch" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer text-sm">
                                 <option value="">Choose a batch...</option>
                             </select>
-                            <p class="text-[10px] text-gray-400 mt-1">Target only a specific group within the course.</p>
                         </div>
                     </div>
                 </div>
@@ -187,6 +182,7 @@
         const assignmentGrid = document.getElementById('assignmentGrid');
 
         // Targeting UI Elements
+        const audienceSection = document.getElementById('audienceSection');
         const targetClassBtn = document.getElementById('targetClassBtn');
         const targetBatchBtn = document.getElementById('targetBatchBtn');
         const targetClassGroup = document.getElementById('targetClassGroup');
@@ -198,10 +194,10 @@
         // State
         let activeTargetMode = 'class'; // 'class' or 'batch'
         let allCourses = [];
+        let allClasses = [];
         let currentAssignments = [];
         let isEditMode = false;
         let editingAssignmentId = null;
-        let currentUser = null;
 
         // Modal Controls
         if (openBtn) openBtn.onclick = () => {
@@ -210,6 +206,7 @@
             modal.querySelector('h3').textContent = 'Post New Assignment';
             document.getElementById('submitBtn').textContent = 'Post Assignment';
             addForm.reset();
+            audienceSection.classList.add('hidden');
             setTargetMode('class');
             modal.classList.remove('hidden');
             fetchTargetingData();
@@ -218,9 +215,7 @@
         if (closeBtn) closeBtn.onclick = () => {
             modal.classList.add('hidden');
             addForm.reset();
-            setTargetMode('class');
         };
-        window.onclick = (e) => { if (e.target === modal) closeBtn.click(); };
 
         /**
          * TARGETING LOGIC
@@ -244,7 +239,6 @@
             targetClassSelect.required = (mode === 'class');
             targetBatchSelect.required = (mode === 'batch');
 
-            // Trigger sync of dependent dropdowns
             syncDependentDropdowns();
         }
 
@@ -252,10 +246,9 @@
         targetBatchBtn.onclick = () => setTargetMode('batch');
 
         async function fetchTargetingData() {
-            globalCourseSelect.innerHTML = '<option value="">Loading courses...</option>';
-            targetClassSelect.innerHTML = '<option value="">Loading classes...</option>';
+            globalCourseSelect.innerHTML = '<option value="">Loading subjects...</option>';
+            targetClassSelect.innerHTML = '<option value="">Choose a class...</option>';
             targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>';
-            targetBatchSelect.disabled = true;
 
             try {
                 const [classRes, courseRes] = await Promise.all([
@@ -271,59 +264,51 @@
                     } else {
                         globalCourseSelect.innerHTML = '<option value="">Choose a subject...</option>' + 
                             courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-                        
-                        // If we already have a course selected (e.g. from Edit Mode), sync batches now
-                        syncDependentDropdowns();
                     }
                 }
 
                 if (classRes.ok) {
                     const { classes } = await classRes.json();
-                    if (classes.length === 0) {
-                        targetClassSelect.innerHTML = '<option value="">No classes found</option>';
-                    } else {
-                        targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
-                            classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
-                    }
+                    allClasses = classes;
+                    targetClassSelect.innerHTML = '<option value="">Choose a class...</option>' + 
+                        classes.map(c => `<option value="${c._id}">${c.name} (${c.section})</option>`).join('');
                 }
+                
+                // If in Edit Mode, we need to ensure the sequence is maintained
+                if (isEditMode) syncDependentDropdowns();
+
             } catch (err) {
                 console.error('Failed to load targeting data:', err);
                 showToast('Error loading targeting data', 'error');
             }
         }
 
-        globalCourseSelect.onchange = () => {
-            console.log('[Assignment Modal] Course changed:', globalCourseSelect.value);
-            syncDependentDropdowns();
-        };
+        globalCourseSelect.onchange = () => syncDependentDropdowns();
 
         function syncDependentDropdowns() {
             const courseId = globalCourseSelect.value;
-            console.log('[Assignment Modal] Syncing dropdowns for course:', courseId, 'Mode:', activeTargetMode);
             
             if (!courseId) {
-                targetBatchSelect.innerHTML = '<option value="">Select a course first...</option>';
-                targetBatchSelect.disabled = true;
+                audienceSection.classList.add('hidden');
                 return;
             }
 
+            // Show target audience section
+            audienceSection.classList.remove('hidden');
+
             if (activeTargetMode === 'batch') {
                 const course = allCourses.find(c => String(c._id) === String(courseId));
-                console.log('[Assignment Modal] Found course for batches:', course?.title, 'Batches:', course?.batches?.length);
-                
                 if (course && course.batches && course.batches.length > 0) {
                     targetBatchSelect.innerHTML = '<option value="">Choose a batch...</option>' + 
                         course.batches.map(b => `<option value="${b._id}">${b.name}</option>`).join('');
-                    targetBatchSelect.disabled = false;
                 } else {
-                    targetBatchSelect.innerHTML = '<option value="">No batches found for this course</option>';
-                    targetBatchSelect.disabled = true;
+                    targetBatchSelect.innerHTML = '<option value="">No specific batches found</option>';
                 }
             }
         }
 
         /**
-         * ASSIGNMENT CRUD
+         * CRUD LOGIC
          */
         async function fetchAssignments() {
             try {
@@ -340,45 +325,38 @@
 
         function renderAssignments(assignments) {
             if (!assignments.length) {
-                assignmentGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No assignments posted yet. Click "New Assignment" to start.</div>';
+                assignmentGrid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500 font-bold italic">No assignments posted yet.</div>';
                 return;
             }
 
             assignmentGrid.innerHTML = assignments.map(a => {
-                let targetDisplay = 'General';
-                if (a.class) targetDisplay = a.class.name;
-                else if (a.batch && a.course) {
-                    const batch = a.course.batches?.find(b => b._id === a.batch);
-                    targetDisplay = `${a.course.title} - ${batch?.name || 'Specific Batch'}`;
+                let targetDisplay = a.class ? a.class.name : 'Specific Batch';
+                if (a.batch && a.course) {
+                    const batch = a.course.batches?.find(b => String(b._id) === String(a.batch));
+                    if (batch) targetDisplay = batch.name;
                 }
 
                 return `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full hover:shadow-lg transition-all duration-300">
                         <div class="flex justify-between items-start mb-4">
                             <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                                ${a.course?.title || 'General'}
+                                ${a.course?.title || 'Course'}
                             </span>
-                            <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                            <span class="text-[10px] text-gray-400 font-bold">
                                 Due: ${new Date(a.dueDate).toLocaleDateString()}
                             </span>
                         </div>
                         <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">${a.title}</h3>
-                        <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-3 leading-relaxed">${a.description}</p>
-                        <div class="flex justify-between items-center pt-4 border-t border-gray-50 mt-auto">
-                            <div class="flex flex-col">
-                                <span class="text-[9px] text-gray-400 font-black uppercase tracking-tighter">Targeted To</span>
-                                <span class="text-xs font-bold text-gray-700 truncate max-w-[120px]">${targetDisplay}</span>
+                        <p class="text-gray-600 text-sm mb-6 flex-1 line-clamp-2">${a.description}</p>
+                        <div class="flex justify-between items-center pt-4 border-t border-gray-50">
+                            <div>
+                                <p class="text-[9px] text-gray-400 font-black uppercase tracking-tighter">Target</p>
+                                <p class="text-xs font-bold text-gray-700">${targetDisplay}</p>
                             </div>
-                            <div class="flex gap-1.5">
-                                <button data-action="edit" data-id="${a._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:bg-blue-50 hover:text-blue-600 transition" title="Edit Assignment">
-                                    <i class="fa-solid fa-pen-to-square text-xs"></i>
-                                </button>
-                                <button data-action="delete" data-id="${a._id}" class="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-600 transition" title="Delete Assignment">
-                                    <i class="fa-solid fa-trash-can text-xs"></i>
-                                </button>
-                                <button data-action="submissions" data-id="${a._id}" class="bg-gray-900 text-white px-3 py-2 rounded-lg font-bold text-[9px] uppercase tracking-widest hover:bg-blue-600 transition shadow-sm ml-1">
-                                    Submissions
-                                </button>
+                            <div class="flex gap-2">
+                                <button data-action="edit" data-id="${a._id}" class="text-gray-400 hover:text-blue-600 transition"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button data-action="delete" data-id="${a._id}" class="text-gray-400 hover:text-red-600 transition"><i class="fa-solid fa-trash-can"></i></button>
+                                <button data-action="submissions" data-id="${a._id}" class="bg-gray-900 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase">Submissions</button>
                             </div>
                         </div>
                     </div>
@@ -390,181 +368,14 @@
             const btn = e.target.closest('button[data-action]');
             if (!btn) return;
             const { action, id } = btn.dataset;
-            
             if (action === 'edit') openEditModal(id);
             else if (action === 'delete') openDeleteModal(id);
-            else if (action === 'submissions') {
-                const card = btn.closest('.bg-white');
-                const title = card.querySelector('h3').textContent;
-                openSubmissionsModal(id, title);
-            }
+            else if (action === 'submissions') openSubmissionsModal(id, btn.closest('.bg-white').querySelector('h3').textContent);
         };
 
-        /**
-         * SUBMISSIONS & GRADING LOGIC
-         */
-        const submissionsModal = document.getElementById('submissionsModal');
-        const submissionsList = document.getElementById('submissionsList');
-        const gradingModal = document.getElementById('gradingModal');
-        const gradingForm = document.getElementById('gradingForm');
-
-        let activeAssignment = null;
-        let allSubmissions = [];
-
-        async function openSubmissionsModal(id, title) {
-            activeAssignment = currentAssignments.find(a => a._id === id);
-            document.getElementById('submissionsModalTitle').textContent = `Submissions: ${title}`;
-            submissionsModal.classList.remove('hidden');
-            
-            submissionsList.innerHTML = '<ui-spinner text="Fetching submissions..."></ui-spinner>';
-            
-            try {
-                const res = await fetch(`/api/teacher/assignments/${id}/submissions`);
-                if (res.ok) {
-                    const { submissions } = await res.json();
-                    allSubmissions = submissions;
-                    renderSubmissions(submissions);
-                } else {
-                    submissionsList.innerHTML = '<p class="text-center text-red-500 py-10 font-bold">Failed to load submissions.</p>';
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        function renderSubmissions(submissions) {
-            if (!submissions.length) {
-                submissionsList.innerHTML = `
-                    <div class="bg-white p-20 rounded-3xl text-center border border-dashed border-gray-200">
-                        <i class="fa-solid fa-face-meh text-5xl text-gray-200 mb-4"></i>
-                        <p class="text-gray-500 font-bold italic">No students have submitted this assignment yet.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            submissionsList.innerHTML = submissions.map(s => `
-                <div class="bg-white p-6 rounded-2xl border border-gray-100 flex justify-between items-center group hover:border-blue-200 transition">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center font-black text-xl">
-                            ${s.student.name.charAt(0)}
-                        </div>
-                        <div>
-                            <p class="font-bold text-gray-900">${s.student.name}</p>
-                            <p class="text-xs text-gray-400 font-medium">${new Date(s.submittedAt).toLocaleString()}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-6">
-                        ${s.status === 'graded' ? `
-                            <div class="text-right">
-                                <p class="text-xs font-black text-green-600 uppercase tracking-widest">Graded</p>
-                                <p class="text-lg font-black text-gray-900">${s.grade} / ${activeAssignment.maxPoints}</p>
-                            </div>
-                        ` : `
-                            <span class="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-[10px] font-black uppercase tracking-widest">Pending</span>
-                        `}
-                        
-                        <div class="flex gap-2">
-                            ${s.attachments?.length ? `
-                                <a href="${s.attachments[0]}" target="_blank" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-900 hover:text-white transition shadow-sm">
-                                    <i class="fa-solid fa-paperclip"></i>
-                                </a>
-                            ` : ''}
-                            <button data-action="grade" data-id="${s._id}" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition active:scale-95 shadow-lg shadow-blue-100">
-                                ${s.status === 'graded' ? 'Update Grade' : 'Grade Now'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Event Delegation for Submissions
-        submissionsList.onclick = (e) => {
-            const btn = e.target.closest('button[data-action="grade"]');
-            if (btn) {
-                const subId = btn.dataset.id;
-                const submission = allSubmissions.find(s => s._id === subId);
-                if (submission) {
-                    window.openGradingModal(submission._id, submission.grade || 0, submission.feedback || '');
-                }
-            }
-        };
-
-        window.openGradingModal = (id, currentGrade, currentFeedback) => {
-            document.getElementById('gradingSubmissionId').value = id;
-            document.getElementById('gradingScore').value = currentGrade;
-            document.getElementById('gradingFeedback').value = currentFeedback;
-            document.getElementById('gradingMaxPoints').textContent = activeAssignment.maxPoints;
-            gradingModal.classList.remove('hidden');
-        };
-
-        document.getElementById('closeSubmissionsModal').onclick = () => submissionsModal.classList.add('hidden');
-        document.getElementById('closeGradingModal').onclick = () => gradingModal.classList.add('hidden');
-
-        gradingForm.onsubmit = async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('gradingSubmissionId').value;
-            const data = {
-                grade: document.getElementById('gradingScore').value,
-                feedback: document.getElementById('gradingFeedback').value
-            };
-
-            try {
-                const res = await fetch(`/api/teacher/assignments/grade/${id}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-
-                if (res.ok) {
-                    showToast('Submission graded successfully');
-                    gradingModal.classList.add('hidden');
-                    // Refresh submissions list
-                    openSubmissionsModal(activeAssignment._id, activeAssignment.title);
-                } else {
-                    showToast('Grading failed', 'error');
-                }
-            } catch (err) {
-                showToast('Server error', 'error');
-            }
-        };
-
-        /**
-         * DELETE LOGIC
-         */
-        const deleteModal = document.getElementById('deleteModal');
-        let assignmentToDeleteId = null;
-
-        function openDeleteModal(id) {
-            assignmentToDeleteId = id;
-            deleteModal.classList.remove('hidden');
-        }
-
-        document.getElementById('closeDeleteModal').onclick = () => deleteModal.classList.add('hidden');
-        document.getElementById('cancelDeleteBtn').onclick = () => deleteModal.classList.add('hidden');
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
-            if (!assignmentToDeleteId) return;
-            try {
-                const res = await fetch(`/api/teacher/assignments/${assignmentToDeleteId}`, { method: 'DELETE' });
-                if (res.ok) {
-                    showToast('Assignment deleted');
-                    deleteModal.classList.add('hidden');
-                    fetchAssignments();
-                } else {
-                    showToast('Delete failed', 'error');
-                }
-            } catch (err) { showToast('Server error', 'error'); }
-        };
-
-        /**
-         * EDIT LOGIC
-         */
         async function openEditModal(id) {
             isEditMode = true;
             editingAssignmentId = id;
-            
             const a = currentAssignments.find(item => item._id === id);
             if (!a) return;
 
@@ -574,7 +385,6 @@
             addForm.description.value = a.description;
             addForm.dueDate.value = new Date(a.dueDate).toISOString().split('T')[0];
             addForm.maxPoints.value = a.maxPoints;
-
             globalCourseSelect.value = a.course._id || a.course;
 
             if (a.class) {
@@ -591,80 +401,138 @@
             modal.classList.remove('hidden');
         }
 
-        if (addForm) {
-            addForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const formData = new FormData(addForm);
-                
-                const data = {
-                    title: formData.get('title'),
-                    description: formData.get('description'),
-                    dueDate: formData.get('dueDate'),
-                    maxPoints: Number(formData.get('maxPoints')),
-                    course: formData.get('course'),
-                    class: activeTargetMode === 'class' ? formData.get('class') : undefined,
-                    batch: activeTargetMode === 'batch' ? formData.get('batch') : undefined
-                };
-
-                const submitBtn = document.getElementById('submitBtn');
-                submitBtn.disabled = true;
-                const originalText = submitBtn.textContent;
-                submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> ${isEditMode ? 'Updating...' : 'Posting...'}`;
-
-                try {
-                    const url = isEditMode ? `/api/teacher/assignments/${editingAssignmentId}` : '/api/teacher/assignments';
-                    const method = isEditMode ? 'PATCH' : 'POST';
-
-                    const res = await fetch(url, {
-                        method: method,
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                    if (res.ok) {
-                        showToast(isEditMode ? 'Assignment updated' : 'Assignment posted');
-                        closeBtn.click();
-                        fetchAssignments();
-                    } else {
-                        const err = await res.json();
-                        showToast(err.message || 'Action failed', 'error');
-                    }
-                } catch (err) { 
-                    showToast('Connection error', 'error'); 
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = originalText;
-                }
+        addForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(addForm);
+            const data = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                dueDate: formData.get('dueDate'),
+                maxPoints: Number(formData.get('maxPoints')),
+                course: formData.get('course'),
+                class: activeTargetMode === 'class' ? formData.get('class') : undefined,
+                batch: activeTargetMode === 'batch' ? formData.get('batch') : undefined
             };
+
+            const url = isEditMode ? `/api/teacher/assignments/${editingAssignmentId}` : '/api/teacher/assignments';
+            const method = isEditMode ? 'PATCH' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast(isEditMode ? 'Updated' : 'Posted');
+                    modal.classList.add('hidden');
+                    fetchAssignments();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Failed', 'error');
+                }
+            } catch (err) { showToast('Error', 'error'); }
+        };
+
+        /**
+         * DELETE / SUBMISSIONS / GRADING (Placeholders for logic already implemented)
+         */
+        const deleteModal = document.getElementById('deleteModal');
+        let assignmentToDeleteId = null;
+        function openDeleteModal(id) { assignmentToDeleteId = id; deleteModal.classList.remove('hidden'); }
+        document.getElementById('closeDeleteModal').onclick = () => deleteModal.classList.add('hidden');
+        document.getElementById('cancelDeleteBtn').onclick = () => deleteModal.classList.add('hidden');
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            const res = await fetch(`/api/teacher/assignments/${assignmentToDeleteId}`, { method: 'DELETE' });
+            if (res.ok) { showToast('Deleted'); deleteModal.classList.add('hidden'); fetchAssignments(); }
+        };
+
+        const submissionsModal = document.getElementById('submissionsModal');
+        const submissionsList = document.getElementById('submissionsList');
+        const gradingModal = document.getElementById('gradingModal');
+        const gradingForm = document.getElementById('gradingForm');
+        let activeAssignment = null;
+        let allSubmissions = [];
+
+        async function openSubmissionsModal(id, title) {
+            activeAssignment = currentAssignments.find(a => a._id === id);
+            document.getElementById('submissionsModalTitle').textContent = `Submissions: ${title}`;
+            submissionsModal.classList.remove('hidden');
+            submissionsList.innerHTML = '<ui-spinner text="Fetching..."></ui-spinner>';
+            const res = await fetch(`/api/teacher/assignments/${id}/submissions`);
+            if (res.ok) {
+                const { submissions } = await res.json();
+                allSubmissions = submissions;
+                renderSubmissions(submissions);
+            }
         }
+
+        function renderSubmissions(submissions) {
+            if (!submissions.length) { submissionsList.innerHTML = '<p class="text-center py-20 text-gray-400">No submissions yet.</p>'; return; }
+            submissionsList.innerHTML = submissions.map(s => `
+                <div class="bg-white p-4 rounded-xl border border-gray-100 flex justify-between items-center hover:border-blue-200 transition">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold">${s.student.name.charAt(0)}</div>
+                        <div><p class="font-bold text-sm">${s.student.name}</p><p class="text-[10px] text-gray-400">${new Date(s.submittedAt).toLocaleString()}</p></div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        ${s.status === 'graded' ? `<div class="text-right"><p class="text-[10px] font-black text-green-600 uppercase">Graded</p><p class="font-black">${s.grade} / ${activeAssignment.maxPoints}</p></div>` : '<span class="text-[10px] font-black text-orange-500 uppercase">Pending</span>'}
+                        <button data-action="grade" data-id="${s._id}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-[10px]">Grade</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        submissionsList.onclick = (e) => {
+            const btn = e.target.closest('button[data-action="grade"]');
+            if (btn) {
+                const sub = allSubmissions.find(s => s._id === btn.dataset.id);
+                document.getElementById('gradingSubmissionId').value = sub._id;
+                document.getElementById('gradingScore').value = sub.grade || 0;
+                document.getElementById('gradingFeedback').value = sub.feedback || '';
+                document.getElementById('gradingMaxPoints').textContent = activeAssignment.maxPoints;
+                gradingModal.classList.remove('hidden');
+            }
+        };
+
+        gradingForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('gradingSubmissionId').value;
+            const res = await fetch(`/api/teacher/assignments/grade/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ grade: document.getElementById('gradingScore').value, feedback: document.getElementById('gradingFeedback').value })
+            });
+            if (res.ok) { showToast('Graded'); gradingModal.classList.add('hidden'); openSubmissionsModal(activeAssignment._id, activeAssignment.title); }
+        };
+
+        document.getElementById('closeSubmissionsModal').onclick = () => submissionsModal.classList.add('hidden');
+        document.getElementById('closeGradingModal').onclick = () => gradingModal.classList.add('hidden');
 
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                currentUser = user;
                 if (window.initSocket) window.initSocket(user);
                 if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
                 
                 customElements.whenDefined('ui-navbar').then(() => {
                     const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    if (navbar && navbar.renderLinks) navbar.renderLinks(user);
                 });
                 
                 fetchAssignments();
-            } catch (err) {
-                console.error('Failed to fetch profile:', err);
-                window.location.href = '/api/auth/login';
-            }
+            } catch (err) { window.location.href = '/api/auth/login'; }
         }
+
         document.addEventListener('click', async (e) => {
             if (e.target.closest('#logoutBtn')) {
                 await fetch('/api/auth/logout', { method: 'POST' });
                 window.location.href = '/api/auth/login';
             }
         });
+
         fetchProfile();
     </script>
 </body>
