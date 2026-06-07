@@ -1,31 +1,39 @@
-# Specification: Curriculum Studio Redesign
+# Specification: Daily Schedule for Curriculum Milestones
 
 ## Background
-The current "Academic Studio" is feature-rich but visually dense. Teachers find it difficult to navigate through long syllabi and manage nested modules. We need to transition to a more modern, intuitive "Editor" layout.
+Currently, the Curriculum Studio allows teachers to organize curricula into "Sections" (Learning Paths) and "Modules" (Milestones). A common feedback is that "Milestones" often represent full weeks of study (e.g., Week 1, Week 2). Teachers need a way to break down these weekly milestones into specific daily schedules (e.g., Monday: Introduction, Wednesday: Lab Session).
 
 ## User Stories
-- **As a Teacher**, I want a clear overview of my entire curriculum at all times so I can jump between weeks/sections easily.
-- **As a Teacher**, I want a "distraction-free" editing experience for specific modules.
-- **As a Teacher**, I want a simpler way to add learning outcomes and resources without navigating through complex card structures.
+- **As a Teacher**, I want to add specific daily schedules within a weekly milestone so I can plan day-by-day learning activities.
+- **As a Teacher**, I want to assign specific dates to these daily schedules so they appear correctly on the student's calendar or roadmap.
+- **As a Student**, I want to see the daily breakdown of each week in my roadmap so I know exactly what to study each day.
 
 ## Requirements
 
 ### Functional
-- **Sidebar Navigation**: A persistent sidebar (or collapsible panel) showing the "Table of Contents" (Sections -> Modules).
-- **Focus Mode**: When selecting a section in the sidebar, the main editor scrolls to or only displays that specific part.
-- **Streamlined Inputs**: Replace bulky card layouts with a more compact, row-based module editor.
-- **Breadcrumbs**: Clear indication of what course/class is being edited.
-- **Integrated Search**: Ability to find specific topics within the curriculum.
+- **Milestone Breakdown**: Each "Milestone" (Module) can now contain an optional list of "Day Schedules".
+- **Day Attributes**:
+    - `dayOfWeek`: (Monday - Sunday)
+    - `date`: (Optional) Specific calendar date.
+    - `topic`: Short headline for the day.
+    - `description`: Detailed activities or instructions for the day.
+- **UI Integration**:
+    - The Teacher Curriculum Studio must allow adding, editing, and reordering day schedules within a module.
+    - The Student Roadmap must expand to show the daily breakdown when a milestone is clicked or viewed.
+- **Performance**: Must handle nested data efficiently in the JSON blob without hitting document size limits (highly unlikely for standard curricula).
 
 ### Technical
-- **Layout**: Use a `flex` or `grid` layout with a scrollable sidebar.
-- **Performance**: Optimized DOM rendering to handle 50+ modules without lag.
-- **Logic**: Maintain parity with the existing `curriculumLocked` and `curriculumSections` data structure.
-- **Component Reuse**: Leverage existing `ui-navbar` and `ui-spinner`.
+- **Data Model Update**:
+    - Introduce `IDaySchedule` interface.
+    - Update `ICurriculumModule` to include `daySchedules: IDaySchedule[]`.
+- **UI Rewrite**:
+    - Refactor `curriculum.html` (Teacher) to include a nested "Day Editor".
+    - Refactor `curriculum.html` (Student) to display the daily list.
+- **Persistence**: Ensure `scrapeCurriculum` logic captures the new nested "days" data.
 
 ## Acceptance Criteria
-- [ ] Sidebar correctly reflects the current sections and modules.
-- [ ] Clicking a sidebar item scrolls the main view or updates the focus.
-- [ ] Adding/Removing modules is intuitive and requires fewer clicks.
-- [ ] UI remains fully responsive (sidebar collapses on mobile).
-- [ ] No loss of data integrity during the migration to the new UI.
+- [ ] Teacher can add a "Monday" schedule to "Week 1" milestone.
+- [ ] Teacher can set a specific date for a day schedule.
+- [ ] Data persists correctly to MongoDB upon deployment.
+- [ ] Student Roadmap displays the "Monday" topic under "Week 1".
+- [ ] npx tsc passes with the updated interfaces.

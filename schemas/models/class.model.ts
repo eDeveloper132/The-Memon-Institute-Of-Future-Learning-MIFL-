@@ -14,6 +14,12 @@ const curriculumModuleSchema = new Schema({
         title: { type: String, required: true },
         url: { type: String, required: true }
     }],
+    daySchedules: [{
+        dayOfWeek: { type: String, required: true },
+        date: Date,
+        topic: { type: String, required: true },
+        description: String
+    }],
     order: { type: Number, required: true, default: 0 }
 });
 

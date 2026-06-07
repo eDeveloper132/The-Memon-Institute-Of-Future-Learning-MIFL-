@@ -1,14 +1,18 @@
-# Data Model: Multi-Fee Support
+# Data Model: Daily Curriculum Schedules
 
-## Entity: Class (Updated)
+## Entity: DaySchedule (Sub-document)
 | Field | Type | Description | Validation |
 |-------|------|-------------|------------|
-| `monthlyFee` | Number | Monthly tuition for the class | Required, default: 0 |
+| `dayOfWeek` | String | Day of the week | Enum: Mon-Sun |
+| `date` | Date | Specific calendar date | Optional |
+| `topic` | String | Subject for the day | Required |
+| `description`| String | Detailed activities | Optional |
 
-## Entity: Course (Verified)
-| Field | Type | Description | Validation |
-|-------|------|-------------|------------|
-| `monthlyFee` | Number | Monthly tuition for the course | Required, default: 0 |
+## Entity: CurriculumModule (Updated)
+| Field | Type | Description |
+|-------|------|-------------|
+| ...previous | ... | (title, description, etc.) |
+| `daySchedules`| Array<DaySchedule> | Nested daily breakdown |
 
-## Entity: User (Parent/Student)
-N/A - This change only affects the management of course/class definitions.
+## Entity: Course / Class (Implicit)
+These entities will store the updated `CurriculumModule` within their `curriculumSections` or `classCurriculumSections` arrays.

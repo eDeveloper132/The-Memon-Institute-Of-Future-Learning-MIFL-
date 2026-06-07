@@ -182,29 +182,6 @@
                                 
                                 <p class="text-sm text-gray-500 leading-relaxed mb-6">${m.description}</p>
 
-                                ${m.daySchedules?.length ? `
-                                    <div class="mb-8 space-y-4">
-                                        <p class="text-[9px] font-black text-blue-600 uppercase tracking-[0.2em] mb-4">Daily Breakdown</p>
-                                        <div class="space-y-4 relative before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-blue-50">
-                                            ${m.daySchedules.map(d => `
-                                                <div class="flex gap-6 relative">
-                                                    <div class="w-6 h-6 rounded-full bg-white border-2 border-blue-500 flex items-center justify-center shrink-0 z-10">
-                                                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <div class="flex items-center gap-3 mb-1">
-                                                            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">${d.dayOfWeek}</span>
-                                                            ${d.date ? `<span class="text-[10px] font-bold text-blue-400">${new Date(d.date).toLocaleDateString()}</span>` : ''}
-                                                        </div>
-                                                        <h5 class="font-bold text-gray-800 text-sm">${d.topic}</h5>
-                                                        ${d.description ? `<p class="text-xs text-gray-500 mt-1 leading-relaxed">${d.description}</p>` : ''}
-                                                    </div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                ` : ''}
-
                                 ${m.learningObjectives?.length ? `
                                     <div class="mb-6 space-y-2">
                                         <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Key Outcomes</p>

@@ -1,23 +1,26 @@
-# Quickstart: Multi-Fee Management
+# Quickstart: Testing Daily Schedules
 
 ## Setup
-1. Log in as an Admin.
-2. Navigate to "Course Management" (`/protected/admin/courses.html`).
-3. Navigate to "Class Management" (`/protected/admin/classes.html`).
+1. Log in as a **Teacher**.
+2. Navigate to the **Curriculum Studio** (`/protected/teacher/curriculum.html`).
+3. Select an existing course or class.
 
-## Testing Dual Fees (Courses)
-1. Click "Add Course".
-2. Enter values for both "Enrollment Fee" and "Monthly Fee".
-3. Save and verify both values appear on the course card.
-4. Edit the course, update both fees, and verify the card updates.
+## Test Case 1: Add Daily Schedule to a Module
+1. Locate a "Milestone" (Module) card.
+2. Click the "+ Add Day" button within the card.
+3. Select "Monday" from the dropdown.
+4. Enter a topic: "Intro to Linear Algebra".
+5. Set a date: `2026-07-07`.
+6. Click "Deploy Syllabus".
+7. Verify that the page reloads and the day schedule is visible.
 
-## Testing Dual Fees (Classes)
-1. Click "Create Class".
-2. Enter values for both "Enrollment Fee" and "Monthly Fee".
-3. Save and verify both values appear on the class card.
-4. Edit the class, update both fees, and verify the card updates.
+## Test Case 2: Student View Verification
+1. Log in as a **Student** enrolled in that course.
+2. Navigate to the **Course Roadmap** (`/protected/student/curriculum.html`).
+3. Locate the Milestone updated in Test Case 1.
+4. Verify that "Monday - Intro to Linear Algebra" is displayed under that milestone.
 
-## Verification
-- [ ] Mongoose database shows correct numeric values for both fields.
-- [ ] Card UI doesn't overflow or wrap awkwardly with the two fee displays.
-- [ ] Toasts provide success feedback for both creation and updates.
+## Verification Checklist
+- [ ] Nested JSON structure is valid in MongoDB.
+- [ ] Date input correctly handles local timezones.
+- [ ] Smooth scrolling to milestones still works in Teacher IDE.

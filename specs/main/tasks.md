@@ -1,11 +1,11 @@
 ---
-description: "Task list for Curriculum Studio Redesign implementation"
+description: "Task list for Daily Curriculum Schedules implementation"
 ---
 
-# Tasks: Curriculum Studio Redesign
+# Tasks: Daily Curriculum Schedules
 
 **Input**: Design documents from `/specs/main/`
-**Prerequisites**: plan.md, spec.md, research.md
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -16,57 +16,56 @@ description: "Task list for Curriculum Studio Redesign implementation"
 ## Phase 1: Setup
 
 - [x] T001 Initialize design artifacts in specs/main/
-- [x] T002 Backup current `public/protected/teacher/curriculum.html` for safety
+- [x] T002 [P] Backup current curriculum files to `.bak` extension in `public/protected/teacher/` and `public/protected/student/`
 
-## Phase 2: Foundational (Infrastructure & Data Sync)
+## Phase 2: Foundational (Backend & Types)
 
-**Purpose**: Stabilize the data-flow patterns needed for the new UI
+**Purpose**: Update the core data layer to support nested daily schedules.
 
-- [x] T003 Verify `workingState` JSON structure for curriculum synchronization in `public/protected/teacher/curriculum.html`
-- [x] T004 [P] Update `scrapeCurriculum` function to handle the new DOM hierarchy in `public/protected/teacher/curriculum.html`
+- [x] T003 [P] Add `IDaySchedule` interface and update `ICurriculumModule` in `schemas/types/course.type.ts`
+- [x] T004 Update `curriculumModuleSchema` to include `daySchedules` array in `schemas/models/course.model.ts`
+- [x] T005 Update `curriculumModuleSchema` to include `daySchedules` array in `schemas/models/class.model.ts`
 
 ---
 
-## Phase 3: User Story 1 - Sidebar Navigation (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Teacher Day Editor (Priority: P1) 🎯 MVP
 
-**Goal**: Implement the dual-pane IDE layout with real-time sidebar navigation
+**Goal**: Enable teachers to add and manage daily schedules within the Curriculum IDE.
 
-**Independent Test**: Load the page, see a sidebar with the "Table of Contents," and click an item to scroll to it.
+**Independent Test**: Add a "Monday" schedule to a milestone, save, and verify data persists.
 
 ### Implementation for User Story 1
 
-- [x] T005 [US1] Refactor `curriculum.html` body to use a 2-pane flex/grid layout (Sidebar + Main Editor)
-- [x] T006 [US1] Implement `renderSidebar()` to dynamically generate the navigation tree from the curriculum data
-- [x] T007 [US1] Integrate `scrollIntoView` anchoring for smooth jumps between sidebar items and sections
-- [x] T008 [US1] Add a collapsible toggle for the sidebar to support small screens/focus mode
+- [x] T006 [US1] Implement `renderDays(secIdx, modIdx)` helper function in `public/protected/teacher/curriculum.html`
+- [x] T007 [US1] Update `createModuleRow` to include the "+ Add Day" action and container for daily entries in `public/protected/teacher/curriculum.html`
+- [x] T008 [US1] Create `createDayRow(secIdx, modIdx, dayIdx)` element generator for the nested editor in `public/protected/teacher/curriculum.html`
+- [x] T009 [US1] Update `scrapeCurriculum` to traverse and capture the new `daySchedules` data from the DOM in `public/protected/teacher/curriculum.html`
 
-**Checkpoint**: Navigation foundation is ready. User can browse the curriculum via the sidebar.
+**Checkpoint**: Teachers can now architect day-by-day learning paths in the IDE.
 
 ---
 
-## Phase 4: User Story 2 - Focus Module Editor (Priority: P2)
+## Phase 4: User Story 2 - Student Schedule View (Priority: P2)
 
-**Goal**: Transform bulky module cards into a compact, row-based editing interface
+**Goal**: Display the daily breakdown of milestones on the Student Roadmap.
 
-**Independent Test**: Edit a module's title, duration, and pedagogical description using the new tight layout.
+**Independent Test**: Load the student roadmap and see "Monday - Topic" listed under the relevant week.
 
 ### Implementation for User Story 2
 
-- [x] T009 [US2] Redesign `createModuleElement` for high-density editing (row-based inputs)
-- [x] T010 [US2] Implement inline lists for "Learning Outcomes" and "Digital Resources" to reduce vertical height
-- [x] T011 [US2] Add "Ghost" controls (hover effects) for reordering and deleting modules to reduce visual noise
-- [x] T012 [US2] Ensure all input changes are synced back to the `workingState` object instantly
+- [x] T010 [US2] Update `renderRoadmap` logic to include a nested daily timeline under each module in `public/protected/student/curriculum.html`
+- [x] T011 [US2] Implement conditional rendering to show "Flexible Schedule" if no days are defined in `public/protected/student/curriculum.html`
+- [x] T012 [US2] Add visual indicators (icons/badges) for specific days (e.g., Monday, Wednesday) in `public/protected/student/curriculum.html`
 
-**Checkpoint**: The editor is now significantly easier to use for data entry.
+**Checkpoint**: Students have clear, daily visibility into their academic journey.
 
 ---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [x] T013 [P] Implement a real-time search filter for the sidebar navigation tree
-- [x] T014 [P] Refine Tailwind transitions and animations for a "premium" software feel
-- [x] T015 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
-- [x] T016 Final validation of "Deploy Syllabus" functionality with the new UI state
+- [x] T013 [P] Standardize "Day of Week" dropdown options and validation in the Teacher IDE.
+- [x] T014 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
+- [x] T015 Run quickstart.md validation for the entire Teacher -> Student flow.
 
 ---
 
@@ -74,17 +73,19 @@ description: "Task list for Curriculum Studio Redesign implementation"
 
 ### Phase Dependencies
 
-- **Phase 1 & 2** are completed first to stabilize data handling.
-- **US1 (Sidebar)** is the MVP and must be completed to enable efficient navigation.
-- **US2 (Editor)** refines the data entry experience after navigation is established.
+- **Phase 2** is a hard blocker for all UI implementation as it defines the data contract.
+- **US1 (Teacher)** should be completed first to allow for data creation before testing the **US2 (Student)** view.
 
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-Navigation is the biggest pain point. We will deliver the sidebar and smooth-scrolling first, keeping the existing card structures inside the new layout.
+The primary value is in the planning tool. Once teachers can save daily data (US1), the MVP is complete, even if the student view is still a simple list.
 
 ---
 
 ## Notes
-- Use `requestAnimationFrame` for DOM updates if rendering 50+ modules.
-- Ensure strict CSP compliance by avoiding inline event handlers in generated HTML.
+
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- **MANDATORY**: Run `npx tsc` after every task or logical group. ZERO errors allowed for commit/push.
+- Use the existing "Ghost Controls" pattern for daily entries to keep the UI clean.

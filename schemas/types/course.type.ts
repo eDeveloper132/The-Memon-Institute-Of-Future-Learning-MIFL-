@@ -6,12 +6,21 @@ export interface ICourseBatch {
     students: Types.ObjectId[];
 }
 
+export interface IDaySchedule {
+    _id?: Types.ObjectId;
+    dayOfWeek: string; // 'Monday'...'Sunday'
+    date?: Date;
+    topic: string;
+    description?: string;
+}
+
 export interface ICurriculumModule {
     title: string;
     description: string;
     duration?: string;
     learningObjectives?: string[];
     resources?: { title: string; url: string }[];
+    daySchedules: IDaySchedule[]; // NEW: Daily breakdown
     order: number;
 }
 

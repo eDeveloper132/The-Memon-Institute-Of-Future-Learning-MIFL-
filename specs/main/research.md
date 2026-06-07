@@ -1,29 +1,40 @@
-# Research: Navigation Patterns for Curriculum Editors
+# Research: Nested Daily Schedules in Curriculum
 
-## Decision: Dual-Pane Navigation
-We will use a fixed-width left sidebar (320px) for the hierarchy and an elastic main area for the editor.
+## Decision: Hierarchical JSON Schema
+We will use an array of objects for `daySchedules` nested within the `curriculumModuleSchema`.
 
 ## Rationale
-- **Hierarchy Visibility**: Sitemaps/Table of Contents are essential for documents with nested data (Sections -> Modules -> Outcomes).
-- **Familiarity**: This layout mimics modern editors like VS Code or Notion, reducing the learning curve for teachers.
+- **Temporal Context**: Daily schedules make sense only within the context of a "Week" (Milestone).
+- **Flexibility**: Teachers can add 0, 1, or 7 days to a week depending on the course intensity.
+- **Relational Integrity**: By nesting the data, we ensure that deleting a Milestone automatically removes its daily breakdown.
 
 ## Findings
 
-### 1. The "Anchor" vs "Focus" Problem
-- **Approach**: Clicking a sidebar item will use `scrollIntoView({ behavior: 'smooth' })` on the main editor.
-- **Why**: Keeping all data in one scrollable area prevents the "Where did my data go?" feeling of multi-page forms.
+### 1. Data Schema Detail
+The `IDaySchedule` should be defined as:
+```typescript
+{
+    dayOfWeek: string; // 'Monday'...'Sunday'
+    date?: Date; // Optional specific calendar date
+    topic: string; // Main subject for the day
+    description?: string; // Activities/Notes
+}
+```
 
-### 2. Compact Module Editing
-- **Old**: Bulky white cards with 40px margins.
-- **New**: Tight, row-based layout with "ghost" icons that appear on hover for dragging/deleting.
+### 2. UI/UX: The "Expander" Pattern
+- **Teacher View**: Each module row will have a "+ Add Day" action. Added days will appear as nested rows or a sub-table within the module.
+- **Student View**: The Milestone cards will become collapsible. When expanded, they will list the daily schedule in a timeline format.
 
-### 3. State Syncing
-- **Decision**: We will keep a JSON representation of the curriculum in memory (`workingState`) and re-render only the affected branches of the DOM tree where possible, or use a highly optimized full re-render if performance allows.
+### 3. DOM Scraping (Capture Logic)
+The `scrapeCurriculum` function in `curriculum.html` must be updated to traverse deep into the DOM:
+- **Loop 1**: Sections.
+- **Loop 2**: Modules (within sections).
+- **Loop 3**: Day Schedules (within modules).
 
 ## Alternatives Considered
 
-### Modal-based editing for modules
-- **Rejected because**: Slows down the workflow. Teachers want to scan and edit multiple modules simultaneously.
+### Flat Day Schedule Collection
+- **Rejected because**: Requires a complex "parentModuleId" reference system and would double the number of API calls needed to render a single roadmap.
 
-### "Infinite" Scroll with Lazy Loading
-- **Rejected because**: Syllabi are typically < 100 modules. Lazy loading adds complexity that isn't needed for this scale (YAGNI).
+### Fixed 7-Day Template for every Module
+- **Rejected because**: Not every course has 7 days of activities per week. Some might only have 2 (e.g., Tues/Thurs). A dynamic array is more resource-efficient and less cluttered.
