@@ -28,7 +28,8 @@ import {
     getTeacherNotices,
     createNotice,
     deleteNotice,
-    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage
+    getTeacherChatHistory, getTeacherConversations, sendTeacherMessage,
+    saveActivityTime, getActivityTimes, updateActivityTime, deleteActivityTime
 } from '../controllers/teacher.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 import { chatUpload } from '../middlewares/upload.js';
@@ -46,6 +47,14 @@ router.get('/stats', getDashboardStats);
 router.get('/courses', getTeacherCourses);
 router.get('/classes', getTeacherClasses);
 router.get('/students/:studentId/summary', getStudentSummary);
+
+/**
+ * Activity Times
+ */
+router.get('/activities', getActivityTimes);
+router.post('/activities', saveActivityTime);
+router.patch('/activities/:id', updateActivityTime);
+router.delete('/activities/:id', deleteActivityTime);
 
 /**
  * Attendance

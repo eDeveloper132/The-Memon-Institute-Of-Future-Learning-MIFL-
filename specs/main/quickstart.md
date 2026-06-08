@@ -1,23 +1,30 @@
-# Quickstart: Testing Standalone Material Uploads
+# Quickstart: Testing Stopwatch Activity Times
 
 ## Setup
 1. Log in as a **Teacher**.
-2. Navigate to the **Resource Hub** (`/protected/staff/index.html`).
+2. Navigate to the **Stopwatch Utility** (`/protected/teacher/stopwatch.html`).
 
-## Test Case 1: Upload to a Class
-1. On the Resource Hub, select the **Class** target option.
-2. Select a specific class from the dynamic dropdown (e.g., "Class 10A").
-3. Fill in a title ("Term 1 Guidelines") and select a PDF file.
-4. Click **Upload Material**.
-5. Verify a success toast appears and the item shows up in the "Recent Uploads" list.
+## Test Case 1: Save a Time
+1. Start the stopwatch and let it run for a few seconds.
+2. Select "Specific Class" and choose a class from the dropdown.
+3. Select a student from the populated student dropdown.
+4. Enter an activity name: "Reading Fluency Test".
+5. Click **Save Activity**.
+6. Verify a success toast appears and the new record is instantly added to the "Recent Activities" list below.
 
-## Test Case 2: Student Verification
-1. Log out, then log in as a **Student** who belongs to the class selected in Test Case 1.
-2. Navigate to the **Course Files** dashboard (`/protected/student/course-files.html`).
-3. Verify that the "Term 1 Guidelines" PDF is visible in the list.
-4. Click the download link and verify it opens the correct Sanity CDN URL.
+## Test Case 2: Edit a Record
+1. In the "Recent Activities" list, click the **Edit** (pen) icon on the record created in Test Case 1.
+2. An edit modal should appear.
+3. Change the activity name to "Reading Fluency Test - Updated" and change the duration string manually.
+4. Click **Save Changes**.
+5. Verify the list updates with the new name and time.
+
+## Test Case 3: Delete a Record
+1. Click the **Delete** (trash) icon on the record.
+2. Accept the confirmation prompt.
+3. Verify the record is removed from the list.
 
 ## Verification Checklist
-- [ ] Mongoose schema validation passes without throwing errors for missing `course` references when a `class` is provided.
-- [ ] Sanity correctly hosts the PDF/DOCX file.
-- [ ] Student dashboard correctly merges class-level and course-level materials.
+- [ ] UI dropdowns accurately reflect the teacher's authorized classes and the students within them.
+- [ ] No inline `onclick` handlers are used in the generated HTML for the list (CSP compliance).
+- [ ] MongoDB saves the `durationMs` and `duration` strings accurately.

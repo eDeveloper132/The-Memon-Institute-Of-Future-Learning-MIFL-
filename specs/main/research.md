@@ -1,48 +1,43 @@
-# Research: Material Targeting Logic
+# Research: Activity Time State Management
 
-## Decision: Dual-Targeting Schema
-We will update the `Material` schema to support an XOR-like relationship where a material can be linked to either a `course` or a `class`.
+## Decision: Dedicated ActivityTime Collection
+We will create a new MongoDB collection `ActivityTime` rather than embedding activity times directly into the `User` or `Class`/`Course` models.
 
 ## Rationale
-- **Flexibility**: Teachers often have general resources for an entire Course (e.g., "Syllabus Overview") that all batches should see, but they also have specific resources for a single Class (e.g., "Class 10A Field Trip Permission Slip").
-- **Database Efficiency**: A single `Material` collection with dual optional references is highly indexable and avoids table duplication.
+- **Growth**: Activity logs can grow indefinitely. Embedding them in a user profile or course document could lead to hitting the 16MB BSON document size limit over time.
+- **Querying**: A separate collection allows for robust querying, aggregation (e.g., average time per activity across a class), and pagination in the future.
 
 ## Findings
 
 ### 1. Data Schema Detail
-The `IMaterial` should be updated as:
+The `IActivityTime` should be defined as:
 ```typescript
 {
-    // ...
-    course?: Types.ObjectId; // Make optional
-    class?: Types.ObjectId;  // Add optional
-    // ...
+    student: Types.ObjectId; // User
+    teacher: Types.ObjectId; // User
+    targetType: 'class' | 'course';
+    targetId: Types.ObjectId; // Class or Course
+    activityName: string;
+    duration: string; // Stored as formatted string "HH:MM:SS" or milliseconds
+    durationMs: number; // Storing MS allows for easy math operations later
 }
 ```
 
-### 2. UI/UX: The Upload Hub (`staff/index.html`)
-- **Target Selection**: The UI will use radio buttons to select the target type ("Course" or "Class"). Based on the selection, a dynamic dropdown will populate with the teacher's authorized courses or classes.
-- **Upload Flow**: 
-    1. Select file.
-    2. Upload to Sanity (`POST /api/teacher/materials/upload`).
-    3. Receive CDN URL.
-    4. Submit full form (`POST /api/teacher/materials`) with title, description, URL, and target ID.
+### 2. UI/UX: Stopwatch Integration
+- The stopwatch will remain at the top of the page.
+- Below the stopwatch, we will add:
+    - **Target Selection**: Radio buttons for Class/Course -> Dropdown for specific entity -> Dropdown for specific student.
+    - **Activity Details**: Input for "Activity Name".
+    - **Save Button**: Captures the current `elapsedTime` from the stopwatch state.
+- **Records Table**: A list below the controls showing recent activities.
 
-### 3. Student Retrieval Logic
-The `getMyMaterials` function in `student.controller.ts` must query materials using an `$or` condition:
-```javascript
-const materials = await Material.find({
-    $or: [
-        { course: { $in: courseIds } },
-        { class: user.currentClass }
-    ]
-});
-```
+### 3. API Design
+- `POST /api/teacher/activities`: Save a new time.
+- `GET /api/teacher/activities`: Fetch recent times recorded by the teacher.
+- `PATCH /api/teacher/activities/:id`: Update activity name or duration.
+- `DELETE /api/teacher/activities/:id`: Delete a record.
 
 ## Alternatives Considered
 
-### Dedicated `ClassMaterial` Model
-- **Rejected because**: It would require creating parallel APIs for uploading, fetching, deleting, and updating, leading to massive code duplication for exactly the same functionality.
-
-### Forcing all materials to Course level
-- **Rejected because**: A primary user request is the ability to send materials to a "specified class", implying a need for class-level granularity that course-level targeting cannot satisfy.
+### Embedding in User Model
+- **Rejected because**: Array of activities on the user object would grow unbounded, causing performance degradation when fetching student profiles.

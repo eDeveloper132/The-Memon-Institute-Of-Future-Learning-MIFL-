@@ -1,28 +1,28 @@
-# Implementation Plan: Standalone Material Uploads via Sanity
+# Implementation Plan: Student Activity Times in Stopwatch
 
 **Branch**: `main` | **Date**: 2026-06-07 | **Spec**: `/specs/main/spec.md`
 **Input**: Feature specification from `/specs/main/spec.md`
 
 ## Summary
-Transform the existing placeholder page at `/protected/staff/index.html` into a fully functional "Resource Hub" where teachers can upload standalone PDF and DOCX files directly to Sanity CDN. These materials can be targeted to either specific Courses or specific Classes, and will instantly appear in the respective students' dashboards.
+Enhance the existing Stopwatch Utility to allow teachers to record, save, edit, and delete activity times for specific students within their authorized classes or courses.
 
 ## Technical Context
 
 **Language/Version**: TypeScript (Node.js 18+)
-**Primary Dependencies**: Mongoose, Express, Tailwind CSS, Sanity Client
-**Storage**: MongoDB (Material collection) & Sanity.io (Files)
+**Primary Dependencies**: Mongoose, Express, Tailwind CSS
+**Storage**: MongoDB (ActivityTime collection)
 **Testing**: Manual visual testing, npx tsc
-**Target Platform**: Web (Staff/Teacher & Student Dashboards)
-**Constraints**: Ensure backward compatibility with existing Curriculum Studio resources. Principle III (tsc gate).
+**Target Platform**: Web (Teacher Dashboard)
+**Constraints**: Zero type errors (tsc gate). Avoid inline event handlers (CSP compliance).
 
 ## Constitution Check
 
 - [x] I. Spec-Driven: Requirement coverage confirmed in `spec.md`.
-- [x] II. Type Safety: Defining `class` reference as optional in `IMaterial`.
+- [x] II. Type Safety: Defining `IActivityTime` interface.
 - [x] III. Verification Gate: `npx tsc` mandatory.
-- [x] IV. Library-First: Logic remains encapsulated in schemas and existing controllers.
-- [x] V. Simplicity: Re-using the `/api/teacher/materials/upload` endpoint rather than creating a new one.
-- [x] VI. Proactive: Immediate visual sync for students.
+- [x] IV. Library-First: Logic encapsulated in schemas and controllers.
+- [x] V. Simplicity: Re-using existing student fetching logic.
+- [x] VI. Proactive: UI auto-updates on save/edit/delete.
 
 ## Project Structure
 
@@ -31,7 +31,7 @@ Transform the existing placeholder page at `/protected/staff/index.html` into a 
 ```text
 specs/main/
 ├── plan.md              # This file
-├── research.md          # Targeting logic findings
+├── research.md          # State management findings
 ├── data-model.md        # Updated Schema definitions
 └── tasks.md             # Actionable tasks
 ```
@@ -41,22 +41,22 @@ specs/main/
 ```text
 schemas/
 ├── types/
-│   └── material.type.ts   # Make course optional, add class
+│   └── activityTime.type.ts   # New interface
 └── models/
-    └── material.model.ts  # Make course optional, add class
+    └── activityTime.model.ts  # New schema
 
 controllers/
-└── student.controller.ts  # Update getMyMaterials query
+└── teacher.controller.ts  # Add endpoints for ActivityTime CRUD
 
-public/protected/
-├── staff/
-│   └── index.html         # Overhaul into Material Upload Hub
-└── student/
-    └── course-files.html  # Verify rendering of new data structure
+routes/
+└── teacher.routes.ts      # Register CRUD routes
+
+public/protected/teacher/
+└── stopwatch.html         # Overhaul to include target selection and CRUD UI
 ```
 
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Optional References | A material can belong to a Course OR a Class | Forcing a material to have both or creating separate tables (`CourseMaterial`, `ClassMaterial`) adds unnecessary overhead. |
+| None | N/A | Using a standard CRUD pattern with a new entity keeps concerns separated from the heavy Course/Class models. |

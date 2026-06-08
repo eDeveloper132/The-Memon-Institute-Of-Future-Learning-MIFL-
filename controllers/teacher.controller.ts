@@ -7,6 +7,7 @@ import { Exam, Grade } from '../schemas/models/exam.model.js';
 import { Assignment, Submission } from '../schemas/models/assignment.model.js';
 import { Quiz } from '../schemas/models/quiz.model.js';
 import { Material } from '../schemas/models/material.model.js';
+import { ActivityTime } from '../schemas/models/activityTime.model.js';
 import { Message } from '../schemas/models/message.model.js';
 import { Notice } from '../schemas/models/notice.model.js';
 import { NotificationService } from '../services/notification.service.js';
@@ -50,6 +51,101 @@ export const getDashboardStats = async (req: any, res: Response) => {
         });
     } catch (error: any) {
         console.error(chalk.red('Get Dashboard Stats error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+/**
+ * Activity Time Management
+ */
+export const saveActivityTime = async (req: any, res: Response) => {
+    try {
+        const { studentId, targetType, targetId, activityName, duration, durationMs } = req.body;
+        
+        const activityTime = await ActivityTime.create({
+            student: studentId,
+            teacher: req.user.id,
+            targetType,
+            targetId,
+            activityName,
+            duration,
+            durationMs
+        });
+
+        await activityTime.populate('student', 'name');
+
+        res.status(201).json({ message: 'Activity time saved', activityTime });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] saveActivityTime error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getActivityTimes = async (req: any, res: Response) => {
+    try {
+        const activities = await ActivityTime.find({ teacher: req.user.id })
+            .populate('student', 'name')
+            .sort({ createdAt: -1 })
+            .limit(50);
+        
+        const populatedActivities = await Promise.all(activities.map(async (act) => {
+            const doc: any = act.toObject();
+            if (act.targetType === 'class') {
+                const cls = await Class.findById(act.targetId).select('name');
+                doc.targetName = cls?.name || 'Unknown Class';
+            } else {
+                const crs = await Course.findById(act.targetId).select('title');
+                doc.targetName = crs?.title || 'Unknown Course';
+            }
+            return doc;
+        }));
+
+        res.status(200).json({ activities: populatedActivities });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] getActivityTimes error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateActivityTime = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { activityName, duration, durationMs } = req.body;
+
+        const activity = await ActivityTime.findOneAndUpdate(
+            { _id: id, teacher: req.user.id },
+            { activityName, duration, durationMs },
+            { new: true }
+        ).populate('student', 'name');
+
+        if (!activity) return res.status(404).json({ message: 'Activity not found or unauthorized' });
+
+        const doc: any = activity.toObject();
+        if (activity.targetType === 'class') {
+            const cls = await Class.findById(activity.targetId).select('name');
+            doc.targetName = cls?.name || 'Unknown Class';
+        } else {
+            const crs = await Course.findById(activity.targetId).select('title');
+            doc.targetName = crs?.title || 'Unknown Course';
+        }
+
+        res.status(200).json({ message: 'Activity time updated', activityTime: doc });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] updateActivityTime error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteActivityTime = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const activity = await ActivityTime.findOneAndDelete({ _id: id, teacher: req.user.id });
+        
+        if (!activity) return res.status(404).json({ message: 'Activity not found or unauthorized' });
+
+        res.status(200).json({ message: 'Activity time deleted' });
+    } catch (error) {
+        console.error(chalk.red('[Teacher Controller] deleteActivityTime error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

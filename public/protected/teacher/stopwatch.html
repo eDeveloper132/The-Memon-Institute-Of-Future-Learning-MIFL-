@@ -8,37 +8,145 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
     
-    <ui-navbar title="Stopwatch Utility"></ui-navbar>
+    <ui-navbar title="Activity Timer"></ui-navbar>
 
-    <main class="p-8 max-w-7xl mx-auto flex flex-col items-center justify-center py-20">
-        <div class="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 text-center w-full max-w-lg">
-            <h2 class="text-2xl font-bold text-gray-700 mb-8 uppercase tracking-widest">Activity Timer</h2>
+    <main class="p-8 max-w-4xl mx-auto py-12 space-y-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-black text-gray-900 tracking-tight">Student Activity Tracker</h1>
+            <p class="text-gray-500 font-medium mt-2">Measure and record reading fluency, presentations, or physical activities.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
-            <div id="display" class="text-7xl font-mono font-extrabold text-blue-600 mb-12">
-                00:00:00
+            <!-- Left Column: Timer & Controls -->
+            <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-gray-100 text-center flex flex-col justify-center h-[28rem]">
+                <div id="display" class="text-7xl font-mono font-black text-blue-600 mb-10 tracking-tighter">
+                    00:00:00
+                </div>
+
+                <div class="flex justify-center gap-6">
+                    <button id="startBtn" class="bg-green-500 text-white w-20 h-20 rounded-full flex items-center justify-center hover:bg-green-600 hover:scale-105 transition-all shadow-xl shadow-green-200 active:scale-95" type="button" title="Start">
+                        <i class="fa-solid fa-play text-3xl ml-1"></i>
+                    </button>
+                    <button id="pauseBtn" class="bg-orange-500 text-white w-20 h-20 rounded-full flex items-center justify-center hover:bg-orange-600 hover:scale-105 transition-all shadow-xl shadow-orange-200 active:scale-95 hidden" type="button" title="Pause">
+                        <i class="fa-solid fa-pause text-3xl"></i>
+                    </button>
+                    <button id="resetBtn" class="bg-gray-100 text-gray-500 w-20 h-20 rounded-full flex items-center justify-center hover:bg-gray-200 hover:scale-105 transition-all active:scale-95" type="button" title="Reset">
+                        <i class="fa-solid fa-rotate-left text-2xl"></i>
+                    </button>
+                </div>
             </div>
 
-            <div class="flex justify-center space-x-6">
-<button id="startBtn" class="bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center hover:bg-green-600 transition shadow-lg" type="button" title="Start the timer">
-    <i class="fa-solid fa-play text-xl"></i>
-</button>
-<button id="pauseBtn" class="bg-orange-500 text-white w-16 h-16 rounded-full flex items-center justify-center hover:bg-orange-600 transition shadow-lg hidden" type="button" title="Pause the timer">
-    <i class="fa-solid fa-pause text-xl"></i>
-</button>
-<button id="resetBtn" class="bg-gray-300 text-gray-700 w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-400 transition shadow-lg" type="button" title="Reset the timer">
-    <i class="fa-solid fa-rotate-left text-xl"></i>
-</button>
+            <!-- Right Column: Target Selection & Save -->
+            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 flex flex-col h-[28rem]">
+                <h3 class="text-lg font-black text-gray-800 mb-6">Log Activity</h3>
+                
+                <form id="saveActivityForm" class="flex-1 flex flex-col space-y-5">
+                    
+                    <!-- 1. Target Type -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Audience</label>
+                        <div class="flex gap-4 p-1 bg-gray-50 rounded-xl w-full">
+                            <label class="cursor-pointer flex-1 text-center">
+                                <input type="radio" name="targetType" value="class" class="peer sr-only" checked>
+                                <div class="py-2.5 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition-all">My Classes</div>
+                            </label>
+                            <label class="cursor-pointer flex-1 text-center">
+                                <input type="radio" name="targetType" value="course" class="peer sr-only">
+                                <div class="py-2.5 rounded-lg text-xs font-bold text-gray-500 peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition-all">My Courses</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 2. Entity Select -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">2. Entity</label>
+                        <select id="targetSelect" required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            <option value="">Loading...</option>
+                        </select>
+                    </div>
+
+                    <!-- 3. Student Select -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">3. Student</label>
+                        <select id="studentSelect" required class="w-full p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none transition-all" disabled>
+                            <option value="">Select Entity First...</option>
+                        </select>
+                    </div>
+
+                    <!-- 4. Activity Name -->
+                    <div class="space-y-2 flex-1">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">4. Activity Name</label>
+                        <input type="text" id="activityName" required placeholder="e.g. Reading Fluency" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                    </div>
+
+                    <button type="submit" id="saveBtn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition flex items-center justify-center gap-2 mt-auto">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Save Current Time
+                    </button>
+                </form>
             </div>
         </div>
 
-        <div id="laps" class="mt-12 w-full max-w-lg space-y-3">
-            <!-- Laps will appear here -->
-        </div>
+        <!-- Recent Activities List -->
+        <section class="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm mt-8">
+            <h3 class="text-lg font-black text-gray-800 mb-6 flex items-center gap-3">
+                <i class="fa-solid fa-list-check text-blue-500"></i> Recent Activity Logs
+            </h3>
+            
+            <div id="activitiesList" class="space-y-3">
+                <div class="animate-pulse flex space-x-4 p-4">
+                    <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+                    <div class="flex-1 space-y-4 py-1">
+                        <div class="h-2 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-2 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="emptyState" class="hidden py-12 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 text-2xl mb-4">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No activities recorded yet.</p>
+            </div>
+        </section>
+
     </main>
 
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 opacity-0 transition-all duration-300" id="editModalContent">
+            <div class="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-lg font-black text-gray-900 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><i class="fa-solid fa-pen"></i></div>
+                    Edit Record
+                </h3>
+                <button id="closeEditModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 transition-colors">&times;</button>
+            </div>
+            
+            <form id="editForm" class="p-6 space-y-5">
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Activity Name</label>
+                    <input type="text" id="editActivityName" required class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest">Duration (HH:MM:SS)</label>
+                    <input type="text" id="editDuration" required pattern="[0-9]{2}:[0-9]{2}:[0-9]{2}" class="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm font-mono font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-center">
+                </div>
+                <button type="submit" id="editSubmitBtn" class="w-full py-3 bg-blue-600 text-white rounded-xl font-black shadow-md hover:bg-blue-700 transition">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        // --- STOPWATCH STATE ---
         let startTime;
         let elapsedTime = 0;
         let timerInterval;
@@ -51,58 +159,66 @@
         function timeToString(time) {
             let diffInHrs = time / 3600000;
             let hh = Math.floor(diffInHrs);
-
             let diffInMin = (diffInHrs - hh) * 60;
             let mm = Math.floor(diffInMin);
-
             let diffInSec = (diffInMin - mm) * 60;
             let ss = Math.floor(diffInSec);
-
-            let formattedHH = hh.toString().padStart(2, "0");
-            let formattedMM = mm.toString().padStart(2, "0");
-            let formattedSS = ss.toString().padStart(2, "0");
-
-            return `${formattedHH}:${formattedMM}:${formattedSS}`;
+            return `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
         }
 
-        function print(txt) { display.innerHTML = txt; }
+        function printTime() {
+            elapsedTime = Date.now() - startTime;
+            display.textContent = timeToString(elapsedTime);
+        }
 
-        function start() {
+        startBtn.addEventListener("click", () => {
             startTime = Date.now() - elapsedTime;
-            timerInterval = setInterval(function printTime() {
-                elapsedTime = Date.now() - startTime;
-                print(timeToString(elapsedTime));
-            }, 1000);
-            showButton("PAUSE");
-        }
+            timerInterval = setInterval(printTime, 1000);
+            startBtn.classList.add('hidden');
+            pauseBtn.classList.remove('hidden');
+        });
 
-        function pause() {
+        pauseBtn.addEventListener("click", () => {
             clearInterval(timerInterval);
-            showButton("PLAY");
-        }
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+        });
 
-        function reset() {
+        resetBtn.addEventListener("click", () => {
             clearInterval(timerInterval);
-            print("00:00:00");
+            display.textContent = "00:00:00";
             elapsedTime = 0;
-            showButton("PLAY");
-        }
+            startBtn.classList.remove('hidden');
+            pauseBtn.classList.add('hidden');
+        });
 
-        function showButton(buttonKey) {
-            if (buttonKey === "PAUSE") {
-                startBtn.classList.add('hidden');
-                pauseBtn.classList.remove('hidden');
-            } else {
-                startBtn.classList.remove('hidden');
-                pauseBtn.classList.add('hidden');
-            }
-        }
+        // --- APP STATE & LOGIC ---
+        const state = {
+            classes: [],
+            courses: [],
+            activities: [],
+            editingId: null
+        };
 
-        startBtn.addEventListener("click", start);
-        pauseBtn.addEventListener("click", pause);
-        resetBtn.addEventListener("click", reset);
+        const els = {
+            form: document.getElementById('saveActivityForm'),
+            targetTypeRadios: document.querySelectorAll('input[name="targetType"]'),
+            targetSelect: document.getElementById('targetSelect'),
+            studentSelect: document.getElementById('studentSelect'),
+            activityName: document.getElementById('activityName'),
+            saveBtn: document.getElementById('saveBtn'),
+            activitiesList: document.getElementById('activitiesList'),
+            emptyState: document.getElementById('emptyState'),
+            editModal: document.getElementById('editModal'),
+            editModalContent: document.getElementById('editModalContent'),
+            editForm: document.getElementById('editForm'),
+            editActivityName: document.getElementById('editActivityName'),
+            editDuration: document.getElementById('editDuration'),
+            closeEditModal: document.getElementById('closeEditModal'),
+            editSubmitBtn: document.getElementById('editSubmitBtn')
+        };
 
-        async function fetchProfile() {
+        async function init() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
@@ -111,21 +227,269 @@
                 
                 customElements.whenDefined('ui-navbar').then(() => {
                     const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    if (navbar && navbar.renderLinks) navbar.renderLinks(user);
                 });
-            } catch (err) {
-                window.location.href = '/api/auth/login';
-            }
+
+                await Promise.all([loadTargets(), loadActivities()]);
+                setupListeners();
+            } catch (err) { console.error(err); }
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
+
+        async function loadTargets() {
+            try {
+                const [classRes, courseRes] = await Promise.all([
+                    fetch('/api/teacher/classes'),
+                    fetch('/api/teacher/courses')
+                ]);
+                
+                if (classRes.ok) state.classes = (await classRes.json()).classes || [];
+                if (courseRes.ok) state.courses = (await courseRes.json()).courses || [];
+                
+                updateTargetDropdown('class');
+            } catch (err) { showToast('Failed to load targets', 'error'); }
+        }
+
+        function updateTargetDropdown(type) {
+            const options = type === 'class' ? state.classes : state.courses;
+            els.targetSelect.innerHTML = `<option value="">Select a ${type}...</option>` + 
+                options.map(o => `<option value="${o._id}">${type === 'class' ? o.name : o.title}</option>`).join('');
+            
+            els.studentSelect.innerHTML = '<option value="">Select Entity First...</option>';
+            els.studentSelect.disabled = true;
+        }
+
+        // Fetch students when entity is selected
+        els.targetSelect.addEventListener('change', async (e) => {
+            const targetId = e.target.value;
+            const targetType = document.querySelector('input[name="targetType"]:checked').value;
+            
+            if (!targetId) {
+                els.studentSelect.innerHTML = '<option value="">Select Entity First...</option>';
+                els.studentSelect.disabled = true;
+                return;
+            }
+
+            els.studentSelect.disabled = false;
+            els.studentSelect.innerHTML = '<option value="">Loading students...</option>';
+
+            try {
+                // Determine API endpoint based on type to fetch enrolled students
+                let students = [];
+                if (targetType === 'class') {
+                    const entity = state.classes.find(c => c._id === targetId);
+                    students = entity?.students || []; 
+                    // Note: If students are object IDs instead of populated objects, 
+                    // we need the attendance data API to fetch full names.
+                    const res = await fetch(`/api/teacher/attendance?classId=${targetId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        students = data.students || [];
+                    }
+                } else {
+                    const res = await fetch(`/api/teacher/attendance?courseId=${targetId}&batchId=${state.courses.find(c=>c._id===targetId)?.batches[0]?._id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        students = data.students || [];
+                    }
+                }
+
+                els.studentSelect.innerHTML = '<option value="">Choose Student...</option>' + 
+                    students.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+            } catch (error) {
+                els.studentSelect.innerHTML = '<option value="">Error loading students</option>';
             }
         });
-        fetchProfile();
+
+        async function loadActivities() {
+            try {
+                const res = await fetch('/api/teacher/activities');
+                if (res.ok) {
+                    state.activities = (await res.json()).activities || [];
+                    renderActivities();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function renderActivities() {
+            if (!state.activities.length) {
+                els.activitiesList.innerHTML = '';
+                els.emptyState.classList.remove('hidden');
+                return;
+            }
+            els.emptyState.classList.add('hidden');
+            
+            els.activitiesList.innerHTML = state.activities.map(act => `
+                <div class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-sm border border-blue-100">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900">${act.activityName}</h4>
+                            <div class="flex items-center gap-2 mt-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <span class="text-blue-500">${act.student?.name || 'Unknown Student'}</span>
+                                <span>&bull;</span>
+                                <span>${act.targetName}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="font-mono font-black text-lg text-gray-700">${act.duration}</span>
+                        <div class="flex items-center gap-2 border-l border-gray-200 pl-4">
+                            <button data-action="edit" data-id="${act._id}" class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all" title="Edit">
+                                <i class="fa-solid fa-pen pointer-events-none text-xs"></i>
+                            </button>
+                            <button data-action="delete" data-id="${act._id}" class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-red-600 hover:border-red-200 hover:shadow-sm transition-all" title="Delete">
+                                <i class="fa-solid fa-trash pointer-events-none text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupListeners() {
+            els.targetTypeRadios.forEach(radio => {
+                radio.addEventListener('change', (e) => updateTargetDropdown(e.target.value));
+            });
+
+            // Save Activity
+            els.form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const targetType = document.querySelector('input[name="targetType"]:checked').value;
+                const targetId = els.targetSelect.value;
+                const studentId = els.studentSelect.value;
+                const activityName = els.activityName.value;
+
+                if (!targetId || !studentId) return showToast('Please select a target and student', 'error');
+                if (elapsedTime === 0) return showToast('Timer is at zero. Start the timer first.', 'error');
+
+                els.saveBtn.disabled = true;
+                els.saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                try {
+                    const payload = {
+                        targetType,
+                        targetId,
+                        studentId,
+                        activityName,
+                        duration: timeToString(elapsedTime),
+                        durationMs: elapsedTime
+                    };
+
+                    const res = await fetch('/api/teacher/activities', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) throw new Error('Failed to save activity');
+                    const data = await res.json();
+                    
+                    // The backend doesn't populate targetName on creation, fetch it from local state
+                    const savedRecord = data.activityTime;
+                    savedRecord.targetName = els.targetSelect.options[els.targetSelect.selectedIndex].text;
+
+                    state.activities.unshift(savedRecord);
+                    renderActivities();
+                    showToast('Activity saved successfully', 'success');
+                    
+                    els.activityName.value = ''; // Reset name input
+                    
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    els.saveBtn.disabled = false;
+                    els.saveBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Save Current Time';
+                }
+            });
+
+            // Event Delegation for Edit/Delete
+            els.activitiesList.addEventListener('click', async (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                
+                const action = btn.dataset.action;
+                const id = btn.dataset.id;
+                
+                if (action === 'delete') {
+                    if (!confirm('Delete this record?')) return;
+                    try {
+                        const res = await fetch(`/api/teacher/activities/${id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            state.activities = state.activities.filter(a => a._id !== id);
+                            renderActivities();
+                            showToast('Record deleted', 'success');
+                        }
+                    } catch (err) { showToast('Error deleting', 'error'); }
+                }
+
+                if (action === 'edit') {
+                    const act = state.activities.find(a => a._id === id);
+                    if (!act) return;
+                    
+                    state.editingId = id;
+                    els.editActivityName.value = act.activityName;
+                    els.editDuration.value = act.duration;
+                    
+                    els.editModal.classList.remove('hidden');
+                    setTimeout(() => {
+                        els.editModalContent.classList.remove('scale-95', 'opacity-0');
+                        els.editModalContent.classList.add('scale-100', 'opacity-100');
+                    }, 10);
+                }
+            });
+
+            // Edit Modal Close
+            els.closeEditModal.addEventListener('click', () => {
+                els.editModalContent.classList.remove('scale-100', 'opacity-100');
+                els.editModalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => els.editModal.classList.add('hidden'), 300);
+            });
+
+            // Edit Form Submit
+            els.editForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                els.editSubmitBtn.disabled = true;
+                els.editSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+
+                try {
+                    const durationStr = els.editDuration.value;
+                    const parts = durationStr.split(':');
+                    const durationMs = (parseInt(parts[0]) * 3600000) + (parseInt(parts[1]) * 60000) + (parseInt(parts[2]) * 1000);
+
+                    const payload = {
+                        activityName: els.editActivityName.value,
+                        duration: durationStr,
+                        durationMs
+                    };
+
+                    const res = await fetch(`/api/teacher/activities/${state.editingId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!res.ok) throw new Error('Update failed');
+                    const data = await res.json();
+                    
+                    const index = state.activities.findIndex(a => a._id === state.editingId);
+                    state.activities[index] = data.activityTime;
+                    
+                    renderActivities();
+                    showToast('Record updated', 'success');
+                    els.closeEditModal.click();
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    els.editSubmitBtn.disabled = false;
+                    els.editSubmitBtn.textContent = 'Save Changes';
+                }
+            });
+        }
+
+        init();
     </script>
 </body>
 </html>

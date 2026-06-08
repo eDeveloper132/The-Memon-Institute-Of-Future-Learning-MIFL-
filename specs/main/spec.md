@@ -1,35 +1,32 @@
-# Specification: Standalone Material Uploads via Sanity
+# Specification: Student Activity Times in Stopwatch
 
 ## Background
-Currently, teachers can upload PDFs within the Curriculum Studio, tying resources strictly to specific curriculum modules. However, teachers also need a general "Resource Hub" where they can upload standalone files (PDFs, DOCX) directly to a specified Class or Course, completely independent of the daily curriculum milestones. The user has specifically requested this functionality to be built into `http://localhost:2000/protected/staff/index.html`.
+The Teacher Dashboard includes a Stopwatch Utility (`/protected/teacher/stopwatch.html`). Currently, this is a basic timer. Teachers want to use this timer to measure student activities (e.g., reading speed, problem-solving time, physical activities) and save these times directly to student profiles within a specific Class or Course.
 
 ## User Stories
-- **As a Teacher**, I want a dedicated Resource Hub (`/protected/staff/index.html`) where I can upload standalone PDF and DOCX files.
-- **As a Teacher**, I want to link these uploaded files to a specific Course or a specific Class.
-- **As a Student**, I want to see these uploaded standalone materials in my `course-files.html` dashboard, properly filtering based on my current Class and my enrolled Courses.
+- **As a Teacher**, I want to select a specific Class or Course and then choose a student from that entity within the Stopwatch utility.
+- **As a Teacher**, I want to save the current elapsed time on the stopwatch as an "Activity Record" for the selected student.
+- **As a Teacher**, I want to specify an "Activity Name" (e.g., "Reading Assignment 1") when saving the time.
+- **As a Teacher**, I want to view a list of saved activity times for my students on the same page.
+- **As a Teacher**, I want to edit (e.g., update the activity name or adjust the time) or delete previously saved activity records.
 
 ## Requirements
 
 ### Functional
-- **File Upload to Sanity**: The upload must use the existing Sanity backend integration (`uploadMaterialAsset`).
-- **Target Selection**: The UI must allow the teacher to toggle between targeting a "Course" or a "Class" and then select the specific entity from a dropdown.
-- **Student Visibility**: Students must be able to view and download these materials. If a material is linked to a class, all students in that class see it. If it is linked to a course, all enrolled students see it.
-- **UI Integration**: Repurpose the existing placeholder at `public/protected/staff/index.html` to be the "Resource & Material Hub" for staff/teachers.
+- **Target Selection**: The UI must allow toggling between "Class" and "Course", displaying a dropdown of the teacher's authorized entities, followed by a dropdown of students enrolled in that entity.
+- **Save Flow**: While the timer is running or paused, the teacher can click "Save Activity", enter an Activity Name, and save the record to the database.
+- **Records List**: Display a table or list of recently saved activity times, showing the student's name, activity name, duration, and target entity.
+- **Edit/Delete**: Each record in the list should have Edit and Delete actions.
 
 ### Technical
-- **Data Model Update**: 
-    - Modify the existing `Material` model in `schemas/models/material.model.ts`. 
-    - Make `course` optional.
-    - Add an optional `class` reference.
-    - Add validation to ensure at least one (course or class) is provided.
-- **API Updates**:
-    - `student.controller.ts` -> `getMyMaterials`: Must query materials where `course` is in the student's enrolled courses OR `class` is the student's `currentClass`.
-- **Teacher View**: Build a form in `staff/index.html` that handles file selection, uploads to Sanity to get a URL, and then saves the `Material` record to MongoDB.
-- **Student View**: Ensure `student/course-files.html` renders both Course-level and Class-level materials accurately.
+- **Data Model**: Create a new `ActivityTime` Mongoose schema in `schemas/models/activityTime.model.ts`.
+- **API Routes**: Create endpoints in `teacher.controller.ts` (e.g., `saveActivityTime`, `getActivityTimes`, `updateActivityTime`, `deleteActivityTime`).
+- **UI Update**: Refactor `public/protected/teacher/stopwatch.html` to include the targeting dropdowns, activity name input, and the CRUD interface for the records.
 
 ## Acceptance Criteria
-- [ ] Teacher can navigate to `/protected/staff/index.html` and see a material upload form.
-- [ ] Teacher can upload a PDF and target it to a specific Class.
-- [ ] Student in that Class can see the PDF in their `course-files.html` dashboard and download it.
-- [ ] Data persists accurately in MongoDB with the `fileUrl` pointing to Sanity CDN.
+- [ ] Teacher can load authorized classes/courses and their respective students in the stopwatch UI.
+- [ ] Teacher can save the stopwatch time to a selected student with an activity name.
+- [ ] The saved record appears immediately in the "Recent Activities" list.
+- [ ] Teacher can edit the activity name or time string of a saved record.
+- [ ] Teacher can delete a saved record with a confirmation prompt.
 - [ ] Application compiles with zero TypeScript errors.
