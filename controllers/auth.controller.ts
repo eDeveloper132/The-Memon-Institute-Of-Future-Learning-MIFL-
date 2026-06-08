@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { mailService } from '../services/mail.service.js';
 import crypto from 'crypto';
 import { emailTemplates } from '../services/emailTemplates.js';
+import { sanityService } from '../services/sanity.service.js';
 
 /**
  * Generate JWT Token
@@ -272,6 +273,55 @@ export const getMe = async (req: any, res: Response) => {
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.status(200).json({ user });
     } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const updateProfile = async (req: any, res: Response) => {
+    try {
+        const allowedUpdates = [
+            'name', 'phoneNumber', 'address', 'dateOfBirth', 'gender', 
+            'bloodGroup', 'emergencyContact', 'qualification'
+        ];
+        
+        const updates: any = {};
+        Object.keys(req.body).forEach(key => {
+            if (allowedUpdates.includes(key)) {
+                updates[key] = req.body[key];
+            }
+        });
+
+        const user = await User.findByIdAndUpdate(req.user.id, { $set: updates }, { new: true });
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        res.status(200).json({ message: 'Profile updated successfully', user });
+    } catch (error) {
+        console.error(chalk.red('Update Profile error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const uploadAvatar = async (req: any, res: Response) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+
+        const asset = await sanityService.uploadAsset(
+            req.file.buffer,
+            req.file.originalname,
+            req.file.mimetype
+        );
+
+        const user = await User.findByIdAndUpdate(req.user.id, {
+            $set: { profilePicture: asset.url }
+        }, { new: true });
+
+        res.status(200).json({ 
+            message: 'Avatar uploaded successfully', 
+            profilePicture: asset.url,
+            user 
+        });
+    } catch (error) {
+        console.error(chalk.red('Upload Avatar error:'), error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

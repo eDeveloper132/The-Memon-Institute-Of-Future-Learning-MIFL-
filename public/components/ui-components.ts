@@ -54,9 +54,16 @@ class UINavbar extends HTMLElement {
                             </div>
                         </div>
 
-                        <div class="hidden md:flex flex-col text-right mr-2">
-                            <span id="userName" class="text-gray-900 font-bold text-sm leading-none truncate max-w-[120px]">Loading...</span>
-                            <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
+                        <!-- User Profile Area -->
+                        <div id="profileTrigger" class="flex items-center gap-3 px-3 py-1.5 rounded-2xl hover:bg-gray-50 cursor-pointer transition active:scale-95 group">
+                            <div class="hidden md:flex flex-col text-right">
+                                <span id="userName" class="text-gray-900 font-bold text-sm leading-none truncate max-w-[120px]">Loading...</span>
+                                <span id="userRoleBadge" class="text-[10px] text-blue-500 font-black uppercase tracking-tighter mt-1">...</span>
+                            </div>
+                            <div class="w-10 h-10 rounded-xl bg-blue-100 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
+                                <img id="navAvatar" src="" alt="User" class="w-full h-full object-cover hidden">
+                                <i id="navAvatarPlaceholder" class="fa-solid fa-user text-blue-400"></i>
+                            </div>
                         </div>
                         
                         <button id="logoutBtn" class="hidden sm:flex text-gray-400 hover:text-red-500 transition p-2 hover:bg-red-50 rounded-xl">
@@ -195,6 +202,266 @@ class UINavbar extends HTMLElement {
 
         logoutBtn?.addEventListener('click', handleLogout);
         mobileLogoutBtn?.addEventListener('click', handleLogout);
+
+        // Profile Modal Trigger
+        this.querySelector('#profileTrigger')?.addEventListener('click', () => {
+            this.renderProfileModal();
+        });
+    }
+
+    private async renderProfileModal() {
+        // Ensure we have fresh user data
+        try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                this._userData = data.user;
+            }
+        } catch (err) {
+            console.error('Failed to refresh user data', err);
+        }
+
+        const user = this._userData;
+        const modalId = 'profileModal';
+        
+        // Remove existing modal if any
+        document.getElementById(modalId)?.remove();
+
+        const modalHtml = `
+            <div id="${modalId}" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] flex items-center justify-center opacity-0 transition-opacity duration-300">
+                <div class="bg-white rounded-[2rem] w-full max-w-2xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+                    <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                        <div>
+                            <h3 class="text-xl font-black text-gray-900 tracking-tight">Update Profile</h3>
+                            <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-0.5">User Settings & Preferences</p>
+                        </div>
+                        <button id="closeProfileModal" class="w-10 h-10 rounded-full hover:bg-red-50 hover:text-red-500 text-gray-400 transition flex items-center justify-center text-2xl font-bold">&times;</button>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-8 space-y-8">
+                        <!-- Avatar Section -->
+                        <div class="flex flex-col items-center gap-6">
+                            <div class="relative group">
+                                <div class="w-32 h-32 rounded-[2.5rem] bg-blue-50 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center group-hover:shadow-blue-200 transition-all duration-500">
+                                    <img id="modalAvatar" src="${user.profilePicture || ''}" class="w-full h-full object-cover ${user.profilePicture ? '' : 'hidden'}">
+                                    <i id="modalAvatarPlaceholder" class="fa-solid fa-user text-4xl text-blue-200 ${user.profilePicture ? 'hidden' : ''}"></i>
+                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <i class="fa-solid fa-camera text-white text-2xl"></i>
+                                    </div>
+                                    <input type="file" id="avatarInput" class="absolute inset-0 opacity-0 cursor-pointer" accept="image/*">
+                                </div>
+                                <div id="avatarLoading" class="absolute inset-0 bg-white/80 rounded-[2.5rem] flex items-center justify-center hidden">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-blue-600 text-2xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex gap-3">
+                                <button id="changeAvatarBtn" class="text-xs font-black text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-xl transition">Change Photo</button>
+                                ${user.profilePicture ? `<button id="removeAvatarBtn" class="text-xs font-black text-red-600 hover:text-red-700 bg-red-50 px-4 py-2 rounded-xl transition">Remove</button>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Info Form -->
+                        <form id="profileForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+                                <input type="text" name="name" value="${user.name || ''}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold" required>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
+                                <input type="text" name="phoneNumber" value="${user.phoneNumber || ''}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold" required>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Email Address (Read-only)</label>
+                                <input type="email" value="${user.email || ''}" class="w-full px-5 py-3.5 bg-gray-100 border border-gray-100 rounded-2xl text-gray-400 font-bold outline-none cursor-not-allowed" disabled>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Address</label>
+                                <textarea name="address" rows="2" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold resize-none">${user.address || ''}</textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Date of Birth</label>
+                                <input type="date" name="dateOfBirth" value="${user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : ''}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Gender</label>
+                                <select name="gender" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold">
+                                    <option value="">Select Gender</option>
+                                    <option value="male" ${user.gender === 'male' ? 'selected' : ''}>Male</option>
+                                    <option value="female" ${user.gender === 'female' ? 'selected' : ''}>Female</option>
+                                    <option value="other" ${user.gender === 'other' ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Role Specific Fields -->
+                            ${user.role === 'teacher' ? `
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Qualifications (Comma separated)</label>
+                                    <input type="text" name="qualification" value="${(user.qualification || []).join(', ')}" class="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition font-bold" placeholder="e.g. M.Phil, PhD">
+                                </div>
+                            ` : ''}
+
+                            ${user.role === 'student' ? `
+                                <div class="md:col-span-2 bg-gray-50 p-6 rounded-[2rem] space-y-4">
+                                    <h4 class="text-xs font-black text-gray-900 uppercase tracking-widest">Emergency Contact</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Contact Name</label>
+                                            <input type="text" name="emergencyContact_name" value="${user.emergencyContact?.name || ''}" class="w-full px-4 py-2.5 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-sm">
+                                        </div>
+                                        <div>
+                                            <label class="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 ml-1">Contact Phone</label>
+                                            <input type="text" name="emergencyContact_phoneNumber" value="${user.emergencyContact?.phoneNumber || ''}" class="w-full px-4 py-2.5 bg-white border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition font-bold text-sm">
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </form>
+                    </div>
+
+                    <div class="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
+                        <button id="cancelProfileBtn" class="flex-1 py-4 rounded-2xl bg-white border border-gray-100 text-gray-600 font-black text-xs uppercase tracking-widest hover:bg-gray-50 transition active:scale-95">Cancel</button>
+                        <button id="saveProfileBtn" class="flex-[2] py-4 rounded-2xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition shadow-lg shadow-blue-200 active:scale-95">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById(modalId)!;
+        const modalContent = modal.querySelector('div')!;
+
+        // Animate in
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modalContent.classList.remove('scale-95');
+        }, 10);
+
+        // Listeners
+        const close = () => {
+            modal.classList.add('opacity-0');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => modal.remove(), 300);
+        };
+
+        modal.querySelector('#closeProfileModal')?.addEventListener('click', close);
+        modal.querySelector('#cancelProfileBtn')?.addEventListener('click', close);
+
+        // Avatar Upload
+        const avatarInput = modal.querySelector('#avatarInput') as HTMLInputElement;
+        const modalAvatar = modal.querySelector('#modalAvatar') as HTMLImageElement;
+        const modalPlaceholder = modal.querySelector('#modalAvatarPlaceholder') as HTMLElement;
+        const avatarLoading = modal.querySelector('#avatarLoading') as HTMLElement;
+
+        const handleAvatarUpload = async (file: File) => {
+            avatarLoading.classList.remove('hidden');
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/auth/profile/avatar', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    modalAvatar.src = data.profilePicture;
+                    modalAvatar.classList.remove('hidden');
+                    modalPlaceholder.classList.add('hidden');
+                    
+                    // Update Navbar Immediately
+                    const navAvatar = this.querySelector('#navAvatar') as HTMLImageElement;
+                    const navPlaceholder = this.querySelector('#navAvatarPlaceholder') as HTMLElement;
+                    if (navAvatar) {
+                        navAvatar.src = data.profilePicture;
+                        navAvatar.classList.remove('hidden');
+                        navPlaceholder.classList.add('hidden');
+                    }
+                    (window as any).showToast('Profile picture updated!');
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (err) {
+                (window as any).showToast('Failed to upload image', 'error');
+            } finally {
+                avatarLoading.classList.add('hidden');
+            }
+        };
+
+        avatarInput?.addEventListener('change', (e: any) => {
+            const file = e.target.files[0];
+            if (file) handleAvatarUpload(file);
+        });
+
+        modal.querySelector('#removeAvatarBtn')?.addEventListener('click', async () => {
+            if (!confirm('Remove profile picture?')) return;
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profilePicture: null })
+                });
+                if (res.ok) {
+                    modalAvatar.classList.add('hidden');
+                    modalPlaceholder.classList.remove('hidden');
+                    const navAvatar = this.querySelector('#navAvatar') as HTMLImageElement;
+                    const navPlaceholder = this.querySelector('#navAvatarPlaceholder') as HTMLElement;
+                    navAvatar?.classList.add('hidden');
+                    navPlaceholder?.classList.remove('hidden');
+                    (window as any).showToast('Profile picture removed');
+                }
+            } catch (err) {
+                (window as any).showToast('Failed to remove picture', 'error');
+            }
+        });
+
+        // Save Form
+        modal.querySelector('#saveProfileBtn')?.addEventListener('click', async () => {
+            const form = modal.querySelector('#profileForm') as HTMLFormElement;
+            const formData = new FormData(form);
+            const data: any = {};
+            
+            formData.forEach((value, key) => {
+                if (key.startsWith('emergencyContact_')) {
+                    if (!data.emergencyContact) data.emergencyContact = {};
+                    data.emergencyContact[key.replace('emergencyContact_', '')] = value;
+                } else if (key === 'qualification') {
+                    data.qualification = (value as string).split(',').map(s => s.trim()).filter(Boolean);
+                } else {
+                    data[key] = value;
+                }
+            });
+
+            const saveBtn = modal.querySelector('#saveProfileBtn') as HTMLButtonElement;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i> Saving...';
+
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    (window as any).showToast('Profile updated successfully!');
+                    const updated = await res.json();
+                    this._userData = updated.user;
+                    this.renderLinks(this._userData);
+                    close();
+                } else {
+                    throw new Error('Update failed');
+                }
+            } catch (err) {
+                (window as any).showToast('Failed to save changes', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = 'Save Changes';
+            }
+        });
     }
 
     private async loadNotifications() {
@@ -269,6 +536,20 @@ class UINavbar extends HTMLElement {
         if (typeof user === 'object' && user.name) {
             if (userName) userName.textContent = user.name;
             if (mobileUserName) mobileUserName.textContent = user.name;
+        }
+
+        // Update Avatar in Navbar
+        const navAvatar = this.querySelector('#navAvatar') as HTMLImageElement;
+        const navPlaceholder = this.querySelector('#navAvatarPlaceholder') as HTMLElement;
+        if (navAvatar) {
+            if (user.profilePicture) {
+                navAvatar.src = user.profilePicture;
+                navAvatar.classList.remove('hidden');
+                navPlaceholder.classList.add('hidden');
+            } else {
+                navAvatar.classList.add('hidden');
+                navPlaceholder.classList.remove('hidden');
+            }
         }
 
         if (!navLinks && !mobileNavLinks) return;

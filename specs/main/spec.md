@@ -1,32 +1,39 @@
-# Specification: Student Activity Times in Stopwatch
+# Specification: Universal User Profile Management
 
 ## Background
-The Teacher Dashboard includes a Stopwatch Utility (`/protected/teacher/stopwatch.html`). Currently, this is a basic timer. Teachers want to use this timer to measure student activities (e.g., reading speed, problem-solving time, physical activities) and save these times directly to student profiles within a specific Class or Course.
+Users currently cannot edit their profile information or upload an avatar easily from the UI. The user requested that clicking their name in the universal navbar should trigger a profile update interface. This interface must allow uploading/deleting a profile picture (saved to Sanity CDN), displaying the picture in the navbar, and updating credentials/details based on the user's role.
 
 ## User Stories
-- **As a Teacher**, I want to select a specific Class or Course and then choose a student from that entity within the Stopwatch utility.
-- **As a Teacher**, I want to save the current elapsed time on the stopwatch as an "Activity Record" for the selected student.
-- **As a Teacher**, I want to specify an "Activity Name" (e.g., "Reading Assignment 1") when saving the time.
-- **As a Teacher**, I want to view a list of saved activity times for my students on the same page.
-- **As a Teacher**, I want to edit (e.g., update the activity name or adjust the time) or delete previously saved activity records.
+- **As a User**, I want to click my name/avatar in the navbar to open a Profile Settings interface.
+- **As a User**, I want to upload a new profile picture or delete my existing one, with changes immediately reflected in the navbar.
+- **As a User**, I want to update my personal credentials (e.g., phone number, address, date of birth).
+- **As a Teacher**, I want to be able to view/update specific details relevant to my role (e.g., qualifications).
+- **As a Student**, I want to view/update my specific details (e.g., emergency contact).
 
 ## Requirements
 
 ### Functional
-- **Target Selection**: The UI must allow toggling between "Class" and "Course", displaying a dropdown of the teacher's authorized entities, followed by a dropdown of students enrolled in that entity.
-- **Save Flow**: While the timer is running or paused, the teacher can click "Save Activity", enter an Activity Name, and save the record to the database.
-- **Records List**: Display a table or list of recently saved activity times, showing the student's name, activity name, duration, and target entity.
-- **Edit/Delete**: Each record in the list should have Edit and Delete actions.
+- **Universal Access**: The profile trigger must be integrated into `ui-components.ts` (`<ui-navbar>`) so it is available across all protected pages.
+- **Avatar Management**: 
+    - Support uploading an image file (JPG, PNG, WEBP).
+    - Upload image to Sanity CDN via existing infrastructure (`sanityService`).
+    - Provide a "Remove Picture" option that sets `profilePicture` to null.
+- **Role-Specific Fields**:
+    - The modal/page should dynamically render form fields based on the user's `role` (Admin, Teacher, Student, Parent).
+- **Real-Time Sync**: Updating the profile picture should immediately update the navbar avatar without requiring a hard page refresh.
 
 ### Technical
-- **Data Model**: Create a new `ActivityTime` Mongoose schema in `schemas/models/activityTime.model.ts`.
-- **API Routes**: Create endpoints in `teacher.controller.ts` (e.g., `saveActivityTime`, `getActivityTimes`, `updateActivityTime`, `deleteActivityTime`).
-- **UI Update**: Refactor `public/protected/teacher/stopwatch.html` to include the targeting dropdowns, activity name input, and the CRUD interface for the records.
+- **API**: 
+    - Add a `POST /api/auth/profile/avatar` route to handle multipart image uploads directly to Sanity.
+    - Add a `PATCH /api/auth/profile` route to handle textual detail updates.
+- **Service Integration**: Use `sanityService.uploadAsset` for storing the profile pictures securely.
+- **Component**: Build a `<ui-profile-modal>` custom element inside `ui-components.ts` or dynamically inject a modal into the DOM when the user clicks their name.
+- **Security**: Users can only update their own profile. Read-only fields (email, role, IDs) must be stripped from requests.
 
 ## Acceptance Criteria
-- [ ] Teacher can load authorized classes/courses and their respective students in the stopwatch UI.
-- [ ] Teacher can save the stopwatch time to a selected student with an activity name.
-- [ ] The saved record appears immediately in the "Recent Activities" list.
-- [ ] Teacher can edit the activity name or time string of a saved record.
-- [ ] Teacher can delete a saved record with a confirmation prompt.
-- [ ] Application compiles with zero TypeScript errors.
+- [ ] Clicking the user name in the navbar opens the profile settings.
+- [ ] User can upload a profile picture and it saves to Sanity.
+- [ ] Navbar avatar updates immediately upon successful upload.
+- [ ] User can update generic credentials (phone, address).
+- [ ] User can delete their profile picture.
+- [ ] TypeScript compilation passes with 0 errors.

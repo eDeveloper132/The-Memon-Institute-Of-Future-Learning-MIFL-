@@ -1,6 +1,12 @@
 import { Router } from 'express';
-import { signup, login, logout, forgotPassword, resetPassword, getMe, verifyEmail, resendVerification, requestEmailChange, initiateNewEmailVerification, confirmEmailChange } from '../controllers/auth.controller.js';
+import { 
+    signup, login, logout, forgotPassword, resetPassword, 
+    getMe, verifyEmail, resendVerification, requestEmailChange, 
+    initiateNewEmailVerification, confirmEmailChange,
+    updateProfile, uploadAvatar 
+} from '../controllers/auth.controller.js';
 import { authenticate } from '../middlewares/auth.js';
+import { chatUpload } from '../middlewares/upload.js';
 import path from 'path';
 
 const router = Router();
@@ -50,5 +56,9 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:token', resetPassword);
 router.post('/request-email-change', requestEmailChange);
 router.post('/update-email/:token', initiateNewEmailVerification);
+
+// Profile Management
+router.patch('/profile', authenticate, updateProfile);
+router.post('/profile/avatar', authenticate, chatUpload.single('file'), uploadAvatar);
 
 export default router;

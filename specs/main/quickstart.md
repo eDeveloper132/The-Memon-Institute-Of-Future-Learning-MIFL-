@@ -1,30 +1,28 @@
-# Quickstart: Testing Stopwatch Activity Times
+# Quickstart: Testing Profile Updates
 
 ## Setup
-1. Log in as a **Teacher**.
-2. Navigate to the **Stopwatch Utility** (`/protected/teacher/stopwatch.html`).
+1. Log in as any user (Admin, Teacher, or Student).
+2. Look at the top right of the navigation bar.
 
-## Test Case 1: Save a Time
-1. Start the stopwatch and let it run for a few seconds.
-2. Select "Specific Class" and choose a class from the dropdown.
-3. Select a student from the populated student dropdown.
-4. Enter an activity name: "Reading Fluency Test".
-5. Click **Save Activity**.
-6. Verify a success toast appears and the new record is instantly added to the "Recent Activities" list below.
+## Test Case 1: Avatar Upload
+1. Click your name/avatar in the navbar. The Profile Settings modal should open.
+2. In the Avatar section, click to upload a new image (JPG/PNG).
+3. Wait for the upload to complete.
+4. Verify that the avatar in the modal AND the avatar in the top right navbar update immediately.
 
-## Test Case 2: Edit a Record
-1. In the "Recent Activities" list, click the **Edit** (pen) icon on the record created in Test Case 1.
-2. An edit modal should appear.
-3. Change the activity name to "Reading Fluency Test - Updated" and change the duration string manually.
-4. Click **Save Changes**.
-5. Verify the list updates with the new name and time.
+## Test Case 2: Update Details
+1. In the Profile Settings modal, change your Phone Number and Address.
+2. If you are a Student, update your Emergency Contact Name.
+3. Click "Save Changes".
+4. Refresh the page.
+5. Click your name in the navbar again and verify the updated details persisted.
 
-## Test Case 3: Delete a Record
-1. Click the **Delete** (trash) icon on the record.
-2. Accept the confirmation prompt.
-3. Verify the record is removed from the list.
+## Test Case 3: Delete Avatar
+1. In the Profile Settings modal, click the "Remove" or "Trash" button next to your avatar.
+2. Verify the avatar reverts to the default generic user icon in both the modal and the navbar.
+3. Refresh the page to ensure the deletion persisted to the database.
 
 ## Verification Checklist
-- [ ] UI dropdowns accurately reflect the teacher's authorized classes and the students within them.
-- [ ] No inline `onclick` handlers are used in the generated HTML for the list (CSP compliance).
-- [ ] MongoDB saves the `durationMs` and `duration` strings accurately.
+- [ ] Inline scripts are avoided in the modal (CSP compliance).
+- [ ] Sanity CDN correctly hosts the profile images.
+- [ ] Read-only fields (Role, Email, ID) cannot be modified via backend endpoint injection.
