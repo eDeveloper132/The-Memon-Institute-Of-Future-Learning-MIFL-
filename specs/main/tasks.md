@@ -1,8 +1,8 @@
 ---
-description: "Task list for Daily Curriculum Schedules implementation"
+description: "Task list for Standalone Material Uploads via Sanity implementation"
 ---
 
-# Tasks: Daily Curriculum Schedules
+# Tasks: Standalone Material Uploads via Sanity
 
 **Input**: Design documents from `/specs/main/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md
@@ -16,56 +16,54 @@ description: "Task list for Daily Curriculum Schedules implementation"
 ## Phase 1: Setup
 
 - [x] T001 Initialize design artifacts in specs/main/
-- [x] T002 [P] Backup current curriculum files to `.bak` extension in `public/protected/teacher/` and `public/protected/student/`
+- [ ] T002 [P] Backup current `public/protected/staff/index.html` and `public/protected/student/course-files.html`
 
 ## Phase 2: Foundational (Backend & Types)
 
-**Purpose**: Update the core data layer to support nested daily schedules.
+**Purpose**: Update the core data layer to support dual-targeting for materials.
 
-- [x] T003 [P] Add `IDaySchedule` interface and update `ICurriculumModule` in `schemas/types/course.type.ts`
-- [x] T004 Update `curriculumModuleSchema` to include `daySchedules` array in `schemas/models/course.model.ts`
-- [x] T005 Update `curriculumModuleSchema` to include `daySchedules` array in `schemas/models/class.model.ts`
+- [x] T003 [P] Update `IMaterial` interface to make `course` optional and add optional `class` reference in `schemas/types/material.type.ts`
+- [x] T004 [P] Update `materialSchema` to make `course` optional and add optional `class` reference in `schemas/models/material.model.ts`
+- [x] T005 Update `uploadMaterial` logic to support optional course/class references and validation in `controllers/teacher.controller.ts`
 
 ---
 
-## Phase 3: User Story 1 - Teacher Day Editor (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Teacher Resource Hub (Priority: P1) 🎯 MVP
 
-**Goal**: Enable teachers to add and manage daily schedules within the Curriculum IDE.
+**Goal**: Transform the Staff Inventory placeholder into a fully functional Material Upload Hub.
 
-**Independent Test**: Add a "Monday" schedule to a milestone, save, and verify data persists.
+**Independent Test**: Teacher can navigate to the Resource Hub, select a target (Course or Class), select a PDF file, upload it, and see a success toast.
 
 ### Implementation for User Story 1
 
-- [x] T006 [US1] Implement `renderDays(secIdx, modIdx)` helper function in `public/protected/teacher/curriculum.html`
-- [x] T007 [US1] Update `createModuleRow` to include the "+ Add Day" action and container for daily entries in `public/protected/teacher/curriculum.html`
-- [x] T008 [US1] Create `createDayRow(secIdx, modIdx, dayIdx)` element generator for the nested editor in `public/protected/teacher/curriculum.html`
-- [x] T009 [US1] Update `scrapeCurriculum` to traverse and capture the new `daySchedules` data from the DOM in `public/protected/teacher/curriculum.html`
+- [x] T006 [US1] Redesign `public/protected/staff/index.html` to include a Material Upload form
+- [x] T007 [US1] Implement radio toggles (Course vs Class) and dynamic dropdown population in `public/protected/staff/index.html`
+- [x] T008 [US1] Integrate Sanity upload flow (`POST /api/teacher/materials/upload`) into the submit action in `public/protected/staff/index.html`
+- [x] T009 [US1] Send full payload to `POST /api/teacher/materials` upon successful Sanity upload in `public/protected/staff/index.html`
 
-**Checkpoint**: Teachers can now architect day-by-day learning paths in the IDE.
+**Checkpoint**: Teachers can upload standalone PDFs/DOCX files targeting specific classes or courses.
 
 ---
 
-## Phase 4: User Story 2 - Student Schedule View (Priority: P2)
+## Phase 4: User Story 2 - Student Material Visibility (Priority: P2)
 
-**Goal**: Display the daily breakdown of milestones on the Student Roadmap.
+**Goal**: Ensure students can see both course-level and class-level materials in their dashboard.
 
-**Independent Test**: Load the student roadmap and see "Monday - Topic" listed under the relevant week.
+**Independent Test**: Student logs in and sees a recently uploaded class-level PDF in their "Course Files" section.
 
 ### Implementation for User Story 2
 
-- [x] T010 [US2] Update `renderRoadmap` logic to include a nested daily timeline under each module in `public/protected/student/curriculum.html`
-- [x] T011 [US2] Implement conditional rendering to show "Flexible Schedule" if no days are defined in `public/protected/student/curriculum.html`
-- [x] T012 [US2] Add visual indicators (icons/badges) for specific days (e.g., Monday, Wednesday) in `public/protected/student/curriculum.html`
+- [x] T010 [US2] Update `getMyMaterials` to query using an `$or` condition for both enrolled courses and current class in `controllers/student.controller.ts`
+- [x] T011 [US2] Update material rendering to gracefully handle both course-level and class-level items in `public/protected/student/course-files.html`
 
-**Checkpoint**: Students have clear, daily visibility into their academic journey.
+**Checkpoint**: Students have access to all targeted materials.
 
 ---
 
 ## Phase N: Polish & Cross-Cutting Concerns
 
-- [x] T013 [P] Standardize "Day of Week" dropdown options and validation in the Teacher IDE.
-- [x] T014 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
-- [x] T015 Run quickstart.md validation for the entire Teacher -> Student flow.
+- [x] T012 Run `npx tsc` to verify zero type errors (CONSTITUTIONAL GATE)
+- [x] T013 Verify the file upload UI provides clear loading states and error handling in `public/protected/staff/index.html`
 
 ---
 
@@ -79,13 +77,4 @@ description: "Task list for Daily Curriculum Schedules implementation"
 ## Implementation Strategy
 
 ### MVP First (User Story 1 Only)
-The primary value is in the planning tool. Once teachers can save daily data (US1), the MVP is complete, even if the student view is still a simple list.
-
----
-
-## Notes
-
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
-- **MANDATORY**: Run `npx tsc` after every task or logical group. ZERO errors allowed for commit/push.
-- Use the existing "Ghost Controls" pattern for daily entries to keep the UI clean.
+The primary value is in enabling the upload. Once teachers can save standalone materials targeted to a class or course (US1), the MVP is technically achievable, though US2 is required for end-to-end functionality.

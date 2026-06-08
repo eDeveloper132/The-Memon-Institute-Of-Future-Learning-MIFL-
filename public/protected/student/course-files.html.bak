@@ -50,30 +50,12 @@
                 return;
             }
 
-            // Group by course or class
+            // Group by course
             const grouped = {};
             materials.forEach(m => {
-                let groupId, groupTitle;
-                
-                if (m.class) {
-                    groupId = `class_${m.class._id}`;
-                    groupTitle = `[Class] ${m.class.name}`;
-                } else if (m.course) {
-                    groupId = `course_${m.course._id}`;
-                    groupTitle = `[Course] ${m.course.title}`;
-                } else {
-                    groupId = 'general';
-                    groupTitle = 'General Resources';
-                }
-
-                if (!grouped[groupId]) {
-                    grouped[groupId] = { 
-                        title: groupTitle, 
-                        teacher: m.teacher?.name || 'Faculty', 
-                        items: [] 
-                    };
-                }
-                grouped[groupId].items.push(m);
+                const cId = m.course?._id || 'other';
+                if (!grouped[cId]) grouped[cId] = { title: m.course?.title || 'General Resources', teacher: m.teacher?.name || 'Faculty', items: [] };
+                grouped[cId].items.push(m);
             });
 
             list.innerHTML = Object.values(grouped).map(group => `

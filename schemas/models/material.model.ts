@@ -10,7 +10,8 @@ const materialSchema = new Schema<IMaterial>(
             enum: ['pdf', 'doc', 'video', 'link', 'other'],
             default: 'other'
         },
-        course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+        course: { type: Schema.Types.ObjectId, ref: 'Course' },
+        class: { type: Schema.Types.ObjectId, ref: 'Class' },
         teacher: { type: Schema.Types.ObjectId, ref: 'User', required: true },
         fileUrl: String,
         link: String,

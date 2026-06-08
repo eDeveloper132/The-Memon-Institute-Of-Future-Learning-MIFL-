@@ -1,18 +1,19 @@
-# Data Model: Daily Curriculum Schedules
+# Data Model: Standalone Materials
 
-## Entity: DaySchedule (Sub-document)
+## Entity: Material (Updated)
 | Field | Type | Description | Validation |
 |-------|------|-------------|------------|
-| `dayOfWeek` | String | Day of the week | Enum: Mon-Sun |
-| `date` | Date | Specific calendar date | Optional |
-| `topic` | String | Subject for the day | Required |
-| `description`| String | Detailed activities | Optional |
+| `title` | String | Material headline | Required, trimmed |
+| `description` | String | Context or instructions | Optional |
+| `type` | String | File classification | Enum: pdf, doc, video, link, other (Default: other) |
+| `course` | ObjectId | Course reference | **Optional** (Previously Required) |
+| `class` | ObjectId | Class reference | **Optional** (New) |
+| `teacher` | ObjectId | Uploader reference | Required |
+| `fileUrl` | String | Sanity CDN link | Optional |
+| `link` | String | External URL | Optional |
 
-## Entity: CurriculumModule (Updated)
-| Field | Type | Description |
-|-------|------|-------------|
-| ...previous | ... | (title, description, etc.) |
-| `daySchedules`| Array<DaySchedule> | Nested daily breakdown |
+**Custom Validation**:
+Before saving, the schema should ideally verify that either `course` or `class` is provided, though this can also be enforced at the controller level.
 
-## Entity: Course / Class (Implicit)
-These entities will store the updated `CurriculumModule` within their `curriculumSections` or `classCurriculumSections` arrays.
+## Entity: User (Implicit)
+No changes required. Relies on `currentClass` for class-level targeting and `enrolledStudents` array in the `Course` model for course-level targeting.

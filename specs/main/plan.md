@@ -1,28 +1,28 @@
-# Implementation Plan: Daily Schedule for Curriculum Milestones
+# Implementation Plan: Standalone Material Uploads via Sanity
 
-**Branch**: `main` | **Date**: 2026-06-06 | **Spec**: `/specs/main/spec.md`
+**Branch**: `main` | **Date**: 2026-06-07 | **Spec**: `/specs/main/spec.md`
 **Input**: Feature specification from `/specs/main/spec.md`
 
 ## Summary
-Transform the hierarchical curriculum system to support a third level of granularity: "Daily Schedules" within "Weekly Milestones". This will provide teachers with a powerful planning tool and students with a clear daily roadmap.
+Transform the existing placeholder page at `/protected/staff/index.html` into a fully functional "Resource Hub" where teachers can upload standalone PDF and DOCX files directly to Sanity CDN. These materials can be targeted to either specific Courses or specific Classes, and will instantly appear in the respective students' dashboards.
 
 ## Technical Context
 
 **Language/Version**: TypeScript (Node.js 18+)
-**Primary Dependencies**: Mongoose, Express, Tailwind CSS
-**Storage**: MongoDB (Course & Class collections)
+**Primary Dependencies**: Mongoose, Express, Tailwind CSS, Sanity Client
+**Storage**: MongoDB (Material collection) & Sanity.io (Files)
 **Testing**: Manual visual testing, npx tsc
-**Target Platform**: Web (Teacher & Student Dashboards)
-**Constraints**: Nested Mongoose sub-documents, Principle III (tsc gate)
+**Target Platform**: Web (Staff/Teacher & Student Dashboards)
+**Constraints**: Ensure backward compatibility with existing Curriculum Studio resources. Principle III (tsc gate).
 
 ## Constitution Check
 
 - [x] I. Spec-Driven: Requirement coverage confirmed in `spec.md`.
-- [x] II. Type Safety: Defining `IDaySchedule` and updating `ICurriculumModule`.
+- [x] II. Type Safety: Defining `class` reference as optional in `IMaterial`.
 - [x] III. Verification Gate: `npx tsc` mandatory.
-- [x] IV. Library-First: Logic remains encapsulated in schema definitions and rendering utilities.
-- [x] V. Simplicity: Reusing the existing "compact row" pattern from the studio redesign for daily entries.
-- [x] VI. Proactive: Immediate visual sync in the IDE sidebar.
+- [x] IV. Library-First: Logic remains encapsulated in schemas and existing controllers.
+- [x] V. Simplicity: Re-using the `/api/teacher/materials/upload` endpoint rather than creating a new one.
+- [x] VI. Proactive: Immediate visual sync for students.
 
 ## Project Structure
 
@@ -31,7 +31,7 @@ Transform the hierarchical curriculum system to support a third level of granula
 ```text
 specs/main/
 ├── plan.md              # This file
-├── research.md          # Nested data structure findings
+├── research.md          # Targeting logic findings
 ├── data-model.md        # Updated Schema definitions
 └── tasks.md             # Actionable tasks
 ```
@@ -41,20 +41,22 @@ specs/main/
 ```text
 schemas/
 ├── types/
-│   └── course.type.ts   # Update ICurriculumModule and add IDaySchedule
+│   └── material.type.ts   # Make course optional, add class
 └── models/
-    ├── course.model.ts  # Add daySchedules to curriculumModuleSchema
-    └── class.model.ts   # Add daySchedules to curriculumModuleSchema
+    └── material.model.ts  # Make course optional, add class
+
+controllers/
+└── student.controller.ts  # Update getMyMaterials query
 
 public/protected/
-├── teacher/
-│   └── curriculum.html  # Refactor to include nested Day Editor
+├── staff/
+│   └── index.html         # Overhaul into Material Upload Hub
 └── student/
-    └── curriculum.html  # Refactor to display Daily Schedules
+    └── course-files.html  # Verify rendering of new data structure
 ```
 
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Deep Nesting | Required by business logic (Section -> Week -> Day) | Flattening would lose the essential temporal context of a "Week". |
+| Optional References | A material can belong to a Course OR a Class | Forcing a material to have both or creating separate tables (`CourseMaterial`, `ClassMaterial`) adds unnecessary overhead. |

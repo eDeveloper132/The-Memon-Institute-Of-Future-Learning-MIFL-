@@ -3,42 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventory Management - MIFL</title>
+    <title>Resource Hub - MIFL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
     
-    <ui-navbar title="Inventory Management"></ui-navbar>
+    <ui-navbar title="Resource Hub"></ui-navbar>
 
-    <main class="p-8 max-w-7xl mx-auto">
-        <div class="mb-8 flex justify-between items-center">
+    <main class="p-8 max-w-5xl mx-auto space-y-8">
+        <header class="flex justify-between items-end">
             <div>
-                <h2 class="text-3xl font-bold text-gray-900">Resource Inventory</h2>
-                <p class="text-gray-500 mt-2">Track and manage laboratory equipment, books, and stationaries.</p>
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight">Material Distribution</h1>
+                <p class="text-gray-500 font-medium mt-1">Upload and distribute standalone PDFs and documents directly to your students.</p>
             </div>
-            <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-lg active:scale-95">
-                <i class="fa-solid fa-plus mr-2"></i> Add Item
+            <button id="showUploadModal" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 hover:scale-[1.02] transition-all active:scale-95 flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> New Upload
             </button>
-        </div>
+        </header>
 
-        <div class="bg-white rounded-2xl shadow-xl p-12 text-center border border-gray-100">
-            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center text-blue-300 text-5xl mx-auto mb-6 shadow-inner">
-                <i class="fa-solid fa-boxes-stacked"></i>
+        <section class="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm min-h-[400px]">
+            <h2 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-gray-400"></i> Recent Distributions</h2>
+            <div id="materialsList" class="space-y-4">
+                <div class="animate-pulse flex space-x-4">
+                    <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+                    <div class="flex-1 space-y-4 py-1">
+                        <div class="h-2 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-2 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                </div>
             </div>
-            <h3 class="text-2xl font-light text-gray-700">Inventory Module Initializing</h3>
-            <p class="text-gray-500 text-sm mt-3 max-w-md mx-auto leading-relaxed">
-                We are currently cataloging the system resources. This module will allow you to request items, track stock levels, and manage distributions.
-            </p>
-            <div class="mt-8 pt-8 border-t border-gray-50 flex items-center justify-center gap-2 text-gray-400 text-xs font-medium">
-                <i class="fa-solid fa-info-circle text-[10px]"></i>
-                <span>Module coming soon in v1.1</span>
+            <div id="emptyState" class="hidden h-64 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 text-2xl mb-4">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <p class="text-gray-500 font-medium">No materials distributed yet.</p>
             </div>
-        </div>
+        </section>
     </main>
 
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl w-full max-w-xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
+            <div class="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-xl font-black text-gray-900 flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><i class="fa-solid fa-file-arrow-up"></i></div>
+                    Distribute Material
+                </h3>
+                <button id="closeModal" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 text-gray-400 transition-colors">&times;</button>
+            </div>
+            
+            <form id="uploadForm" class="p-8 space-y-6">
+                <!-- Target Selection -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">1. Select Target Audience</label>
+                    <div class="flex gap-4 p-1 bg-gray-100 rounded-xl w-fit">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="targetType" value="class" class="peer sr-only" checked>
+                            <div class="px-6 py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition-all">Specific Class</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="targetType" value="course" class="peer sr-only">
+                            <div class="px-6 py-2 rounded-lg text-sm font-bold text-gray-500 peer-checked:bg-white peer-checked:text-blue-600 peer-checked:shadow-sm transition-all">Specific Course</div>
+                        </label>
+                    </div>
+                    <select id="targetSelect" required class="w-full mt-3 p-3 bg-gray-50 border border-gray-100 rounded-xl text-sm font-medium text-gray-800 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Loading options...</option>
+                    </select>
+                </div>
+
+                <!-- Material Details -->
+                <div class="space-y-4 pt-4 border-t border-gray-50">
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">2. Material Details</label>
+                    <input type="text" id="title" required placeholder="Material Title (e.g., Chapter 1 Notes)" class="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+                    <textarea id="description" placeholder="Optional description or instructions for students..." class="w-full p-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-600 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm h-24 resize-none"></textarea>
+                </div>
+
+                <!-- File Upload -->
+                <div class="space-y-3 pt-4 border-t border-gray-50">
+                    <label class="block text-xs font-black text-gray-400 uppercase tracking-widest">3. Upload File</label>
+                    <div class="relative group">
+                        <input type="file" id="fileInput" required accept=".pdf,.doc,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="w-full p-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 flex flex-col items-center justify-center gap-2 group-hover:border-blue-400 group-hover:bg-blue-50 transition-colors">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 group-hover:text-blue-500"></i>
+                            <p id="fileNameDisplay" class="text-sm font-bold text-gray-600">Click to browse or drag file here</p>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">PDF, DOCX up to 10MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg shadow-blue-200 hover:bg-blue-700 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Distribute Material
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
+        const state = {
+            classes: [],
+            courses: [],
+            materials: []
+        };
+
+        const els = {
+            modal: document.getElementById('uploadModal'),
+            modalContent: document.getElementById('modalContent'),
+            form: document.getElementById('uploadForm'),
+            targetTypeRadios: document.querySelectorAll('input[name="targetType"]'),
+            targetSelect: document.getElementById('targetSelect'),
+            fileInput: document.getElementById('fileInput'),
+            fileNameDisplay: document.getElementById('fileNameDisplay'),
+            submitBtn: document.getElementById('submitBtn'),
+            materialsList: document.getElementById('materialsList'),
+            emptyState: document.getElementById('emptyState')
+        };
+
         async function init() {
             try {
                 const response = await fetch('/api/auth/me');
@@ -48,20 +131,172 @@
                 
                 customElements.whenDefined('ui-navbar').then(() => {
                     const navbar = document.querySelector('ui-navbar');
-                    if (navbar && navbar.renderLinks) {
-                        navbar.renderLinks(user);
-                    }
+                    if (navbar && navbar.renderLinks) navbar.renderLinks(user);
                 });
+
+                await Promise.all([loadTargets(), loadMaterials()]);
+                setupListeners();
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadTargets() {
+            try {
+                const [classRes, courseRes] = await Promise.all([
+                    fetch('/api/teacher/classes'),
+                    fetch('/api/teacher/courses')
+                ]);
+                
+                if (classRes.ok) state.classes = (await classRes.json()).classes || [];
+                if (courseRes.ok) state.courses = (await courseRes.json()).courses || [];
+                
+                updateDropdown('class'); // Default
             } catch (err) {
-                window.location.href = '/api/auth/login';
+                showToast('Failed to load targeting options', 'error');
             }
         }
-        document.addEventListener('click', async (e) => {
-            if (e.target.closest('#logoutBtn')) {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.href = '/api/auth/login';
+
+        async function loadMaterials() {
+            try {
+                const res = await fetch('/api/teacher/materials');
+                if (res.ok) {
+                    state.materials = (await res.json()).materials || [];
+                    renderMaterials();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function updateDropdown(type) {
+            const options = type === 'class' ? state.classes : state.courses;
+            els.targetSelect.innerHTML = `<option value="">Select a ${type}...</option>` + 
+                options.map(o => `<option value="${o._id}">${type === 'class' ? o.name : o.title}</option>`).join('');
+        }
+
+        function renderMaterials() {
+            if (!state.materials.length) {
+                els.materialsList.innerHTML = '';
+                els.emptyState.classList.remove('hidden');
+                return;
             }
-        });
+            els.emptyState.classList.add('hidden');
+            
+            els.materialsList.innerHTML = state.materials.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt)).map(m => `
+                <div class="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 hover:bg-white hover:shadow-md transition-all">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shadow-sm border border-blue-100">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-900">${m.title}</h4>
+                            <div class="flex items-center gap-2 mt-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                <span>${new Date(m.createdAt).toLocaleDateString()}</span>
+                                <span>&bull;</span>
+                                <span class="text-blue-500">${m.course ? 'Course Level' : 'Class Level'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="${m.fileUrl || m.link || '#'}" target="_blank" class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all">
+                        <i class="fa-solid fa-download"></i>
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function setupListeners() {
+            // Modal Toggles
+            document.getElementById('showUploadModal').onclick = () => {
+                els.modal.classList.remove('hidden');
+                setTimeout(() => {
+                    els.modalContent.classList.remove('scale-95', 'opacity-0');
+                    els.modalContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            };
+
+            document.getElementById('closeModal').onclick = () => {
+                els.modalContent.classList.remove('scale-100', 'opacity-100');
+                els.modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => els.modal.classList.add('hidden'), 300);
+            };
+
+            // Radio Toggles
+            els.targetTypeRadios.forEach(radio => {
+                radio.onchange = (e) => updateDropdown(e.target.value);
+            });
+
+            // File Display
+            els.fileInput.onchange = (e) => {
+                if (e.target.files[0]) {
+                    els.fileNameDisplay.textContent = e.target.files[0].name;
+                    els.fileNameDisplay.classList.add('text-blue-600');
+                } else {
+                    els.fileNameDisplay.textContent = 'Click to browse or drag file here';
+                    els.fileNameDisplay.classList.remove('text-blue-600');
+                }
+            };
+
+            // Form Submit (Sanity Upload + DB Save)
+            els.form.onsubmit = async (e) => {
+                e.preventDefault();
+                
+                const file = els.fileInput.files[0];
+                const targetType = document.querySelector('input[name="targetType"]:checked').value;
+                const targetId = els.targetSelect.value;
+                
+                if (!file || !targetId) return showToast('Please select a file and target.', 'error');
+
+                els.submitBtn.disabled = true;
+                els.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...';
+
+                try {
+                    // 1. Upload to Sanity
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const sanityRes = await fetch('/api/teacher/materials/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!sanityRes.ok) throw new Error('Sanity upload failed');
+                    const asset = await sanityRes.json();
+
+                    els.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Record...';
+
+                    // 2. Save to DB
+                    const dbPayload = {
+                        title: document.getElementById('title').value,
+                        description: document.getElementById('description').value,
+                        type: 'pdf', // Simplification for MVP
+                        fileUrl: asset.url,
+                        [targetType]: targetId // Dynamically assign to class or course
+                    };
+
+                    const dbRes = await fetch('/api/teacher/materials', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dbPayload)
+                    });
+
+                    if (!dbRes.ok) throw new Error('Database save failed');
+                    
+                    const savedMaterial = await dbRes.json();
+                    state.materials.unshift(savedMaterial.material);
+                    renderMaterials();
+                    
+                    showToast('Material distributed successfully!', 'success');
+                    els.form.reset();
+                    els.fileNameDisplay.textContent = 'Click to browse or drag file here';
+                    document.getElementById('closeModal').click();
+
+                } catch (err) {
+                    console.error(err);
+                    showToast(err.message || 'An error occurred during upload', 'error');
+                } finally {
+                    els.submitBtn.disabled = false;
+                    els.submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Distribute Material';
+                }
+            };
+        }
+
         init();
     </script>
 </body>

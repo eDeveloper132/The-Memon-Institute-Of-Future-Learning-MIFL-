@@ -62,6 +62,9 @@ export const updateCourseCurriculum = async (req: any, res: Response) => {
         const { id } = req.params;
         const { outline, curriculumSections } = req.body;
 
+        console.log(chalk.blue(`[Curriculum Debug] Updating course ${id}...`));
+        console.log(chalk.gray(`[Curriculum Debug] Body: ${JSON.stringify(req.body).substring(0, 500)}...`));
+
         const course = await Course.findById(id);
         if (!course) return res.status(404).json({ message: 'Course not found' });
 
@@ -82,7 +85,11 @@ export const updateCourseCurriculum = async (req: any, res: Response) => {
         res.status(200).json({ message: 'Curriculum updated successfully', course });
     } catch (error: any) {
         console.error(chalk.red('[Teacher Controller] updateCourseCurriculum error:'), error);
-        res.status(500).json({ message: 'Internal server error', details: error.message });
+        res.status(500).json({ 
+            message: 'Internal server error', 
+            details: error.message,
+            validationErrors: error.errors ? Object.keys(error.errors).map(k => error.errors[k].message) : null
+        });
     }
 };
 
@@ -90,6 +97,8 @@ export const updateClassCurriculum = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
         const { classOutline, classCurriculumSections } = req.body;
+
+        console.log(chalk.blue(`[Curriculum Debug] Updating class ${id}...`));
 
         const selectedClass = await Class.findById(id);
         if (!selectedClass) return res.status(404).json({ message: 'Class not found' });
@@ -111,7 +120,11 @@ export const updateClassCurriculum = async (req: any, res: Response) => {
         res.status(200).json({ message: 'Class curriculum updated successfully', class: selectedClass });
     } catch (error: any) {
         console.error(chalk.red('[Teacher Controller] updateClassCurriculum error:'), error);
-        res.status(500).json({ message: 'Internal server error', details: error.message });
+        res.status(500).json({ 
+            message: 'Internal server error', 
+            details: error.message,
+            validationErrors: error.errors ? Object.keys(error.errors).map(k => error.errors[k].message) : null
+        });
     }
 };
 
@@ -517,6 +530,10 @@ export const gradeSubmission = async (req: any, res: Response) => {
  */
 export const uploadMaterial = async (req: any, res: Response) => {
     try {
+        if (!req.body.course && !req.body.class) {
+            return res.status(400).json({ message: 'Material must be assigned to either a course or a class.' });
+        }
+
         const material = await Material.create({
             ...req.body,
             teacher: req.user.id

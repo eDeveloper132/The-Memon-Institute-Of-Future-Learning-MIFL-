@@ -1,39 +1,35 @@
-# Specification: Daily Schedule for Curriculum Milestones
+# Specification: Standalone Material Uploads via Sanity
 
 ## Background
-Currently, the Curriculum Studio allows teachers to organize curricula into "Sections" (Learning Paths) and "Modules" (Milestones). A common feedback is that "Milestones" often represent full weeks of study (e.g., Week 1, Week 2). Teachers need a way to break down these weekly milestones into specific daily schedules (e.g., Monday: Introduction, Wednesday: Lab Session).
+Currently, teachers can upload PDFs within the Curriculum Studio, tying resources strictly to specific curriculum modules. However, teachers also need a general "Resource Hub" where they can upload standalone files (PDFs, DOCX) directly to a specified Class or Course, completely independent of the daily curriculum milestones. The user has specifically requested this functionality to be built into `http://localhost:2000/protected/staff/index.html`.
 
 ## User Stories
-- **As a Teacher**, I want to add specific daily schedules within a weekly milestone so I can plan day-by-day learning activities.
-- **As a Teacher**, I want to assign specific dates to these daily schedules so they appear correctly on the student's calendar or roadmap.
-- **As a Student**, I want to see the daily breakdown of each week in my roadmap so I know exactly what to study each day.
+- **As a Teacher**, I want a dedicated Resource Hub (`/protected/staff/index.html`) where I can upload standalone PDF and DOCX files.
+- **As a Teacher**, I want to link these uploaded files to a specific Course or a specific Class.
+- **As a Student**, I want to see these uploaded standalone materials in my `course-files.html` dashboard, properly filtering based on my current Class and my enrolled Courses.
 
 ## Requirements
 
 ### Functional
-- **Milestone Breakdown**: Each "Milestone" (Module) can now contain an optional list of "Day Schedules".
-- **Day Attributes**:
-    - `dayOfWeek`: (Monday - Sunday)
-    - `date`: (Optional) Specific calendar date.
-    - `topic`: Short headline for the day.
-    - `description`: Detailed activities or instructions for the day.
-- **UI Integration**:
-    - The Teacher Curriculum Studio must allow adding, editing, and reordering day schedules within a module.
-    - The Student Roadmap must expand to show the daily breakdown when a milestone is clicked or viewed.
-- **Performance**: Must handle nested data efficiently in the JSON blob without hitting document size limits (highly unlikely for standard curricula).
+- **File Upload to Sanity**: The upload must use the existing Sanity backend integration (`uploadMaterialAsset`).
+- **Target Selection**: The UI must allow the teacher to toggle between targeting a "Course" or a "Class" and then select the specific entity from a dropdown.
+- **Student Visibility**: Students must be able to view and download these materials. If a material is linked to a class, all students in that class see it. If it is linked to a course, all enrolled students see it.
+- **UI Integration**: Repurpose the existing placeholder at `public/protected/staff/index.html` to be the "Resource & Material Hub" for staff/teachers.
 
 ### Technical
-- **Data Model Update**:
-    - Introduce `IDaySchedule` interface.
-    - Update `ICurriculumModule` to include `daySchedules: IDaySchedule[]`.
-- **UI Rewrite**:
-    - Refactor `curriculum.html` (Teacher) to include a nested "Day Editor".
-    - Refactor `curriculum.html` (Student) to display the daily list.
-- **Persistence**: Ensure `scrapeCurriculum` logic captures the new nested "days" data.
+- **Data Model Update**: 
+    - Modify the existing `Material` model in `schemas/models/material.model.ts`. 
+    - Make `course` optional.
+    - Add an optional `class` reference.
+    - Add validation to ensure at least one (course or class) is provided.
+- **API Updates**:
+    - `student.controller.ts` -> `getMyMaterials`: Must query materials where `course` is in the student's enrolled courses OR `class` is the student's `currentClass`.
+- **Teacher View**: Build a form in `staff/index.html` that handles file selection, uploads to Sanity to get a URL, and then saves the `Material` record to MongoDB.
+- **Student View**: Ensure `student/course-files.html` renders both Course-level and Class-level materials accurately.
 
 ## Acceptance Criteria
-- [ ] Teacher can add a "Monday" schedule to "Week 1" milestone.
-- [ ] Teacher can set a specific date for a day schedule.
-- [ ] Data persists correctly to MongoDB upon deployment.
-- [ ] Student Roadmap displays the "Monday" topic under "Week 1".
-- [ ] npx tsc passes with the updated interfaces.
+- [ ] Teacher can navigate to `/protected/staff/index.html` and see a material upload form.
+- [ ] Teacher can upload a PDF and target it to a specific Class.
+- [ ] Student in that Class can see the PDF in their `course-files.html` dashboard and download it.
+- [ ] Data persists accurately in MongoDB with the `fileUrl` pointing to Sanity CDN.
+- [ ] Application compiles with zero TypeScript errors.

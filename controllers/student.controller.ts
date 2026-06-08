@@ -173,15 +173,26 @@ export const submitAssignment = async (req: any, res: Response) => {
 
 export const getMyMaterials = async (req: any, res: Response) => {
     try {
+        const user = await User.findById(req.user.id);
+
         // Find courses where student is enrolled
         const courses = await Course.find({ enrolledStudents: req.user.id });
         const courseIds = courses.map(c => c._id);
 
-        // Fetch materials ONLY for those courses
-        const materials = await Material.find({ course: { $in: courseIds } })
+        // Build the $or query conditions
+        const orConditions: any[] = [{ course: { $in: courseIds } }];
+        
+        // Only push the class condition if the user has a currentClass
+        if (user && user.currentClass) {
+            orConditions.push({ class: user.currentClass });
+        }
+
+        // Fetch materials for enrolled courses OR the current class
+        const materials = await Material.find({ $or: orConditions })
             .populate('course', 'title')
+            .populate('class', 'name')
             .populate('teacher', 'name');
-            
+
         res.status(200).json({ materials });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
