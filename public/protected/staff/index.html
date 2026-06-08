@@ -194,16 +194,70 @@
                             </div>
                         </div>
                     </div>
-                    <a href="${m.fileUrl || m.link || '#'}" target="_blank" class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all">
-                        <i class="fa-solid fa-download"></i>
-                    </a>
+                    <div class="flex items-center gap-2">
+                        <button onclick="editMaterial('${m._id}')" class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-blue-600 hover:border-blue-200 hover:shadow-sm transition-all" title="Edit">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteMaterial('${m._id}')" class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-red-600 hover:border-red-200 hover:shadow-sm transition-all" title="Delete">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                        <a href="${m.fileUrl || m.link || '#'}" target="_blank" class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-green-600 hover:border-green-200 hover:shadow-sm transition-all" title="Download">
+                            <i class="fa-solid fa-download"></i>
+                        </a>
+                    </div>
                 </div>
             `).join('');
         }
 
+        window.editMaterial = (id) => {
+            const material = state.materials.find(m => m._id === id);
+            if (!material) return;
+
+            state.editingId = id;
+            
+            document.getElementById('title').value = material.title;
+            document.getElementById('description').value = material.description || '';
+            
+            const targetType = material.course ? 'course' : 'class';
+            document.querySelector(`input[name="targetType"][value="${targetType}"]`).checked = true;
+            updateDropdown(targetType);
+            els.targetSelect.value = material.course ? material.course._id || material.course : material.class._id || material.class;
+
+            els.fileNameDisplay.textContent = 'Keep existing file or upload new one';
+            els.fileInput.required = false;
+
+            els.submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Save Changes';
+            document.getElementById('showUploadModal').click();
+        };
+
+        window.deleteMaterial = async (id) => {
+            if (!confirm('Are you sure you want to delete this material?')) return;
+            
+            try {
+                const res = await fetch(`/api/teacher/materials/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    state.materials = state.materials.filter(m => m._id !== id);
+                    renderMaterials();
+                    showToast('Material deleted successfully', 'success');
+                } else {
+                    showToast('Failed to delete material', 'error');
+                }
+            } catch (err) {
+                showToast('Error deleting material', 'error');
+            }
+        };
+
         function setupListeners() {
             // Modal Toggles
             document.getElementById('showUploadModal').onclick = () => {
+                if (!state.editingId) {
+                    els.form.reset();
+                    els.fileInput.required = true;
+                    els.fileNameDisplay.textContent = 'Click to browse or drag file here';
+                    els.submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Distribute Material';
+                    document.querySelector('input[name="targetType"][value="class"]').checked = true;
+                    updateDropdown('class');
+                }
                 els.modal.classList.remove('hidden');
                 setTimeout(() => {
                     els.modalContent.classList.remove('scale-95', 'opacity-0');
@@ -212,6 +266,7 @@
             };
 
             document.getElementById('closeModal').onclick = () => {
+                state.editingId = null;
                 els.modalContent.classList.remove('scale-100', 'opacity-100');
                 els.modalContent.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => els.modal.classList.add('hidden'), 300);
@@ -241,23 +296,29 @@
                 const targetType = document.querySelector('input[name="targetType"]:checked').value;
                 const targetId = els.targetSelect.value;
                 
-                if (!file || !targetId) return showToast('Please select a file and target.', 'error');
+                if (!targetId) return showToast('Please select a target.', 'error');
+                if (!state.editingId && !file) return showToast('Please select a file.', 'error');
 
                 els.submitBtn.disabled = true;
-                els.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...';
-
+                
                 try {
-                    // 1. Upload to Sanity
-                    const formData = new FormData();
-                    formData.append('file', file);
-                    
-                    const sanityRes = await fetch('/api/teacher/materials/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    if (!sanityRes.ok) throw new Error('Sanity upload failed');
-                    const asset = await sanityRes.json();
+                    let fileUrl = null;
+
+                    // 1. Upload to Sanity (only if file is selected)
+                    if (file) {
+                        els.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading to CDN...';
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const sanityRes = await fetch('/api/teacher/materials/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!sanityRes.ok) throw new Error('Sanity upload failed');
+                        const asset = await sanityRes.json();
+                        fileUrl = asset.url;
+                    }
 
                     els.submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving Record...';
 
@@ -266,12 +327,20 @@
                         title: document.getElementById('title').value,
                         description: document.getElementById('description').value,
                         type: 'pdf', // Simplification for MVP
-                        fileUrl: asset.url,
-                        [targetType]: targetId // Dynamically assign to class or course
                     };
+                    
+                    if (fileUrl) dbPayload.fileUrl = fileUrl;
+                    
+                    // Clear both targets first, then assign the new one
+                    dbPayload.course = null;
+                    dbPayload.class = null;
+                    dbPayload[targetType] = targetId;
 
-                    const dbRes = await fetch('/api/teacher/materials', {
-                        method: 'POST',
+                    const url = state.editingId ? `/api/teacher/materials/${state.editingId}` : '/api/teacher/materials';
+                    const method = state.editingId ? 'PATCH' : 'POST';
+
+                    const dbRes = await fetch(url, {
+                        method,
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(dbPayload)
                     });
@@ -279,10 +348,18 @@
                     if (!dbRes.ok) throw new Error('Database save failed');
                     
                     const savedMaterial = await dbRes.json();
-                    state.materials.unshift(savedMaterial.material);
+                    
+                    if (state.editingId) {
+                        const index = state.materials.findIndex(m => m._id === state.editingId);
+                        state.materials[index] = savedMaterial.material;
+                        showToast('Material updated successfully!', 'success');
+                    } else {
+                        state.materials.unshift(savedMaterial.material);
+                        showToast('Material distributed successfully!', 'success');
+                    }
+                    
                     renderMaterials();
                     
-                    showToast('Material distributed successfully!', 'success');
                     els.form.reset();
                     els.fileNameDisplay.textContent = 'Click to browse or drag file here';
                     document.getElementById('closeModal').click();

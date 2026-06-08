@@ -16,6 +16,8 @@ import {
     uploadMaterial,
     uploadMaterialAsset,
     getMaterials,
+    updateMaterial,
+    deleteMaterial,
     updateCourseCurriculum,
     updateClassCurriculum,
     createQuiz,
@@ -67,6 +69,8 @@ router.patch('/assignments/grade/:submissionId', gradeSubmission);
  */
 router.get('/materials', getMaterials);
 router.post('/materials', uploadMaterial);
+router.patch('/materials/:id', updateMaterial);
+router.delete('/materials/:id', deleteMaterial);
 router.post('/materials/upload', chatUpload.single('file'), uploadMaterialAsset);
 router.patch('/courses/:id/curriculum', updateCourseCurriculum);
 router.patch('/classes/:id/curriculum', updateClassCurriculum);

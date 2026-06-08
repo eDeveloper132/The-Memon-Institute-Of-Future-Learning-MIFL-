@@ -577,6 +577,38 @@ export const getMaterials = async (req: any, res: Response) => {
     }
 };
 
+export const updateMaterial = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const material = await Material.findById(id);
+        if (!material) return res.status(404).json({ message: 'Material not found' });
+        if (String(material.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        const updated = await Material.findByIdAndUpdate(id, { ...req.body }, { new: true });
+        res.status(200).json({ message: 'Material updated successfully', material: updated });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const deleteMaterial = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const material = await Material.findById(id);
+        if (!material) return res.status(404).json({ message: 'Material not found' });
+        if (String(material.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        await Material.findByIdAndDelete(id);
+        res.status(200).json({ message: 'Material deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 /**
  * Quiz Management
  */
