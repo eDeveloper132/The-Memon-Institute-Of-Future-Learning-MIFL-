@@ -1,19 +1,9 @@
-# Data Model: User Profile Updates
+# Data Model & Contracts
 
-## Entity: User (Updated Usage)
-No schema structural changes are required. We are simply exposing existing fields to the user for editing.
+No changes to the data model or API contracts are necessary for this task. The existing models (`IExam`, `IGrade`) and API routes (`/api/teacher/exams`, `/api/teacher/grades`) fully support the requested functionality.
 
-| Field | Type | Exposure Context |
-|-------|------|------------------|
-| `name` | String | All Roles |
-| `phoneNumber`| String | All Roles |
-| `address` | String | All Roles |
-| `profilePicture`| String | All Roles (Sanity CDN URL) |
-| `gender` | String | All Roles |
-| `dateOfBirth`| Date | All Roles |
-| `bloodGroup` | String | All Roles |
-| `emergencyContact`| Object | Student Only |
-| `qualification` | Array<String> | Teacher Only |
+## API Usage for Results View
 
-**Security Note**: 
-The `role`, `status`, `studentId`, `staffId`, and `email` fields MUST NOT be updatable through this generic profile endpoint. Changing email requires the specific email verification flow already implemented.
+- **Fetch Exams**: `GET /api/teacher/results`
+- **Fetch Exam Students**: `GET /api/teacher/exams/:id/students` (supports course and class-level filtering)
+- **Submit Grade**: `POST /api/teacher/grades`

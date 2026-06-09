@@ -1,56 +1,52 @@
-# Implementation Plan: Universal User Profile Management
+# Implementation Plan: Restructure Exam Results View
 
-**Branch**: `main` | **Date**: 2026-06-07 | **Spec**: `/specs/main/spec.md`
-**Input**: Feature specification from `/specs/main/spec.md`
+**Branch**: `main` | **Date**: 2026-06-08 | **Spec**: N/A
+**Input**: This route "http://localhost:2000/protected/teacher/results.html" is for exam results so Delete add exam functionalities from it and Create exam results functionalities in it that teacher can distribute marks to his specified course or class students.
 
 ## Summary
-Implement a global profile management system accessible via the top navbar. Users can upload avatars to Sanity CDN, and update their role-specific credentials.
+
+The `results.html` view is dedicated strictly to managing and distributing exam results (marks) rather than creating new exams. Therefore, the "Add Exam" functionality (button, modal, and related logic) will be removed from this page. The existing "Manage Marks" feature already correctly fulfills the requirement to distribute marks to specified course or class students and will be retained.
 
 ## Technical Context
 
-**Language/Version**: TypeScript (Node.js 18+)
-**Primary Dependencies**: Mongoose, Express, Tailwind CSS, Sanity Client
-**Storage**: MongoDB (User collection) & Sanity.io (Images)
-**Testing**: Manual visual testing, npx tsc
-**Target Platform**: Web (All Protected Dashboards)
-**Constraints**: Zero type errors (tsc gate). Strict CSP (no inline scripts).
+**Language/Version**: TypeScript / Node.js
+**Primary Dependencies**: Express, HTML, TailwindCSS
+**Project Type**: Web application
+**Scope**: Single page UI refactor.
 
 ## Constitution Check
 
-- [x] I. Spec-Driven: Requirement coverage confirmed in `spec.md`.
-- [x] II. Type Safety: Re-using `IUser` interface.
-- [x] III. Verification Gate: `npx tsc` mandatory.
-- [x] IV. Library-First: Logic encapsulated in `sanityService` and `auth.controller`.
-- [x] V. Simplicity: Injecting a universal modal via Web Components rather than duplicating code across 15+ HTML files.
-- [x] VI. Proactive: Avatar changes immediately propagate to the DOM.
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+- [x] I. Spec-Driven: Requirement coverage confirmed.
+- [x] II. Type Safety: Schema/Types defined. No `any` without justification.
+- [x] III. Verification Gate: `npx tsc` identified as mandatory pre-commit step.
+- [x] IV. Library-First: Business logic encapsulated in services.
+- [x] V. Simplicity: Smallest viable change identified.
+- [x] VI. Proactive: Notification triggers identified.
 
 ## Project Structure
 
-### Documentation
+### Documentation (this feature)
 
 ```text
 specs/main/
 ├── plan.md              # This file
-├── research.md          # Architecture decisions for the modal
-├── data-model.md        # User entity context
-└── tasks.md             # Actionable tasks
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
 ```
 
-### Source Code
+## Phase 0: Outline & Research
 
-```text
-controllers/
-└── auth.controller.ts   # Add updateProfile logic
+- **Decision**: Remove "Add Exam" button from the header of `public/protected/teacher/results.html`.
+- **Decision**: Remove the HTML markup for `<div id="addExamModal">`.
+- **Decision**: Remove the JavaScript logic binding to the Add Exam form submission and modal toggling.
+- **Rationale**: The user correctly pointed out that "results" management should be distinct from "exam" creation to maintain a clean separation of concerns in the UI.
 
-routes/
-└── auth.routes.ts       # Register PATCH /profile and POST /profile/avatar
+## Phase 1: Design & Contracts
 
-public/components/
-└── ui-components.ts     # Update navbar to trigger modal, create profile modal logic
-```
+No changes to the data model or API contracts are required. The `GET /api/teacher/exams/:id/students` and `POST /api/teacher/grades` endpoints already perfectly serve the "distribute marks" requirement.
 
-## Complexity Tracking
-
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| UI Component Injection | Needs to be accessible globally from the navbar. | Creating a separate `/profile.html` page was considered, but a modal provides a faster, more modern UX without losing context of the current dashboard. |
+### Action Items
+1. Edit `public/protected/teacher/results.html` to strip out the "Add Exam" modal and button.
+2. Confirm the "Manage Marks" functionality remains fully operational.
