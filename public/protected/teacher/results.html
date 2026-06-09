@@ -43,8 +43,50 @@
         </div>
     </main>
 
+    <!-- Grading Modal -->
+    <div id="gradingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-4xl shadow-2xl overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                    <h3 id="modalExamTitle" class="text-xl font-black text-gray-900 tracking-tight">Manage Marks</h3>
+                    <p id="modalExamCourse" class="text-[10px] text-blue-500 font-black uppercase tracking-widest mt-0.5">Course Name</p>
+                </div>
+                <button id="closeModalBtn" class="w-10 h-10 rounded-full hover:bg-red-50 hover:text-red-500 text-gray-400 transition flex items-center justify-center text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-8">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Student Name</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Email</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-700 uppercase w-32">Marks</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-700 uppercase">Remarks</th>
+                            <th class="px-4 py-3 text-xs font-semibold text-gray-700 uppercase w-24">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gradingTableBody" class="divide-y divide-gray-100">
+                        <tr>
+                            <td colspan="5" class="px-6 py-10 text-center text-gray-500">Loading students...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
+        import { showToast } from '/components/ui-components.js?v=1.6';
+
         const resultsTableBody = document.getElementById('resultsTableBody');
+        const gradingModal = document.getElementById('gradingModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const gradingTableBody = document.getElementById('gradingTableBody');
+        const modalExamTitle = document.getElementById('modalExamTitle');
+        const modalExamCourse = document.getElementById('modalExamCourse');
+        
+        let currentExamId = null;
+        let currentMaxMarks = 100;
 
         async function fetchExams() {
             try {
@@ -71,7 +113,7 @@
                     <td class="px-6 py-4 text-gray-600">${new Date(exam.date).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-gray-600">${exam.maxMarks}</td>
                     <td class="px-6 py-4 flex gap-4">
-                        <button class="text-blue-600 hover:underline font-bold" data-action="manage" data-id="${exam._id}">Manage Marks</button>
+                        <button class="text-blue-600 hover:underline font-bold" data-action="manage" data-id="${exam._id}" data-max="${exam.maxMarks}">Manage Marks</button>
                     </td>
                 </tr>
             `).join('');
@@ -81,8 +123,126 @@
         resultsTableBody.onclick = (e) => {
             const btn = e.target.closest('button[data-action="manage"]');
             if (btn) {
+                currentMaxMarks = parseInt(btn.dataset.max) || 100;
                 window.manageMarks(btn.dataset.id);
             }
+        };
+
+        window.manageMarks = async (examId) => {
+            currentExamId = examId;
+            gradingModal.classList.remove('hidden');
+            gradingModal.classList.add('flex');
+            setTimeout(() => {
+                gradingModal.classList.remove('opacity-0');
+                gradingModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+
+            gradingTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-gray-500"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading...</td></tr>';
+
+            try {
+                const res = await fetch(`/api/teacher/exams/${examId}/students`);
+                if (!res.ok) throw new Error('Failed to load students');
+                
+                const { students, grades, exam } = await res.json();
+                
+                modalExamTitle.textContent = exam.title;
+                modalExamCourse.textContent = exam.course?.title || 'Course';
+
+                if (!students.length) {
+                    gradingTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">No students enrolled in this course.</td></tr>';
+                    return;
+                }
+
+                gradingTableBody.innerHTML = students.map(student => {
+                    const grade = grades.find(g => String(g.student) === String(student._id));
+                    const marks = grade ? grade.obtainedMarks : '';
+                    const feedback = grade ? (grade.feedback || '') : '';
+
+                    return `
+                        <tr class="hover:bg-gray-50 transition" data-student-id="${student._id}">
+                            <td class="px-4 py-3 font-bold text-gray-900">${student.name}</td>
+                            <td class="px-4 py-3 text-xs text-gray-500">${student.email}</td>
+                            <td class="px-4 py-3">
+                                <input type="number" min="0" max="${currentMaxMarks}" value="${marks}" class="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500 grade-input" placeholder="0-${currentMaxMarks}">
+                            </td>
+                            <td class="px-4 py-3">
+                                <input type="text" value="${feedback}" class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-blue-500 focus:border-blue-500 feedback-input" placeholder="Remarks...">
+                            </td>
+                            <td class="px-4 py-3">
+                                <button class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-700 transition save-grade-btn">Save</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                gradingTableBody.innerHTML = '<tr><td colspan="5" class="px-6 py-10 text-center text-red-500">Error loading data.</td></tr>';
+            }
+        };
+
+        gradingTableBody.onclick = async (e) => {
+            const btn = e.target.closest('.save-grade-btn');
+            if (!btn) return;
+
+            const row = btn.closest('tr');
+            const studentId = row.dataset.studentId;
+            const marksInput = row.querySelector('.grade-input');
+            const feedbackInput = row.querySelector('.feedback-input');
+            
+            const obtainedMarks = parseFloat(marksInput.value);
+            const remarks = feedbackInput.value;
+
+            if (isNaN(obtainedMarks) || obtainedMarks < 0 || obtainedMarks > currentMaxMarks) {
+                showToast(`Marks must be between 0 and ${currentMaxMarks}`, 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            try {
+                const res = await fetch('/api/teacher/grades', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        examId: currentExamId,
+                        studentId,
+                        obtainedMarks,
+                        remarks
+                    })
+                });
+
+                if (res.ok) {
+                    showToast('Grade saved successfully');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    setTimeout(() => {
+                        btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }, 2000);
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Failed to save grade', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Save';
+            }
+        };
+
+        const hideModal = () => {
+            gradingModal.classList.add('opacity-0');
+            gradingModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                gradingModal.classList.add('hidden');
+                gradingModal.classList.remove('flex');
+            }, 300);
+        };
+
+        closeModalBtn.onclick = hideModal;
+        gradingModal.onclick = (e) => {
+            if (e.target === gradingModal) hideModal();
         };
 
         async function fetchProfile() {

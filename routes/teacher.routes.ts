@@ -25,6 +25,7 @@ import {
     createExam,
     recordGrade,
     getExamsAndGrades,
+    getExamStudents,
     getTeacherNotices,
     createNotice,
     deleteNotice,
@@ -94,6 +95,7 @@ router.post('/quizzes', createQuiz);
  * Results & Exams
  */
 router.post('/exams', createExam);
+router.get('/exams/:id/students', getExamStudents);
 router.post('/grades', recordGrade);
 router.get('/results', getExamsAndGrades);
 

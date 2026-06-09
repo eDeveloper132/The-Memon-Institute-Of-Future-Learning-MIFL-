@@ -833,11 +833,31 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
         const courses = await Course.find({ teacher: teacherId });
         const courseIds = courses.map(c => c._id);
 
-        const exams = await Exam.find({ course: { $in: courseIds } });
+        const exams = await Exam.find({ course: { $in: courseIds } }).populate('course', 'title');
         const grades = await Grade.find({ exam: { $in: exams.map(e => e._id) } }).populate('student', 'name');
         
         res.status(200).json({ exams, grades });
     } catch (error: any) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+export const getExamStudents = async (req: any, res: Response) => {
+    try {
+        const { id } = req.params;
+        const exam: any = await Exam.findById(id).populate('course');
+        if (!exam) return res.status(404).json({ message: 'Exam not found' });
+        
+        if (String(exam.course.teacher) !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        // Get students enrolled in the course
+        const students = await User.find({ _id: { $in: exam.course.enrolledStudents } }).select('name email');
+        const grades = await Grade.find({ exam: id });
+
+        res.status(200).json({ students, grades, exam });
+    } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
