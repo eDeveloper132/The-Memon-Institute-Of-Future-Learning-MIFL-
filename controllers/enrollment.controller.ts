@@ -17,26 +17,36 @@ export const getAvailableOpportunities = async (req: any, res: Response) => {
         const student = await User.findById(studentId);
         
         const [classes, courses, requests] = await Promise.all([
-            Class.find().select('name gradeLevel section enrollmentFee classTeacher').populate('classTeacher', 'name'),
-            Course.find().select('title code department enrollmentFee teacher').populate('teacher', 'name'),
+            Class.find().select('name gradeLevel section enrollmentFee classTeacher students').populate('classTeacher', 'name'),
+            Course.find().select('title code department enrollmentFee teacher enrolledStudents').populate('teacher', 'name'),
             EnrollmentRequest.find({ student: studentId, status: 'pending' })
         ]);
 
         const requestMap = new Map(requests.map(r => [r.targetId.toString(), r]));
 
-        const formatItem = (item: any) => {
+        const formatItem = (item: any, type: 'Class' | 'Course') => {
             const idStr = item._id.toString();
             const request = requestMap.get(idStr);
+            
+            let isEnrolled = false;
+            if (type === 'Class') {
+                isEnrolled = student?.currentClass?.toString() === idStr || 
+                             (item.students && item.students.some((id: any) => id.toString() === studentId));
+            } else {
+                isEnrolled = item.enrolledStudents && 
+                             item.enrolledStudents.some((id: any) => id.toString() === studentId);
+            }
+
             return {
                 ...item.toObject(),
                 requestId: request?._id || null,
-                enrollmentStatus: request ? 'pending' : (student?.currentClass?.toString() === idStr || item.enrolledStudents?.includes(studentId) ? 'enrolled' : 'none')
+                enrollmentStatus: request ? 'pending' : (isEnrolled ? 'enrolled' : 'none')
             };
         };
 
         res.status(200).json({
-            classes: classes.map(formatItem),
-            courses: courses.map(formatItem)
+            classes: classes.map(c => formatItem(c, 'Class')),
+            courses: courses.map(c => formatItem(c, 'Course'))
         });
     } catch (error) {
         console.error(chalk.red('[Enrollment Controller] getAvailableOpportunities error:'), error);
@@ -52,27 +62,40 @@ export const applyForEnrollment = async (req: any, res: Response) => {
         const studentId = req.user.id;
         const { targetType, targetId } = req.body;
 
+        if (!['Class', 'Course'].includes(targetType)) {
+            return res.status(400).json({ message: 'Invalid target type' });
+        }
+
+        const student = await User.findById(studentId);
+        
+        let target;
         if (targetType === 'Class') {
-            const student = await User.findById(studentId);
             if (student?.currentClass) {
                 return res.status(400).json({ message: 'Already enrolled in a class' });
             }
-            
-            const existingPending = await EnrollmentRequest.findOne({ 
-                student: studentId, 
-                targetType: 'Class', 
-                status: 'pending' 
-            });
-            if (existingPending) {
-                return res.status(400).json({ message: 'You already have a pending class application' });
-            }
+            target = await Class.findById(targetId);
+        } else {
+            target = await Course.findById(targetId);
         }
 
-        let target;
-        if (targetType === 'Class') target = await Class.findById(targetId);
-        else target = await Course.findById(targetId);
-
         if (!target) return res.status(404).json({ message: `${targetType} not found` });
+
+        // Check if already enrolled in this specific target
+        const enrolledStudents = targetType === 'Class' ? (target as any).students : (target as any).enrolledStudents;
+        if (enrolledStudents && enrolledStudents.some((id: any) => id.toString() === studentId)) {
+            return res.status(400).json({ message: `Already enrolled in this ${targetType}` });
+        }
+        
+        // Check for existing pending request for this specific target
+        const existingPending = await EnrollmentRequest.findOne({ 
+            student: studentId, 
+            targetType,
+            targetId,
+            status: 'pending' 
+        });
+        if (existingPending) {
+            return res.status(400).json({ message: `You already have a pending application for this ${targetType}` });
+        }
 
         const request = await EnrollmentRequest.create({
             student: studentId,

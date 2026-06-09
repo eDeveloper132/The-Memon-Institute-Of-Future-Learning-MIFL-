@@ -55,12 +55,19 @@ export const getAllUsers = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
-        const exists = await User.findOne({ email });
+        if (!email) return res.status(400).json({ message: 'Email is required' });
+        
+        const sanitizedEmail = email.toLowerCase().trim();
+        const exists = await User.findOne({ email: sanitizedEmail });
         if (exists) return res.status(400).json({ message: 'User already exists' });
 
-        const user = await User.create(req.body);
+        const user = await User.create({
+            ...req.body,
+            email: sanitizedEmail
+        });
         res.status(201).json({ message: 'User created successfully', user });
     } catch (error) {
+        console.error('[Admin] Create user error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
@@ -71,12 +78,16 @@ export const updateUser = async (req: Request, res: Response) => {
         const user = await User.findById(id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
+        const updates = { ...req.body };
+        if (updates.email) updates.email = updates.email.toLowerCase().trim();
+        
         // Merge updates
-        Object.assign(user, req.body);
+        Object.assign(user, updates);
         
         await user.save();
         res.status(200).json({ message: 'User updated successfully', user });
     } catch (error: any) {
+        console.error('[Admin] Update user error:', error);
         if (error.code === 11000) {
             return res.status(400).json({ message: 'Duplicate field error: Email or Student ID already exists' });
         }

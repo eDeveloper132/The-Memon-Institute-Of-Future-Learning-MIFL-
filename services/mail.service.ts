@@ -49,14 +49,20 @@ class MailService {
      * @param options - Recipient, subject, and content
      */
     public async sendMail(options: MailOptions): Promise<void> {
+        const fromEmail = process.env.mail_name || 'support@mifl.edu';
         try {
+            console.log(chalk.blue(`[Mail] Attempting to send email to: ${options.to} (Subject: ${options.subject})`));
+            
             const info = await this.transporter.sendMail({
-                from: `"MIFL Support" <${process.env.mail_name}>`,
+                from: `"MIFL Support" <${fromEmail}>`,
                 ...options,
             });
-            console.log(chalk.blue('Email sent: %s'), info.messageId);
-        } catch (error) {
-            console.error(chalk.red('Failed to send email:'), error);
+            
+            console.log(chalk.green(`[Mail] Email sent successfully! MessageId: ${info.messageId}`));
+        } catch (error: any) {
+            console.error(chalk.red(`[Mail] Failed to send email to ${options.to}:`), error.message);
+            // Log more details if available
+            if (error.response) console.error(chalk.red(`[Mail] SMTP Response: ${error.response}`));
             throw error;
         }
     }

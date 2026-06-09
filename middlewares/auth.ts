@@ -20,20 +20,21 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
         }
         return res.status(401).json({ message: 'Authentication required' });
     }
+try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+    req.user = decoded;
+    console.log(`[Auth] User authenticated: ${(decoded as any).id} [${(decoded as any).role}]`);
+    next();
+} catch (error) {
+    console.error(`[Auth] Token verification failed: ${error}`);
+    res.cookie('token', '', { maxAge: 1, path: '/' }); // Fix: Ensure path is consistent when clearing
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-        req.user = decoded;
-        console.log(`[Auth] User authenticated: ${(decoded as any).id} [${(decoded as any).role}]`);
-        next();
-    } catch (error) {
-        console.error(`[Auth] Token verification failed: ${error}`);
-        res.cookie('token', '', { maxAge: 1 }); // Clear invalid token
-        if (req.accepts('html')) {
-            return res.redirect('/api/auth/login');
-        }
-        return res.status(401).json({ message: 'Invalid or expired token' });
+    // If it's a browser request for a page, redirect to login
+    if (req.accepts('html')) {
+        return res.redirect('/api/auth/login');
     }
+    return res.status(401).json({ message: 'Invalid or expired token' });
+}
 };
 
 /**

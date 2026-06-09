@@ -9,10 +9,13 @@ import { sanityService } from '../services/sanity.service.js';
 
 /**
  * Generate JWT Token
+ * @param id User ID
+ * @param role User Role
+ * @param expiresIn Token expiration (e.g., '1d', '30d')
  */
-const generateToken = (id: string, role: string) => {
+const generateToken = (id: string, role: string, expiresIn: any = '1d') => {
     return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret', {
-        expiresIn: '1d',
+        expiresIn,
     });
 };
 
@@ -33,9 +36,10 @@ export const signup = async (req: Request, res: Response) => {
         console.log(`[Auth] Processing signup for email: ${req.body.email}`);
         const { name, email, password, phoneNumber, address, role } = req.body;
 
-        const userExists = await User.findOne({ email });
+        const sanitizedEmail = email.toLowerCase().trim();
+        const userExists = await User.findOne({ email: sanitizedEmail });
         if (userExists) {
-            console.log(`[Auth] Signup failed: User ${email} already exists`);
+            console.log(`[Auth] Signup failed: User ${sanitizedEmail} already exists`);
             return res.status(400).json({ message: 'User already exists' });
         }
 
@@ -43,7 +47,7 @@ export const signup = async (req: Request, res: Response) => {
 
         const user = await User.create({
             name,
-            email,
+            email: sanitizedEmail,
             password,
             phoneNumber,
             address,
@@ -80,17 +84,30 @@ export const signup = async (req: Request, res: Response) => {
 
 export const login = async (req: any, res: Response) => {
     try {
-        console.log(`[Auth] Processing login for email: ${req.body.email}`);
         const { email, password, rememberMe } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ message: 'Email and password are required' });
+        }
 
-        const user = await User.findOne({ email }).select('+password');
-        if (!user || !(await user.comparePassword(password))) {
-            console.log(`[Auth] Login failed: Invalid credentials for ${email}`);
+        const sanitizedEmail = email.toLowerCase().trim();
+        console.log(`[Auth] Login attempt for: ${sanitizedEmail}`);
+
+        const user = await User.findOne({ email: sanitizedEmail }).select('+password');
+        
+        if (!user) {
+            console.log(`[Auth] Login failed: User not found for ${sanitizedEmail}`);
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            console.log(`[Auth] Login failed: Password mismatch for ${sanitizedEmail}`);
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
         if (!user.isEmailVerified) {
-            console.log(`[Auth] Login failed: Email not verified for ${email}`);
+            console.log(`[Auth] Login failed: Email not verified for ${sanitizedEmail}`);
             return res.status(403).json({ 
                 message: 'Email not verified. Please verify your email before logging in.',
                 requiresVerification: true,
@@ -98,8 +115,16 @@ export const login = async (req: any, res: Response) => {
             });
         }
 
-        console.log(`[Auth] User logged in: ${user._id}`);
-        const token = generateToken(user._id.toString(), user.role);
+        if (user.status !== 'active') {
+            console.log(`[Auth] Login failed: Account ${user.status} for ${sanitizedEmail}`);
+            return res.status(403).json({ message: `Your account is ${user.status}. Please contact support.` });
+        }
+
+        console.log(`[Auth] User logged in: ${user._id} (${user.role})`);
+        
+        // Match JWT expiration with cookie maxAge
+        const tokenExpiresIn = rememberMe ? '30d' : '1d';
+        const token = generateToken(user._id.toString(), user.role, tokenExpiresIn);
 
         const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
 
@@ -108,6 +133,7 @@ export const login = async (req: any, res: Response) => {
             secure: process.env.NODE_ENV === 'production',
             maxAge,
             path: '/',
+            sameSite: 'lax'
         });
 
         // Emit activity to admins
@@ -134,7 +160,7 @@ export const login = async (req: any, res: Response) => {
         });
     } catch (error: any) {
         console.error(chalk.red('Login error:'), error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: 'Internal server error during login' });
     }
 };
 
@@ -185,9 +211,15 @@ export const verifyEmail = async (req: Request, res: Response) => {
 export const resendVerification = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ email });
+        if (!email) return res.status(400).json({ message: 'Email is required' });
 
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        const sanitizedEmail = email.toLowerCase().trim();
+        const user = await User.findOne({ email: sanitizedEmail });
+
+        if (!user) {
+            console.log(`[Auth] Resend verification failed: User not found for ${sanitizedEmail}`);
+            return res.status(404).json({ message: 'User not found' });
+        }
         if (user.isEmailVerified) return res.status(400).json({ message: 'Email is already verified' });
 
         const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -200,6 +232,7 @@ export const resendVerification = async (req: Request, res: Response) => {
         const protocol = req.headers['x-forwarded-proto'] || req.protocol;
         const verificationUrl = `${protocol}://${req.get('host')}/api/auth/verify-email/${verificationToken}`;
 
+        console.log(`[Auth] Resending verification email to ${sanitizedEmail}`);
         await mailService.sendMail({
             to: user.email,
             subject: 'Verify Your Email - MIFL',
@@ -216,16 +249,23 @@ export const resendVerification = async (req: Request, res: Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ email });
+        if (!email) return res.status(400).json({ message: 'Email is required' });
+
+        const sanitizedEmail = email.toLowerCase().trim();
+        console.log(`[Auth] Forgot Password request for: ${sanitizedEmail}`);
+
+        const user = await User.findOne({ email: sanitizedEmail });
         if (!user) {
             // Still return 200 to prevent user enumeration attacks
-            console.log(`[Auth] Forgot Password: Attempt for non-existent user ${email}`);
+            console.log(`[Auth] Forgot Password: User not found for ${sanitizedEmail}`);
             return res.status(200).json({ message: 'If a user with that email exists, a recovery link has been sent.' });
         }
 
         const resetToken = generateResetToken(user._id.toString());
-        const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const resetUrl = `${protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
 
+        console.log(`[Auth] Sending password reset email to ${sanitizedEmail}`);
         await mailService.sendMail({
             to: user.email,
             subject: 'Password Reset Request - MIFL',

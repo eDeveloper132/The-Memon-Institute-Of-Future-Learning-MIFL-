@@ -13,12 +13,15 @@ class AuthCard extends HTMLElement {
 }
 
 class AuthInput extends HTMLElement {
+  private _value: string = '';
+
   get value(): string {
     const input = this.querySelector('input');
-    return input ? input.value : '';
+    return input ? input.value : this._value;
   }
 
   set value(val: string) {
+    this._value = val;
     const input = this.querySelector('input');
     if (input) input.value = val;
   }
@@ -32,8 +35,10 @@ class AuthInput extends HTMLElement {
     const name = this.getAttribute("name") || "";
     const icon = this.getAttribute("icon") || "";
     const required = this.hasAttribute("required") ? "required" : "";
-    const value = this.getAttribute("value") || "";
+    const value = this.getAttribute("value") || this._value || "";
     const togglePassword = this.hasAttribute("toggle-password") && type === "password";
+
+    this._value = value;
 
     this.innerHTML = `
       <div class="mb-4">
@@ -48,7 +53,7 @@ class AuthInput extends HTMLElement {
             type="${type}"
             ${required}
             name="${name}"
-            value="${value}"
+            value="${this._value}"
             class="block w-full ${icon ? "pl-10" : "px-3"} ${togglePassword ? "pr-10" : "pr-3"} py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
             placeholder="${placeholder}"
           >

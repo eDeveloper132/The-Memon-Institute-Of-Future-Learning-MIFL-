@@ -48,8 +48,14 @@ const userSchema = new Schema<IUser>(
     { timestamps: true }
 );
 
-// Password hashing middleware
+// Password hashing and Email sanitization middleware
 userSchema.pre('save', async function (this: any) {
+    // 1. Sanitize Email
+    if (this.isModified('email') && this.email) {
+        this.email = this.email.toLowerCase().trim();
+    }
+
+    // 2. Hash Password
     if (!this.isModified('password')) return;
 
     try {
