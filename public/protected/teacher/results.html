@@ -18,9 +18,14 @@
                 <h2 class="text-3xl font-bold text-gray-900">Exam Results</h2>
                 <p class="text-gray-500 mt-2">Record and publish student marks and report cards.</p>
             </div>
-            <button class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center">
-                <i class="fa-solid fa-file-export mr-2"></i> Export Reports
-            </button>
+            <div class="flex gap-4">
+                <button id="openAddExamModalBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center shadow-md">
+                    <i class="fa-solid fa-plus mr-2"></i> Add Exam
+                </button>
+                <button class="bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition flex items-center shadow-md">
+                    <i class="fa-solid fa-file-export mr-2"></i> Export Reports
+                </button>
+            </div>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -71,6 +76,61 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Exam Modal -->
+    <div id="addExamModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden transform scale-95 transition-all duration-300 flex flex-col max-h-[90vh]">
+            <div class="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-xl font-black text-gray-900 tracking-tight">Create New Exam</h3>
+                <button id="closeAddExamModalBtn" class="w-10 h-10 rounded-full hover:bg-red-50 hover:text-red-500 text-gray-400 transition flex items-center justify-center text-2xl font-bold">&times;</button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto">
+                <form id="addExamForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Exam Title</label>
+                        <input type="text" id="examTitle" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="e.g. Midterm Physics">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Course</label>
+                        <select id="examCourse" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Loading courses...</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                            <select id="examType" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                                <option value="midterm">Midterm</option>
+                                <option value="final">Final</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="assignment">Assignment</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="examDate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Max Marks</label>
+                            <input type="number" id="examMaxMarks" min="1" value="100" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Weightage (%)</label>
+                            <input type="number" id="examWeightage" min="1" max="100" value="20" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div class="pt-4">
+                        <button type="submit" id="submitExamBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-blue-700 transition flex justify-center items-center">
+                            Create Exam
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -243,6 +303,88 @@
         closeModalBtn.onclick = hideModal;
         gradingModal.onclick = (e) => {
             if (e.target === gradingModal) hideModal();
+        };
+
+        // Add Exam Modal Logic
+        const addExamModal = document.getElementById('addExamModal');
+        const openAddExamModalBtn = document.getElementById('openAddExamModalBtn');
+        const closeAddExamModalBtn = document.getElementById('closeAddExamModalBtn');
+        const addExamForm = document.getElementById('addExamForm');
+        const examCourseSelect = document.getElementById('examCourse');
+        const submitExamBtn = document.getElementById('submitExamBtn');
+
+        const hideAddExamModal = () => {
+            addExamModal.classList.add('opacity-0');
+            addExamModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                addExamModal.classList.add('hidden');
+                addExamModal.classList.remove('flex');
+                addExamForm.reset();
+            }, 300);
+        };
+
+        openAddExamModalBtn.onclick = async () => {
+            addExamModal.classList.remove('hidden');
+            addExamModal.classList.add('flex');
+            setTimeout(() => {
+                addExamModal.classList.remove('opacity-0');
+                addExamModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+
+            // Fetch courses if not already loaded
+            if (examCourseSelect.options.length <= 1) {
+                try {
+                    const res = await fetch('/api/teacher/courses');
+                    if (res.ok) {
+                        const { courses } = await res.json();
+                        examCourseSelect.innerHTML = '<option value="">Select Course</option>' + 
+                            courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
+                    }
+                } catch (err) {
+                    showToast('Failed to load courses', 'error');
+                }
+            }
+        };
+
+        closeAddExamModalBtn.onclick = hideAddExamModal;
+        addExamModal.onclick = (e) => {
+            if (e.target === addExamModal) hideAddExamModal();
+        };
+
+        addExamForm.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('examTitle').value;
+            const course = document.getElementById('examCourse').value;
+            const type = document.getElementById('examType').value;
+            const date = document.getElementById('examDate').value;
+            const maxMarks = parseInt(document.getElementById('examMaxMarks').value);
+            const weightage = parseInt(document.getElementById('examWeightage').value);
+
+            submitExamBtn.disabled = true;
+            submitExamBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Creating...';
+
+            try {
+                const res = await fetch('/api/teacher/exams', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, course, type, date, maxMarks, weightage })
+                });
+
+                if (res.ok) {
+                    showToast('Exam created successfully', 'success');
+                    hideAddExamModal();
+                    await fetchExams(); // Reload the table
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Failed to create exam', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            } finally {
+                submitExamBtn.disabled = false;
+                submitExamBtn.innerHTML = 'Create Exam';
+            }
         };
 
         async function fetchProfile() {
