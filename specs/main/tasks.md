@@ -2,19 +2,19 @@
 
 ## Phase 1: Setup
 
-- [ ] T001 Verify project compiles with `npx tsc` before starting changes.
+- [x] T001 Verify project compiles with `npx tsc` before starting changes.
 
 ## Phase 2: User Story 1 (Enable Curriculum Visibility for Students)
 
 **Goal**: Implement a secure backend endpoint to aggregate a student's curriculum data and update the frontend to consume it, resolving the 403 Forbidden errors.
 
-- [ ] T002 [US1] Implement `getMyRoadmaps` logic in `controllers/student.controller.ts` to fetch the student's enrolled courses and current class, populating their curriculum sections.
-- [ ] T003 [US1] Register `GET /api/student/roadmaps` mapping to `getMyRoadmaps` in `routes/student.routes.ts`.
-- [ ] T004 [US1] Refactor `loadData` in `public/protected/student/curriculum.html` to fetch data from `/api/student/roadmaps` instead of the admin endpoints, and map the response to the existing UI rendering logic.
+- [x] T002 [US1] Implement `getMyRoadmaps` logic in `controllers/student.controller.ts` to fetch the student's enrolled courses and current class, populating their curriculum sections.
+- [x] T003 [US1] Register `GET /api/student/roadmaps` mapping to `getMyRoadmaps` in `routes/student.routes.ts`.
+- [x] T004 [US1] Refactor `loadData` in `public/protected/student/curriculum.html` to fetch data from `/api/student/roadmaps` instead of the admin endpoints, and map the response to the existing UI rendering logic.
 
 ## Phase 3: Polish & Cross-Cutting
 
-- [ ] T005 Run final verification with `npx tsc` to ensure no TypeScript compilation errors were introduced.
+- [x] T005 Run final verification with `npx tsc` to ensure no TypeScript compilation errors were introduced.
 
 ## Dependencies
 

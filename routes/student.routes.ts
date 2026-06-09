@@ -12,7 +12,8 @@ import {
     attemptQuiz,
     enrollCourse,
     getStudentChatHistory, getStudentConversations, sendStudentMessage,
-    getMyNotices
+    getMyNotices,
+    getMyRoadmaps
 } from '../controllers/student.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.js';
 import { generalLimiter } from '../middlewares/rateLimiter.js';
@@ -30,6 +31,7 @@ router.get('/attendance', getMyAttendance);
 router.get('/results', getMyResults);
 router.get('/fees', getMyFees);
 router.get('/notices', getMyNotices);
+router.get('/roadmaps', getMyRoadmaps);
 router.post('/enroll/:courseId', enrollCourse);
 
 /**

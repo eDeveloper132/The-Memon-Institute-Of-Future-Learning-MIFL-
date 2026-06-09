@@ -278,6 +278,33 @@ export const getMyNotices = async (req: any, res: Response) => {
     }
 };
 
+export const getMyRoadmaps = async (req: any, res: Response) => {
+    try {
+        const studentId = req.user.id;
+        const user = await User.findById(studentId).populate('currentClass');
+        
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Find courses where the student is directly enrolled OR enrolled via a batch
+        const myCourses = await Course.find({
+            $or: [
+                { enrolledStudents: studentId },
+                { 'batches.students': studentId }
+            ]
+        }).select('title outline curriculumSections');
+
+        let myClass = null;
+        if (user.currentClass) {
+            myClass = await Class.findById(user.currentClass._id).select('name classOutline classCurriculumSections');
+        }
+
+        res.status(200).json({ myClass, myCourses });
+    } catch (error) {
+        console.error(chalk.red('[Student Controller] getMyRoadmaps error:'), error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
 /**
  * STUDENT - MESSAGING
  */

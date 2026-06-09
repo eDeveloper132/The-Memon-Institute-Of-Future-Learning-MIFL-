@@ -85,31 +85,15 @@
         }
 
         async function loadData() {
-            const [classRes, courseRes] = await Promise.all([
-                fetch('/api/student/profile'), // Re-fetch to get populated class if needed
-                fetch('/api/student/assignments') // Used to identify enrolled courses
-            ]);
+            try {
+                const res = await fetch('/api/student/roadmaps');
+                if (!res.ok) throw new Error('Failed to fetch roadmaps');
+                
+                const { myClass: fetchedClass, myCourses: fetchedCourses } = await res.json();
+                myClass = fetchedClass;
+                myCourses = fetchedCourses || [];
 
-            // For now, let's fetch all available courses and filter by student enrollment
-            const allCoursesRes = await fetch('/api/enrollment/available');
-            const { courses: allAvailable } = await allCoursesRes.json();
-            
-            // In a real scenario, we'd have a specific /api/student/my-enrolled-courses
-            // Simplified: Fetch all courses and filter for those containing this student
-            const fullCoursesRes = await fetch('/api/admin/courses'); // Temporary shortcut
-            const { courses: allFull } = await fullCoursesRes.json();
-            
-            myCourses = allFull.filter(c => 
-                c.enrolledStudents.includes(currentUser._id) || 
-                c.batches.some(b => b.students.some(s => (s._id || s) === currentUser._id))
-            );
-
-            const select = document.getElementById('entitySelect');
-            if (currentUser.currentClass) {
-                // Fetch full class details for roadmap
-                const clsRes = await fetch('/api/admin/classes');
-                const { classes } = await clsRes.json();
-                myClass = classes.find(c => c._id === (currentUser.currentClass._id || currentUser.currentClass));
+                const select = document.getElementById('entitySelect');
                 
                 if (myClass) {
                     const opt = document.createElement('option');
@@ -117,20 +101,23 @@
                     opt.textContent = `[Class] ${myClass.name}`;
                     select.appendChild(opt);
                 }
+
+                myCourses.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = `course:${c._id}`;
+                    opt.textContent = `[Course] ${c.title}`;
+                    select.appendChild(opt);
+                });
+
+                select.onchange = (e) => {
+                    const [type, id] = e.target.value.split(':');
+                    if (type === 'class') renderRoadmap(myClass, 'class');
+                    else renderRoadmap(myCourses.find(c => c._id === id), 'course');
+                };
+            } catch (err) {
+                console.error('Error loading roadmap data:', err);
+                showToast('Failed to load curriculum data', 'error');
             }
-
-            myCourses.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = `course:${c._id}`;
-                opt.textContent = `[Course] ${c.title}`;
-                select.appendChild(opt);
-            });
-
-            select.onchange = (e) => {
-                const [type, id] = e.target.value.split(':');
-                if (type === 'class') renderRoadmap(myClass, 'class');
-                else renderRoadmap(myCourses.find(c => c._id === id), 'course');
-            };
         }
 
         function renderRoadmap(data, type) {
