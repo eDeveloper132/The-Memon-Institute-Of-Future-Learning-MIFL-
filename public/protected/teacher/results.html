@@ -78,7 +78,7 @@
     </div>
 
     <script type="module">
-        import { showToast } from '/components/ui-components.js?v=1.6';
+        import { showToast, initSocket } from '/components/ui-components.js?v=1.6';
 
         const resultsTableBody = document.getElementById('resultsTableBody');
         const gradingModal = document.getElementById('gradingModal');
@@ -249,113 +249,14 @@
             if (e.target === gradingModal) hideModal();
         };
 
-        // Add Exam Modal Logic
-        const addExamModal = document.getElementById('addExamModal');
-        const openAddExamModalBtn = document.getElementById('openAddExamModalBtn');
-        const closeAddExamModalBtn = document.getElementById('closeAddExamModalBtn');
-        const addExamForm = document.getElementById('addExamForm');
-        const examCourseSelect = document.getElementById('examCourse');
-        const examClassSelect = document.getElementById('examClass');
-        const submitExamBtn = document.getElementById('submitExamBtn');
-
-        const hideAddExamModal = () => {
-            addExamModal.classList.add('opacity-0');
-            addExamModal.querySelector('div').classList.add('scale-95');
-            setTimeout(() => {
-                addExamModal.classList.add('hidden');
-                addExamModal.classList.remove('flex');
-                addExamForm.reset();
-            }, 300);
-        };
-
-        openAddExamModalBtn.onclick = async () => {
-            addExamModal.classList.remove('hidden');
-            addExamModal.classList.add('flex');
-            setTimeout(() => {
-                addExamModal.classList.remove('opacity-0');
-                addExamModal.querySelector('div').classList.remove('scale-95');
-            }, 10);
-
-            // Fetch courses if not already loaded
-            if (examCourseSelect.options.length <= 1) {
-                try {
-                    const res = await fetch('/api/teacher/courses');
-                    if (res.ok) {
-                        const { courses } = await res.json();
-                        examCourseSelect.innerHTML = '<option value="">Select Course</option>' + 
-                            courses.map(c => `<option value="${c._id}">${c.title}</option>`).join('');
-                    }
-                } catch (err) {
-                    showToast('Failed to load courses', 'error');
-                }
-            }
-
-            // Fetch classes if not already loaded
-            if (examClassSelect && examClassSelect.options.length <= 1) {
-                try {
-                    const res = await fetch('/api/teacher/classes');
-                    if (res.ok) {
-                        const { classes } = await res.json();
-                        examClassSelect.innerHTML = '<option value="">Select a specific class (Optional)</option>' + 
-                            classes.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
-                    }
-                } catch (err) {
-                    showToast('Failed to load classes', 'error');
-                }
-            }
-        };
-
-        closeAddExamModalBtn.onclick = hideAddExamModal;
-        addExamModal.onclick = (e) => {
-            if (e.target === addExamModal) hideAddExamModal();
-        };
-
-        addExamForm.onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const title = document.getElementById('examTitle').value;
-            const course = document.getElementById('examCourse').value;
-            const classId = document.getElementById('examClass') ? document.getElementById('examClass').value : undefined;
-            const type = document.getElementById('examType').value;
-            const date = document.getElementById('examDate').value;
-            const maxMarks = parseInt(document.getElementById('examMaxMarks').value);
-            const weightage = parseInt(document.getElementById('examWeightage').value);
-
-            submitExamBtn.disabled = true;
-            submitExamBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Creating...';
-
-            const payload = { title, course, type, date, maxMarks, weightage };
-            if (classId) payload.class = classId;
-
-            try {
-                const res = await fetch('/api/teacher/exams', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (res.ok) {
-                    showToast('Exam created successfully', 'success');
-                    hideAddExamModal();
-                    await fetchExams(); // Reload the table
-                } else {
-                    const err = await res.json();
-                    showToast(err.message || 'Failed to create exam', 'error');
-                }
-            } catch (err) {
-                showToast('Network error', 'error');
-            } finally {
-                submitExamBtn.disabled = false;
-                submitExamBtn.innerHTML = 'Create Exam';
-            }
-        };
-
         async function fetchProfile() {
             try {
                 const response = await fetch('/api/auth/me');
                 if (!response.ok) { window.location.href = '/api/auth/login'; return; }
                 const { user } = await response.json();
-                if (window.initSocket) window.initSocket(user);
+                
+                await initSocket(user);
+                
                 if (user.role !== 'teacher' && user.role !== 'admin') { window.location.href = '/'; return; }
 
                 customElements.whenDefined('ui-navbar').then(() => {
