@@ -1,18 +1,18 @@
-# Implementation Plan: Restructure Exam Results View
+# Implementation Plan: Fix Student Curriculum Visibility
 
 **Branch**: `main` | **Date**: 2026-06-08 | **Spec**: N/A
-**Input**: This route "http://localhost:2000/protected/teacher/results.html" is for exam results so Delete add exam functionalities from it and Create exam results functionalities in it that teacher can distribute marks to his specified course or class students.
+**Input**: Teacher added curriculum and outline with scheduling and pdf files and links but students can't see in "http://localhost:2000/protected/student/curriculum.html"
 
 ## Summary
 
-The `results.html` view is dedicated strictly to managing and distributing exam results (marks) rather than creating new exams. Therefore, the "Add Exam" functionality (button, modal, and related logic) will be removed from this page. The existing "Manage Marks" feature already correctly fulfills the requirement to distribute marks to specified course or class students and will be retained.
+The frontend roadmap/curriculum view for students is currently trying to fetch data from `/api/admin/courses` and `/api/admin/classes`. Because students lack admin privileges, these requests fail with a 403 Forbidden error, leaving the curriculum UI empty. This plan implements a new, dedicated student endpoint that aggregates the student's enrolled courses and class roadmaps securely, and updates the frontend to consume it.
 
 ## Technical Context
 
 **Language/Version**: TypeScript / Node.js
 **Primary Dependencies**: Express, HTML, TailwindCSS
 **Project Type**: Web application
-**Scope**: Single page UI refactor.
+**Scope**: Backend endpoint creation and frontend fetch update.
 
 ## Constitution Check
 
@@ -23,7 +23,7 @@ The `results.html` view is dedicated strictly to managing and distributing exam 
 - [x] III. Verification Gate: `npx tsc` identified as mandatory pre-commit step.
 - [x] IV. Library-First: Business logic encapsulated in services.
 - [x] V. Simplicity: Smallest viable change identified.
-- [x] VI. Proactive: Notification triggers identified.
+- [x] VI. Proactive: Notification triggers identified (Not applicable here).
 
 ## Project Structure
 
@@ -38,15 +38,14 @@ specs/main/
 
 ## Phase 0: Outline & Research
 
-- **Decision**: Remove "Add Exam" button from the header of `public/protected/teacher/results.html`.
-- **Decision**: Remove the HTML markup for `<div id="addExamModal">`.
-- **Decision**: Remove the JavaScript logic binding to the Add Exam form submission and modal toggling.
-- **Rationale**: The user correctly pointed out that "results" management should be distinct from "exam" creation to maintain a clean separation of concerns in the UI.
+- **Root Cause**: The `curriculum.html` frontend is making unauthorized requests to admin-only API routes.
+- **Solution**: Create a secure `/api/student/roadmaps` endpoint that returns only the curriculum data relevant and permitted to the requesting student.
 
 ## Phase 1: Design & Contracts
 
-No changes to the data model or API contracts are required. The `GET /api/teacher/exams/:id/students` and `POST /api/teacher/grades` endpoints already perfectly serve the "distribute marks" requirement.
+See `data-model.md` for the new `GET /api/student/roadmaps` API contract.
 
 ### Action Items
-1. Edit `public/protected/teacher/results.html` to strip out the "Add Exam" modal and button.
-2. Confirm the "Manage Marks" functionality remains fully operational.
+1. **Backend**: Add `getMyRoadmaps` logic to `controllers/student.controller.ts`.
+2. **Backend**: Register `GET /api/student/roadmaps` in `routes/student.routes.ts`.
+3. **Frontend**: Update `public/protected/student/curriculum.html` to fetch from `/api/student/roadmaps` instead of the broken admin routes.

@@ -1,12 +1,14 @@
-# Research: Restructure Exam Results View
+# Research: Student Curriculum Visibility Issue
 
-## Removing Exam Creation from Results View
+## Root Cause Analysis
 
-**Decision**: Remove all UI components related to Exam Creation from `results.html`.
-**Rationale**: The user indicated that the "results" page should exclusively handle grading and distributing marks. Combining exam creation and grading into a single view violates the Single Responsibility Principle for the UI, cluttering the interface.
-**Alternatives considered**: Keeping the Add Exam button but moving it to a dropdown menu. This was rejected because the user explicitly stated "Delete add exam functionalities from it".
+**Decision**: The root cause of students not being able to see their curriculum is a permissions mismatch on the frontend.
+**Rationale**: In `public/protected/student/curriculum.html`, the `loadData()` function attempts to fetch all courses and classes using the admin endpoints `/api/admin/courses` and `/api/admin/classes`. Because these endpoints are protected by the `authorize('admin')` middleware, requests from students return a 403 Forbidden error, preventing the curriculum data from ever loading.
+**Alternatives considered**: 
+- Removing the admin authorization middleware from the admin endpoints. This is highly insecure and rejected.
+- Creating a new dedicated endpoint for students to fetch their specific roadmaps (courses they are enrolled in, and their assigned class). This is the correct, secure, and performant approach.
 
-## Confirming Grading Functionality
+## Implementation Details
 
-**Decision**: Retain the `window.manageMarks` modal and logic.
-**Rationale**: The user requested to "Create exam results functionalities in it that teacher can distribute marks to his specified course or class students." The current `manageMarks` modal already queries `GET /api/teacher/exams/:id/students` (which supports both course-wide and class-specific filtering) and POSTs grades to `/api/teacher/grades`. Therefore, the feature is fully implemented and merely needs to be isolated.
+**Decision**: Create a new API endpoint `GET /api/student/roadmaps` (or similar) that aggregates and returns the curriculum data specifically permitted for the logged-in student.
+**Rationale**: Instead of making the frontend download all courses and manually filter them (which is slow and insecure), the backend should cleanly provide exactly what the student is enrolled in, populated with the necessary `curriculumSections` and `classCurriculumSections`.

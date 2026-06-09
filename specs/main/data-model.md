@@ -1,9 +1,29 @@
 # Data Model & Contracts
 
-No changes to the data model or API contracts are necessary for this task. The existing models (`IExam`, `IGrade`) and API routes (`/api/teacher/exams`, `/api/teacher/grades`) fully support the requested functionality.
+No schema changes are required for this fix. The curriculum schema is already correctly storing the data.
 
-## API Usage for Results View
+## API Contracts
 
-- **Fetch Exams**: `GET /api/teacher/results`
-- **Fetch Exam Students**: `GET /api/teacher/exams/:id/students` (supports course and class-level filtering)
-- **Submit Grade**: `POST /api/teacher/grades`
+### 1. Get Student Roadmaps (New)
+- **Method**: `GET`
+- **URL**: `/api/student/roadmaps`
+- **Authentication**: Required (Student)
+- **Response**:
+  ```json
+  {
+    "myClass": {
+      "_id": "...",
+      "name": "...",
+      "classOutline": "...",
+      "classCurriculumSections": [...]
+    },
+    "myCourses": [
+      {
+        "_id": "...",
+        "title": "...",
+        "outline": "...",
+        "curriculumSections": [...]
+      }
+    ]
+  }
+  ```
