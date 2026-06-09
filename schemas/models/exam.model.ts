@@ -5,6 +5,7 @@ const examSchema = new Schema<IExam>(
     {
         title: { type: String, required: true, trim: true },
         course: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
+        class: { type: Schema.Types.ObjectId, ref: 'Class' },
         type: {
             type: String,
             enum: ['midterm', 'final', 'quiz', 'assignment'],

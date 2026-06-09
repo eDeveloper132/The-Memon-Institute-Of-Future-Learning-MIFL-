@@ -833,7 +833,7 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
         const courses = await Course.find({ teacher: teacherId });
         const courseIds = courses.map(c => c._id);
 
-        const exams = await Exam.find({ course: { $in: courseIds } }).populate('course', 'title');
+        const exams = await Exam.find({ course: { $in: courseIds } }).populate('course', 'title').populate('class', 'name');
         const grades = await Grade.find({ exam: { $in: exams.map(e => e._id) } }).populate('student', 'name');
         
         res.status(200).json({ exams, grades });
@@ -845,15 +845,22 @@ export const getExamsAndGrades = async (req: any, res: Response) => {
 export const getExamStudents = async (req: any, res: Response) => {
     try {
         const { id } = req.params;
-        const exam: any = await Exam.findById(id).populate('course');
+        const exam: any = await Exam.findById(id).populate('course').populate('class');
         if (!exam) return res.status(404).json({ message: 'Exam not found' });
         
         if (String(exam.course.teacher) !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).json({ message: 'Unauthorized' });
         }
 
-        // Get students enrolled in the course
-        const students = await User.find({ _id: { $in: exam.course.enrolledStudents } }).select('name email');
+        let students;
+        if (exam.class) {
+            // Get students enrolled in the specific class
+            students = await User.find({ _id: { $in: exam.class.students } }).select('name email');
+        } else {
+            // Get all students enrolled in the course
+            students = await User.find({ _id: { $in: exam.course.enrolledStudents } }).select('name email');
+        }
+        
         const grades = await Grade.find({ exam: id });
 
         res.status(200).json({ students, grades, exam });

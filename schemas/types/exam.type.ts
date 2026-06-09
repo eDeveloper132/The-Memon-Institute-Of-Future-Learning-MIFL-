@@ -5,6 +5,7 @@ export type ExamType = 'midterm' | 'final' | 'quiz' | 'assignment';
 export interface IExam extends Document {
     title: string;
     course: Types.ObjectId; // Ref to Course
+    class?: Types.ObjectId; // Ref to Class (optional)
     type: ExamType;
     date: Date;
     maxMarks: number;

@@ -100,6 +100,12 @@
                             <option value="">Loading courses...</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Class (Optional)</label>
+                        <select id="examClass" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Select a specific class (Optional)</option>
+                        </select>
+                    </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -166,17 +172,19 @@
                 return;
             }
 
-            resultsTableBody.innerHTML = exams.map(exam => `
+            resultsTableBody.innerHTML = exams.map(exam => {
+                const contextName = exam.class ? `${exam.course?.title || 'Course'} <span class="text-xs ml-2 bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">${exam.class.name}</span>` : (exam.course?.title || 'Course');
+                return `
                 <tr class="hover:bg-gray-50 transition">
                     <td class="px-6 py-4 font-medium text-gray-900">${exam.title}</td>
-                    <td class="px-6 py-4 text-gray-600">${exam.course?.title || 'Course'}</td>
+                    <td class="px-6 py-4 text-gray-600">${contextName}</td>
                     <td class="px-6 py-4 text-gray-600">${new Date(exam.date).toLocaleDateString()}</td>
                     <td class="px-6 py-4 text-gray-600">${exam.maxMarks}</td>
                     <td class="px-6 py-4 flex gap-4">
                         <button class="text-blue-600 hover:underline font-bold" data-action="manage" data-id="${exam._id}" data-max="${exam.maxMarks}">Manage Marks</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         // Event Delegation for Exam Actions
@@ -311,6 +319,7 @@
         const closeAddExamModalBtn = document.getElementById('closeAddExamModalBtn');
         const addExamForm = document.getElementById('addExamForm');
         const examCourseSelect = document.getElementById('examCourse');
+        const examClassSelect = document.getElementById('examClass');
         const submitExamBtn = document.getElementById('submitExamBtn');
 
         const hideAddExamModal = () => {
@@ -344,6 +353,20 @@
                     showToast('Failed to load courses', 'error');
                 }
             }
+
+            // Fetch classes if not already loaded
+            if (examClassSelect && examClassSelect.options.length <= 1) {
+                try {
+                    const res = await fetch('/api/teacher/classes');
+                    if (res.ok) {
+                        const { classes } = await res.json();
+                        examClassSelect.innerHTML = '<option value="">Select a specific class (Optional)</option>' + 
+                            classes.map(c => `<option value="${c._id}">${c.name}</option>`).join('');
+                    }
+                } catch (err) {
+                    showToast('Failed to load classes', 'error');
+                }
+            }
         };
 
         closeAddExamModalBtn.onclick = hideAddExamModal;
@@ -356,6 +379,7 @@
             
             const title = document.getElementById('examTitle').value;
             const course = document.getElementById('examCourse').value;
+            const classId = document.getElementById('examClass') ? document.getElementById('examClass').value : undefined;
             const type = document.getElementById('examType').value;
             const date = document.getElementById('examDate').value;
             const maxMarks = parseInt(document.getElementById('examMaxMarks').value);
@@ -364,11 +388,14 @@
             submitExamBtn.disabled = true;
             submitExamBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Creating...';
 
+            const payload = { title, course, type, date, maxMarks, weightage };
+            if (classId) payload.class = classId;
+
             try {
                 const res = await fetch('/api/teacher/exams', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, course, type, date, maxMarks, weightage })
+                    body: JSON.stringify(payload)
                 });
 
                 if (res.ok) {
