@@ -37,6 +37,7 @@
 - [ ] IV. Library-First: Business logic encapsulated in services.
 - [ ] V. Simplicity: Smallest viable change identified.
 - [ ] VI. Proactive: Notification triggers identified.
+- [ ] VII. Database Integrity: Data protection and migration safety confirmed.
 
 ## Project Structure
 

@@ -65,8 +65,18 @@ app.use(express.static(path.join(process.cwd(), "public")));
 
 
 
+// Public Landing Page Route (with Soft-Auth Check)
+app.get("/", (req: Request, res: Response) => {
+    // If user has a token, assume logged in and send to dashboard
+    if (req.cookies && req.cookies.token) {
+        return res.redirect('/home');
+    }
+    // Otherwise, serve the public landing page
+    res.sendFile(path.join(process.cwd(), "public", "landing.html"));
+});
+
 // Protected View Routes
-app.get("/", authenticate, (req: Request, res: Response) => {
+app.get("/home", authenticate, (req: Request, res: Response) => {
     res.sendFile(path.join(process.cwd(), "public", "protected", "index.html"));
 });
 app.use("/api/teacher", teacherRoutes);

@@ -9,7 +9,7 @@ This directory and the `schemas/types/` directory define the structure and contr
 
 ## ⚖️ Strict Type Policy
 
-- **No `any`**: In compliance with the **MIFL Constitution (v1.1.0)**, the use of `any` is strictly prohibited.
+- **No `any`**: In compliance with the **MIFL Constitution (v1.2.0)**, the use of `any` is strictly prohibited.
 - **Interfaces over Classes**: Prefer TypeScript `interface` or `type` for defining data contracts to ensure lightweight, performant type checking.
 - **Optionality**: Use optional properties (`field?: type`) only when a field is truly non-essential in all contexts.
 

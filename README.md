@@ -1,4 +1,4 @@
-# MIFL - Educational Management System (v1.1.0)
+# MIFL - Educational Management System (v1.2.0)
 
 MIFL is a high-performance, real-time Educational Management System built with **Node.js (Express 5)**, **TypeScript**, and **MongoDB**. It provides a centralized platform for students, teachers, parents, and admins to manage academic lifecycles, financial records, and real-time communications.
 
@@ -37,7 +37,7 @@ D:\MIFL\
 
 ## ⚖️ Quality Assurance (MANDATORY)
 
-MIFL operates under a strict **Constitution (v1.1.0)**. The following rule is non-negotiable for all contributors:
+MIFL operates under a strict **Constitution (v1.2.0)**. The following rule is non-negotiable for all contributors:
 
 > **Principle III: Mandatory Verification Gate**
 > After any implementation task, `npx tsc` MUST be executed. Changes cannot be committed or pushed to `main` if any type errors exist.

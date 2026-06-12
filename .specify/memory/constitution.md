@@ -1,6 +1,6 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
+- Version change: 1.1.0 → 1.2.0
 - List of modified principles:
     - [PRINCIPLE_1_NAME] → I. Spec-Driven Development (SDD)
     - [PRINCIPLE_2_NAME] → II. Strict Type Safety
@@ -8,6 +8,7 @@ Sync Impact Report
     - [PRINCIPLE_4_NAME] → IV. Library-First Architecture
     - [PRINCIPLE_5_NAME] → V. Simplicity & YAGNI
     - [PRINCIPLE_6_NAME] → VI. Real-time & Proactive Communication
+    - [PRINCIPLE_7_NAME] → VII. Database Integrity & Data Protection
 - Added sections: Quality Standards, Development Workflow
 - Templates requiring updates:
     - ✅ updated: .specify/templates/plan-template.md
@@ -40,6 +41,9 @@ Favor the simplest viable solution that satisfies the current specification. Do 
 ### VI. Real-time & Proactive Communication
 The system SHOULD leverage Socket.IO for real-time updates and the Email Notification System for persistent user engagement. Proactive communication is a first-class citizen of the user experience.
 
+### VII. Database Integrity & Data Protection
+Database schema changes and data migrations MUST be reversible and tested against a non-production environment first. During planning and implementation phases, NO operation shall result in the irreversible loss of production-equivalent data unless explicitly specified in a data retention or migration plan approved by the architect. Verification of data integrity is mandatory after any change affecting the persistence layer.
+
 ## Quality Standards
 All API responses MUST follow a standard JSON structure. Frontend components MUST be reusable, modular, and free of inline JavaScript to comply with strict Content Security Policies (CSP).
 
@@ -49,4 +53,4 @@ The standard development cycle is: Research -> Strategy -> Execution (Plan-Act-V
 ## Governance
 This constitution supersedes all other development practices at MIFL. Amendments to this document require a MINOR version bump and must be propagated to all dependent templates. Violations of Principle III (Mandatory Verification Gate) require immediate remediation.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-06 | **Last Amended**: 2026-06-06
+**Version**: 1.2.0 | **Ratified**: 2026-06-06 | **Last Amended**: 2026-06-12

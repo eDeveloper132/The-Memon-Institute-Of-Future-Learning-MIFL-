@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIFL - Memon Institute Of Future Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/components/ui-components.js?v=1.6" type="module" defer></script>
+    <script src="/js/landing.js" type="module" defer></script>
+    <style>
+        /* Reveal on Scroll Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Mesh Gradient Background */
+        .mesh-gradient {
+            background-color: #ffffff;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(217,100%,95%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(210,100%,90%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(190,100%,95%,1) 0, transparent 50%);
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            .reveal {
+                transition: none;
+                opacity: 1;
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+    <ui-public-navbar title="MIFL"></ui-public-navbar>
+    
+    <main id="mainContent" class="flex-1 w-full">
+        <!-- Hero Section -->
+        <section class="relative overflow-hidden mesh-gradient">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-24 lg:pt-32 lg:pb-36 relative z-10 reveal">
+                <div class="text-center max-w-3xl mx-auto">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-bold mb-6 border border-blue-100">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        Admissions Open for 2026
+                    </div>
+                    <h1 class="text-5xl md:text-6xl font-black text-gray-900 tracking-tight mb-8 leading-tight">
+                        Empowering the Future Through <span class="text-blue-600">Knowledge</span>
+                    </h1>
+                    <p class="text-xl text-gray-600 mb-10 leading-relaxed">
+                        Join the Memon Institute Of Future Learning. A modern educational ecosystem designed to foster excellence, innovation, and career readiness.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="/api/auth/signup" class="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold text-lg hover:bg-blue-700 transition transform hover:scale-105 shadow-xl shadow-blue-200 active:scale-95">
+                            Get Started Today
+                        </a>
+                        <a href="#programs" class="px-8 py-4 bg-white text-gray-700 border-2 border-gray-100 rounded-2xl font-bold text-lg hover:border-blue-200 hover:text-blue-600 transition transform hover:scale-105 active:scale-95">
+                            Explore Programs
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Floating Decorative Blobs -->
+            <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-100/30 rounded-full blur-3xl -z-10 animate-pulse"></div>
+            <div class="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-indigo-50/50 rounded-full blur-3xl -z-10"></div>
+        </section>
+
+        <!-- About Us Section -->
+        <section class="py-24 bg-white border-t border-gray-100">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 reveal">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-900 mb-6">Our Mission</h2>
+                        <p class="text-lg text-gray-600 leading-relaxed mb-8">
+                            At MIFL, we believe that quality education should be accessible, engaging, and forward-thinking. Our curriculum is designed to bridge the gap between traditional academics and the skills required for the future.
+                        </p>
+                        <ul class="space-y-5 text-gray-700 font-bold">
+                            <li class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                                    <i class="fa-solid fa-rocket"></i>
+                                </div>
+                                Industry-aligned curriculum
+                            </li>
+                            <li class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-lg">
+                                    <i class="fa-solid fa-user-tie"></i>
+                                </div>
+                                Expert faculty members
+                            </li>
+                            <li class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-lg">
+                                    <i class="fa-solid fa-microchip"></i>
+                                </div>
+                                State-of-the-art facilities
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-blue-50 rounded-[3rem] p-12 aspect-square flex items-center justify-center relative overflow-hidden group shadow-inner">
+                         <div class="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxjaXJjbGUgY3g9IjIiIGN5PSIyIiByPSIyIiBmaWxsPSIjM0I4MkY2Ii8+Cjwvc3ZnPg==')]"></div>
+                         <i class="fa-solid fa-graduation-cap text-[12rem] text-blue-100 group-hover:scale-110 transition duration-700 relative z-10"></i>
+                         <div class="absolute inset-0 bg-gradient-to-tr from-blue-100/20 to-transparent"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dynamic Content Containers (Filled by JS) -->
+        <div id="dynamicSections">
+             <!-- Statistics Section (Injected by JS) -->
+             <section id="statsSection" class="py-20 bg-gray-50 border-y border-gray-100 reveal"></section>
+             
+             <!-- Featured Programs Section (Injected by JS) -->
+             <section id="programsSection" class="py-24 bg-white reveal"></section>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white pt-16 pb-8 border-t border-gray-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                <div>
+                    <h3 class="text-2xl font-black mb-6 text-white flex items-center gap-2">
+                        <i class="fa-solid fa-graduation-cap text-blue-500"></i> MIFL
+                    </h3>
+                    <p class="text-gray-400 text-sm leading-relaxed mb-6" id="footerMotto">Empowering the future through knowledge and skills.</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6 text-white">Quick Links</h4>
+                    <ul class="space-y-3 text-sm text-gray-400">
+                        <li><a href="/api/auth/login" class="hover:text-blue-400 transition">Student Portal</a></li>
+                        <li><a href="/unprotected/information_center/information-center.html" class="hover:text-blue-400 transition">Information Center</a></li>
+                        <li><a href="#programs" class="hover:text-blue-400 transition">Our Programs</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-bold mb-6 text-white">Contact Us</h4>
+                    <ul class="space-y-4 text-sm text-gray-400" id="footerContact">
+                        <!-- Contact info injected by JS -->
+                        <li><i class="fa-solid fa-circle-notch fa-spin"></i> Loading contact info...</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-sm text-gray-500">© 2026 Memon Institute Of Future Learning. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
